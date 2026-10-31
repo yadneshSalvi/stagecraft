@@ -434,6 +434,40 @@ test("one production carries approved coat repair through recast, independent de
   expect(p.allocationResult!.totalCostCents).toBe(50_000);
   p = await pack(page, id);
   const frozen = structuredClone(p.packs.at(-1)!);
+  const requirements = page.getByRole("region", {
+    name: "Unresolved crew requirements",
+    exact: true,
+  });
+  const requirementsToggle = requirements.getByRole("button");
+  const requirementDetails = requirements.locator(".crew-warnings-details");
+  expect(frozen.warnings.length).toBeGreaterThan(0);
+  await expect(requirements).toContainText(
+    `${frozen.warnings.length} unresolved requirements`,
+  );
+  await expect(requirementsToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(requirementsToggle).toHaveAttribute(
+    "aria-controls",
+    (await requirementDetails.getAttribute("id"))!,
+  );
+  await expect(requirementDetails).not.toBeVisible();
+  await expect(
+    page.getByText("WORKING PACK — EVIDENCE PENDING", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator(".crew-look > figure img").first(),
+  ).toBeInViewport();
+  await page.screenshot({
+    path: testInfo.outputPath("crew-readiness-collapsed.png"),
+  });
+  await requirementsToggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(requirementsToggle).toHaveAttribute("aria-expanded", "true");
+  await expect(requirementDetails).toBeVisible();
+  await expect(requirementDetails.locator("li")).toHaveText(frozen.warnings);
+  await page.keyboard.press("Space");
+  await expect(requirementsToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(requirementDetails).not.toBeVisible();
+  expect((await persisted(page, id)).revision).toBe(p.revision);
   await expect(
     page.getByRole("region", { name: "Separate makeup evidence", exact: true }),
   ).toHaveCount(3);
@@ -450,6 +484,12 @@ test("one production carries approved coat repair through recast, independent de
     }),
   ).toHaveCount(3);
   await page.emulateMedia({ media: "print" });
+  await expect(requirementDetails).toHaveAttribute("hidden", "");
+  await expect(requirementDetails).toBeVisible();
+  await expect(requirementDetails.locator("li")).toHaveText(frozen.warnings);
+  await expect(requirementDetails.locator("li").first()).toBeVisible();
+  await expect(requirementDetails.locator("li").last()).toBeVisible();
+  await expect(requirementsToggle).not.toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   await expect
     .poll(() =>
@@ -472,6 +512,8 @@ test("one production carries approved coat repair through recast, independent de
   expect(crewPdf.subarray(0, 5).toString()).toBe("%PDF-");
   expect(crewPdf.length).toBeGreaterThan(10_000);
   await page.emulateMedia({ media: "screen" });
+  await expect(requirementDetails).not.toBeVisible();
+  await expect(requirementsToggle).toHaveAttribute("aria-expanded", "false");
 
   await test.step("Inspect actual alternatives before authorizing the replacement", async () => {
     await visit(page, id);

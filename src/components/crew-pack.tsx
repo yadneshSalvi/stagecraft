@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
 import {
   ArrowLeft,
   Check,
+  ChevronDown,
   Clock3,
   Copy,
   MapPin,
@@ -141,17 +142,7 @@ export function CrewPackView({ packId }: { packId: string }) {
           </p>
         </div>
         {pack.warnings.length > 0 && (
-          <section className="crew-warnings">
-            <h2>Before this can be called ready</h2>
-            <p>
-              These are unresolved requirements in this exact source revision.
-            </p>
-            <ul>
-              {pack.warnings.map((warning, index) => (
-                <li key={index}>{warning}</li>
-              ))}
-            </ul>
-          </section>
+          <CrewReadiness key={pack.id} warnings={pack.warnings} />
         )}
         {[...snapshot.occurrences]
           .sort((a, b) => a.start.localeCompare(b.start))
@@ -394,5 +385,44 @@ export function CrewPackView({ packId }: { packId: string }) {
         save a PDF deliberately when handing the frozen pages to crew.
       </p>
     </div>
+  );
+}
+
+function CrewReadiness({ warnings }: { warnings: string[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const detailsId = useId();
+  return (
+    <section
+      className="crew-warnings"
+      aria-label="Unresolved crew requirements"
+    >
+      <div className="crew-warnings-summary">
+        <div>
+          <h2>Evidence pending</h2>
+          <p>
+            {warnings.length} unresolved{" "}
+            {warnings.length === 1 ? "requirement" : "requirements"} in this
+            frozen revision.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="crew-warnings-toggle no-print"
+          aria-expanded={expanded}
+          aria-controls={detailsId}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          {expanded ? "Hide requirements" : "Show requirements"}
+          <ChevronDown size={16} aria-hidden="true" />
+        </button>
+      </div>
+      <div className="crew-warnings-details" id={detailsId} hidden={!expanded}>
+        <ul>
+          {warnings.map((warning, index) => (
+            <li key={index}>{warning}</li>
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 }
