@@ -2,7 +2,7 @@
 
 This checklist separates current review-round checks from the preceding deployed release. Synthetic decisions, provider images and software checks do not establish practitioner approval, physical fitting or supplier outcomes.
 
-The current review round starts from `a5f128467e72e9fdfa37ddfc5f0649278eda3129`. Its local application-wide gate is complete; deployment and production acceptance remain separate steps. The canonical application is [stagecraft-swart.vercel.app](https://stagecraft-swart.vercel.app).
+The current review round starts from `a5f128467e72e9fdfa37ddfc5f0649278eda3129`. The final application commit `deaf490c01ceac1320694515fa163ef513baa718` is deployed as `dpl_4jc58ZVN3mbtYjq74GEPuPvVDNr9`, with the normal balance floor. Local gates and independent canonical acceptance are complete. The final canonical browser suite passed **16/16**, with zero failures, skips or retries, in **319.900 seconds**. [Production verification](evidence/review-production-verification.json) records the exact release; later documentation-only commits do not alter the application build. The canonical application is [stagecraft-swart.vercel.app](https://stagecraft-swart.vercel.app).
 
 ## Review-round evidence already observed
 
@@ -28,10 +28,12 @@ The following items are updated only after running against the integrated source
 - [x] Automated accessibility and overflow checks on 11 production surfaces at desktop and 390px, plus landing/evidence; focus restoration and result focus verified.
 - [x] Integrated frozen crew PDF: 19 A4 pages, 27 loaded images, seven calls and seventeen look occurrences. Three separate makeup sections, four hair-colour sections and three necklace sections retain exact frozen approvals. Lead and root inspected makeup, hair and necklace pages without clipping; normal-resolution Poppler and MuPDF renders agree.
 - [x] Independent local full-act own-script browser acceptance: 7/7 grounded cues, explicit own-clothes roles, trusted library reuse, approved look, editable call and adopted FEASIBLE £125 assignment. Observed agent-operated upper bound 273 seconds. [Evidence](evidence/own-script-browser-review.json).
-- [ ] Independent final example browser acceptance and measured change-impact counts.
-- [ ] Final source/staged/client secret scans and ignored-path review. The preceding build scan passed 268 text files, including 32 client chunks, against 27 configured secret values; rerun after the session-recovery build before publication.
-- [ ] Production deployment and canonical browser checks; deliberately authorized fresh provider smoke tests only.
-- [ ] Elevated-floor protected-deployment verification proves friendly fresh refusal while exact recorded replay remains usable.
+- [x] Independent canonical example walkthrough from zero approvals through exact burgundy approval, direction repair, same-production Celeste recast, all independent details, adopted GBP 485 allocation, sourcing draft and frozen R48 crew pack. The missing coat affected two looks, three scenes and three calls, preserving six unrelated costume, two makeup and four detail decisions. [Observed journey](evidence/review-canonical-walkthrough.json).
+- [x] Final source/client credential and ignored-path scan: zero findings across 274 text files, including 32 client chunks, against 27 configured secret values. Private environment files, plans and execution artifacts remain excluded.
+- [x] Canonical production deployment reached READY. The preceding complete canonical run passed 16/16 in 308.901 seconds with fresh isolated app contexts and no paid YouCam calls. The final presentation-patch sweep also passed all 16 cases in 319.900 seconds, including collapsed online readiness and complete print output.
+- [x] Two deliberately authorized fresh canonical tasks succeeded exactly once: a 2-unit exact garment candidate requested from a secondary scoped look, and a separate 1-unit necklace. Persisted workflow/task identity, canonical candidate projection, private output bytes/hashes, explicit output-bound approvals and six stranger-access denials passed. Balance 965→962 matches the 3-unit spend. [Live verification](evidence/review-live-smoke.json).
+- [x] Final online crew disclosure: compact unresolved-count summary, keyboard/ARIA controls, all 38 frozen requirements retained. Printed output automatically expands every requirement. Focused browser regression passed in 14.7 seconds; the PDF remains 19 A4 pages with 27 images. Final source unit suite repeated: 188/188 in 12.90 seconds.
+- [x] Elevated-floor protected deployment `dpl_6MTXbGsYGMD8DY9eHJFwhDN3g7gA`: all 16 browser tests passed in 304.250 seconds. A real fresh POST returned `503 LIVE_PREVIEWS_RESTING`, creating zero jobs/provider tasks, while recorded replay returned 200 and succeeded. Protection-only cookie state contained no application identity. Root independently verified disabled fresh and usable recorded controls in the in-app browser.
 
 ## Previous release — historical scope
 

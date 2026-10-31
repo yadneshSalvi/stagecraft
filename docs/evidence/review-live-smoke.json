@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-31T21:03:06.130Z",
+  "environment": "canonical production",
+  "scope": "AI workflow verification using fictional adult artwork and generated references. The browser operator submitted and inspected both outputs; backend verification used read-only job/storage inspection and an isolated stranger session.",
+  "summary": {
+    "liveTasks": 2,
+    "succeeded": 2,
+    "failed": 0,
+    "ambiguous": 0,
+    "estimatedUnits": 3,
+    "observedUnits": 3,
+    "verifierTaskSubmissions": 0
+  },
+  "balance": {
+    "before": 965,
+    "after": 962,
+    "delta": 3,
+    "reconciled": true,
+    "verification": "Read-only provider balance GET"
+  },
+  "jobs": [
+    {
+      "kind": "garment",
+      "state": "succeeded",
+      "estimatedUnits": 2,
+      "applicationAttempts": 1,
+      "providerTaskPersisted": true,
+      "workflowPersisted": true,
+      "submissionIntentPersisted": true,
+      "sourceAndReferenceUploadsPersisted": true,
+      "projectionCount": 1,
+      "domainInputHashMatches": true,
+      "previewInputHashMatches": true,
+      "previewAssetBindingMatches": true,
+      "requestedSecondaryScopedLook": true,
+      "projectedToFirstScopedLook": true,
+      "immutableCandidateRecipeRevision": 1,
+      "privateOutput": {
+        "readStatus": 200,
+        "width": 1024,
+        "height": 1536,
+        "bytes": 152629,
+        "sha256MatchesDatabase": true,
+        "dimensionsMatchDatabase": true,
+        "ownerAndProjectBindingMatches": true,
+        "unauthenticatedStorageStatus": 403
+      },
+      "approval": {
+        "absentWhenOutputWasProjected": true,
+        "subsequentlyExplicitlyApproved": true,
+        "currentDomainLineageValid": true,
+        "bindsThisFreshOutput": true
+      },
+      "operatorComparedWithSubmittedSources": true
+    },
+    {
+      "kind": "necklace",
+      "state": "succeeded",
+      "estimatedUnits": 1,
+      "applicationAttempts": 1,
+      "providerTaskPersisted": true,
+      "workflowPersisted": true,
+      "submissionIntentPersisted": true,
+      "sourceAndReferenceUploadsPersisted": true,
+      "projectionCount": 1,
+      "domainInputHashMatches": true,
+      "previewInputHashMatches": true,
+      "previewAssetBindingMatches": true,
+      "privateOutput": {
+        "readStatus": 200,
+        "width": 800,
+        "height": 1000,
+        "bytes": 98245,
+        "sha256MatchesDatabase": true,
+        "dimensionsMatchDatabase": true,
+        "ownerAndProjectBindingMatches": true,
+        "unauthenticatedStorageStatus": 403
+      },
+      "approval": {
+        "absentWhenOutputWasProjected": true,
+        "subsequentlyExplicitlyApproved": true,
+        "currentDomainLineageValid": true,
+        "bindsThisFreshOutput": true
+      },
+      "operatorComparedWithSubmittedSources": true
+    }
+  ],
+  "isolation": {
+    "independentAnonymousSession": true,
+    "sessionSecretsExported": false,
+    "projectReadStatus": 404,
+    "projectJobsReadStatus": 404,
+    "garmentJobReadStatus": 404,
+    "garmentOutputReadStatus": 404,
+    "necklaceJobReadStatus": 404,
+    "necklaceOutputReadStatus": 404,
+    "ownerProjectAbsentFromStrangerList": true
+  },
+  "limits": [
+    "Generated appearance and software workflow checks do not establish physical fit, real practitioner validation, supplier confirmation or a realized production outcome."
+  ]
+}

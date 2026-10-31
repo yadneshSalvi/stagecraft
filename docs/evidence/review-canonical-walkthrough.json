@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "observedAt": "2026-10-31T21:00:44Z",
+  "applicationCommit": "786ad58deed7eca046d693ea6053ef4d8e9aaceb",
+  "url": "https://stagecraft-swart.vercel.app",
+  "method": "Independent agent-operated in-app browser walkthrough using the synthetic example production and exact recorded YouCam outputs",
+  "initialState": {
+    "revision": 17,
+    "looks": 8,
+    "scenes": 7,
+    "storyDays": 3,
+    "appearanceApprovals": 0
+  },
+  "journey": [
+    "Individually inspect and approve two appearance outputs, then explicitly apply labelled example decisions to the remaining eligible outputs",
+    "Adopt the initial FEASIBLE allocation: 17 look occurrences, GBP 500 in unique physical-unit costs",
+    "Mark C-014 unavailable: inspect the impact on two looks, three scenes and three calls, with six unrelated costume, two makeup and four independent-detail decisions preserved",
+    "Compare exact charcoal and burgundy candidate images; approve burgundy and observe it become admissible while charcoal remains unapproved",
+    "Adopt C-033, edit the removed velvet reference to the burgundy wool direction, and reapprove the unchanged provider image against the revised creative intent",
+    "Recompute and adopt the FEASIBLE allocation: 17 look occurrences, GBP 485 in unique physical-unit costs",
+    "Recast Nora to Celeste in the same working book; review the matching burgundy candidate and preserve unrelated costume and Mae hair decisions",
+    "Independently attach, inspect and approve Celeste's early and finale makeup and necklace recordings",
+    "Recompute the final FEASIBLE GBP 485 allocation and adopt it",
+    "Create a draft C-033 sourcing request with the preparation-inclusive November 9 08:40 to November 10 19:30 Europe/London window",
+    "Create and open a frozen working crew pack at source revision 48 containing all seven calls and 27 successfully loaded images"
+  ],
+  "findings": {
+    "unapprovedAlternativeAdopted": false,
+    "candidateApprovalChangedPhysicalChoiceAndCost": true,
+    "recastAndCoatRepairCompletedInSameProduction": true,
+    "newYouCamSubmissionsInThisJourney": 0,
+    "supplierMessageOrBookingSent": false,
+    "packReadiness": "Working pack \u2014 evidence pending",
+    "finalPresentationFollowUp": "Verified on canonical application commit deaf490: all 38 frozen requirements are collapsed online behind an accessible Show requirements control; expansion and collapse retain every requirement. The print path exposes the full list automatically."
+  },
+  "limits": [
+    "This is a software acceptance journey, not a participant study or a human completion-time measurement",
+    "Review decisions are explicitly attributed to example decisions or AI workflow verification",
+    "Physical fitting, supplier availability, delivery and practical makeup application remain unverified",
+    "Fresh isolated browser-context acceptance is recorded separately in the deployed automated suite"
+  ],
+  "viewportChecks": {
+    "desktop": {
+      "width": 1280,
+      "height": 720
+    },
+    "mobile": {
+      "width": 390,
+      "height": 720,
+      "documentWidth": 390
+    },
+    "inspection": "In-app browser visual inspection; mobile uses temporary CDP device metrics, cleared afterwards. Full automated desktop and 390px accessibility paths are recorded separately."
+  }
+}

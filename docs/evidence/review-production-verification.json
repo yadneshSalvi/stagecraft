@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-31T21:09:21.151817+00:00",
+  "applicationCommit": "deaf490c01ceac1320694515fa163ef513baa718",
+  "deploymentId": "dpl_4jc58ZVN3mbtYjq74GEPuPvVDNr9",
+  "canonicalUrl": "https://stagecraft-swart.vercel.app",
+  "deploymentState": "READY",
+  "freshAvailability": {
+    "available": true,
+    "reason": "ready"
+  },
+  "canonicalBrowser": {
+    "sourceCommit": "deaf490c01ceac1320694515fa163ef513baa718",
+    "passed": 16,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "durationSeconds": 319.9,
+    "workers": 1,
+    "totalTests": 16,
+    "maxAttempts": 1,
+    "exitCode": 0,
+    "deploymentStorageStateUsed": false,
+    "normalFreshAvailabilityVerified": true,
+    "privatePermissionsValid": true
+  },
+  "protectedFloorBrowser": {
+    "passed": 16,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "durationSeconds": 304.25,
+    "workers": 1,
+    "totalTests": 16,
+    "maxAttempts": 1,
+    "exitCode": 0,
+    "privatePermissionsValid": true
+  },
+  "floorProbe": {
+    "freshStatus": 503,
+    "code": "LIVE_PREVIEWS_RESTING",
+    "newFreshJobs": 0,
+    "providerTasks": 0,
+    "recordedStatus": 200,
+    "recordedState": "succeeded"
+  },
+  "finalLocalUnitSuite": {
+    "passed": 188,
+    "files": 19,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 12.9
+  },
+  "finalPresentationPatch": {
+    "scopedLintTypesFormatAndBuild": "passed",
+    "focusedCrewBrowserPassed": 1,
+    "pdfPages": 19,
+    "loadedImages": 27,
+    "all38RequirementsPrintWhenOnlineCollapsed": true
+  },
+  "manualEvidence": "review-canonical-walkthrough.json",
+  "liveProviderEvidence": "review-live-smoke.json",
+  "providerBalance": 962,
+  "softwareScope": "Synthetic example and explicitly labelled AI workflow decisions. No human study, physical fitting or supplier outcome claimed."
+}

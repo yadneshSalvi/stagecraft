@@ -63,5 +63,30 @@
     "No practitioner study, physical fitting, real supplier outcome, human productivity or environmental claim",
     "Automated accessibility checks do not certify all assistive technology or browsers",
     "Production deployment, elevated shared-credit-floor checks and canonical acceptance are separate release steps"
-  ]
+  ],
+  "finalPresentationFollowUp": {
+    "applicationCommit": "deaf490c01ceac1320694515fa163ef513baa718",
+    "unitIntegration": {
+      "passed": 188,
+      "files": 19,
+      "failed": 0,
+      "skipped": 0,
+      "durationSeconds": 12.9
+    },
+    "scopedLintTypesFormatAndProductionBuild": "passed",
+    "focusedCrewBrowser": {
+      "passed": 1,
+      "failed": 0,
+      "durationSeconds": 14.7
+    },
+    "requirements": 38,
+    "online": "Collapsed by default; keyboard and ARIA expansion verified without revision mutation",
+    "print": "All frozen requirements automatically visible even while collapsed online",
+    "pdf": {
+      "pages": 19,
+      "paper": "A4",
+      "loadedImages": 27,
+      "visuallyInspectedPages": [1, 2, 7, 18]
+    }
+  }
 }

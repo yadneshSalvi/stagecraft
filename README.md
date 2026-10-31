@@ -50,7 +50,7 @@ pnpm test:e2e
 
 Database tests accept only explicitly configured local `stagecraft_dev` or `stagecraft_test` databases. Unit/integration suites replace paid provider calls; recorded browser journeys reject live YouCam requests before the application. The own-script browser journey performs one actual short Gemini extraction. Private-upload checks use the configured private Blob store. Live YouCam smoke tests are separate deliberate operations.
 
-The review-round local gate passes **188 unit/integration tests and all 16 browser tests** against an optimized build. The 19-page frozen crew PDF was visually checked with its independent makeup, hair and necklace evidence. [Observed verification](docs/evidence/review-local-verification.json) keeps these software checks separate from production acceptance and physical outcomes.
+The review round passes **188 unit/integration tests and all 16 browser tests** locally, plus **16/16 on both protected and canonical deployments**. Two bounded fresh production tasks also passed private storage, approval lineage and ownership checks. The 19-page frozen crew PDF retains all 27 images and its complete requirements when printed. [Local verification](docs/evidence/review-local-verification.json) and [production verification](docs/evidence/review-production-verification.json) record software evidence separately from physical outcomes.
 
 ## Saved work and provider limits
 

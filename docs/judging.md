@@ -41,7 +41,7 @@ In **Handoff**, prepare a sourcing draft for the selected units. Requested, conf
 
 Open **Supplier hire orders** to inspect quotation-level rows, download CSV or print/save PDF. A multi-unit quotation is exported once, with its original status, dates, provenance and unresolved evidence. Export does not change the working book.
 
-Create a crew pack for selected calls. It freezes the exact costume, makeup, hair and accessory evidence, unit facts and source revision. Unresolved physical evidence produces a labelled working pack. Change a dependency and revisit it: the online copy says **Superseded**, retaining the original snapshot. A printed copy cannot update itself.
+Create a crew pack for selected calls. It freezes the exact costume, makeup, hair and accessory evidence, unit facts and source revision. Unresolved physical evidence produces a labelled working pack. Online, **Show requirements** opens the complete readiness list; printing automatically includes it even when the list is collapsed. Change a dependency and revisit it: the online copy says **Superseded**, retaining the original snapshot. A printed copy cannot update itself.
 
 ## Bring your own script
 
