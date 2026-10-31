@@ -2,6 +2,8 @@
 
 This checklist reports actual software and provider observations. Synthetic approvals and supplier exercises are not real practitioner reviews or supplier transactions.
 
+Production was verified on October 31, 2026 at [stagecraft-swart.vercel.app](https://stagecraft-swart.vercel.app). The deployed application commit is `0a4e656d1c25c6b3ebaaa23154429f374cff1dc1`; Vercel deployment `dpl_92UN3JArCP5shREhodUEhfWCoJCF` reached `READY` on Node 22.x. Subsequent documentation-only commits do not change that application record. [Production observations](evidence/production-review.json) distinguish the initial live-provider checks from the final deployment verification.
+
 ## Confirmed before the final production build
 
 - [x] Independent project, private Blob store and PostgreSQL database; migrations 001–004 applied locally and in production.
@@ -25,9 +27,9 @@ The final results are recorded below after running lint, typecheck, formatting, 
 - [x] Complete production-server browser suite: 9 tests passed in 1.1 minutes, including expanded independent beauty lineage and request recovery.
 - [x] Both affected garment-repair/handoff and recast journeys passed again after the print-only correction: 2 tests, 31.6 seconds.
 - [x] Frozen crew PDF rendered and visually inspected: 16 A4 pages, 7 scheduled calls, 16 look occurrences, all 19 images loaded, 3 separate makeup evidence sections and 29 explicit unresolved warnings. White margins and per-look call/revision/working status were checked. The inspection fixture's approvals are labelled automated synthetic layout checks, not practitioner decisions.
-- [ ] Production deployment, owner isolation and private upload/render smoke checks.
-- [x] Source and rebuilt public client bundles scanned for configured secrets: 195 candidate source files and 31 built client files checked against 24 configured secret values, with zero matches. The source scan also found zero forbidden paths.
-- [ ] Final staged-file review and secret scan immediately before publication.
+- [x] Production deployment, owner isolation and private upload/render smoke checks. Separate private body and face uploads produced genuine live garment and makeup outputs; the makeup workflow survived refresh. Each completed exactly one live attempt with persisted provider task, Workflow run and private output. Both images remained accessible to their owner after the final deployment.
+- [x] Source and rebuilt public client bundles scanned against 24 configured secret values, with zero matches: 196 initial changed files, 26 patch files and 31 built client files. No private planning, environment, capture or execution-artifact paths were published.
+- [x] Final staged-file review and secret scan completed before both application commits.
 
 ## Fixture-transport correction
 
@@ -37,7 +39,9 @@ The first deployed example attached its beauty recording but rejected the five g
 - [x] Focused transport/recording suite: 4 files, 15 tests passed in 13.69 seconds. With runtime normalization disabled, a fresh example still reaches R07 with five garment recordings, one makeup recording and zero approvals.
 - [x] Full serial 111-test suite, lint, formatting and production rebuild passed. Project-create, preview and Workflow function traces each include all 13 JPEGs and their manifest.
 - [x] Rebuilt client scan repeated: 31 files against 24 configured secret values, zero matches.
-- [ ] Fresh deployed R07 example, recorded charcoal replacement and recorded Celeste recast verified after this correction.
+- [x] Fresh deployed R07 example verified in the in-app browser: all five garment images loaded, one makeup recording attached and zero approvals seeded. Recorded charcoal replacement loaded at 1024×1536. A separate Celeste recast loaded its own 1024×1536 garment recording and independent 800×1000 makeup recording. No fresh provider calls were needed for these replays.
+
+Production Gemini extraction also returned three scenes, two characters and four exact source-linked costume cues from a synthetic script containing instruction-like dialogue. Scene 02 remained explicitly uncertain in chronology, all cues were unreviewed and the draft was left unadopted. The two deliberate production renders consumed three observed provider units; the recorded replays consumed none.
 
 ## Limits that remain explicit
 

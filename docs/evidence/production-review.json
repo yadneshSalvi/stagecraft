@@ -1,0 +1,164 @@
+{
+  "version": 1,
+  "observedOn": "2026-10-31",
+  "evidenceClass": "AI-operated synthetic software verification",
+  "origin": "https://stagecraft-swart.vercel.app",
+  "applicationCommit": "0a4e656d1c25c6b3ebaaa23154429f374cff1dc1",
+  "finalDeployment": "dpl_92UN3JArCP5shREhodUEhfWCoJCF",
+  "initialLiveSmokeDeployment": "dpl_Ghk1rgipxWMPbJdXvxF2myiie1Rn",
+  "localReleaseGate": {
+    "fullSerialTests": 111,
+    "testFiles": 11,
+    "productionBrowserTests": 9,
+    "focusedPostPrintBrowserTests": 2,
+    "transportRegressionTests": 15,
+    "note": "Focused tests overlap the full suite; counts are not added together. Lint, formatting, TypeScript and production builds passed."
+  },
+  "finalHttpVerification": {
+    "observedAt": "2026-10-31T13:30:38.999Z",
+    "deploymentId": "dpl_92UN3JArCP5shREhodUEhfWCoJCF",
+    "publicChecks": {
+      "/": {
+        "status": 200
+      },
+      "/api/config": {
+        "status": 200,
+        "configuration": {
+          "database": true,
+          "storage": true,
+          "youcam": true,
+          "extraction": true,
+          "generationPaused": false,
+          "dailyJobLimit": 16,
+          "ownerDailyJobLimit": 4,
+          "recordedPreviews": 7,
+          "recordedBeautyPreviews": 2
+        }
+      },
+      "/api/projects": {
+        "status": 401
+      },
+      "/api/cron/cleanup": {
+        "status": 401
+      }
+    },
+    "isolatedSignIn": 200,
+    "privateChecks": {
+      "project": {
+        "status": 404,
+        "cacheControl": "private, no-store"
+      },
+      "body": {
+        "status": 404,
+        "cacheControl": "private, no-store"
+      },
+      "face": {
+        "status": 404,
+        "cacheControl": "private, no-store"
+      },
+      "garment": {
+        "status": 404,
+        "cacheControl": "private, no-store"
+      },
+      "makeup": {
+        "status": 404,
+        "cacheControl": "private, no-store"
+      }
+    }
+  },
+  "liveWorkflows": {
+    "source": "Read-only production PostgreSQL query of sc_jobs",
+    "observedAt": "2026-10-31T13:18:27.197Z",
+    "garment": {
+      "state": "succeeded",
+      "liveAttemptCount": 1,
+      "providerTaskPresent": true,
+      "workflowPresent": true,
+      "outputPresent": true
+    },
+    "beauty": {
+      "state": "succeeded",
+      "liveAttemptCount": 1,
+      "providerTaskPresent": true,
+      "workflowPresent": true,
+      "outputPresent": true
+    }
+  },
+  "browserLiveVerification": {
+    "sources": "Separately uploaded fictional body and face artwork, each saved as a new private capture.",
+    "garmentOutputPixels": [1024, 1536],
+    "makeupOutputPixels": [800, 1000],
+    "makeupSurvivedRefresh": true,
+    "automaticApprovals": 0,
+    "bothPrivateOutputsReloadedOnFinalDeployment": true,
+    "observedProviderUnits": 3
+  },
+  "productionScriptExtraction": {
+    "status": "review",
+    "model": "gemini-4-argon",
+    "provider": "Gemini",
+    "sceneCount": 3,
+    "characterCount": 2,
+    "cueCount": 4,
+    "unspecifiedChronologyScenes": ["02"],
+    "sourceHashValid": true,
+    "sceneSpansValid": true,
+    "cueSpansInTheirScene": true,
+    "explicitCueQuotesExact": true,
+    "inferredCueCount": 0,
+    "allScenesUnreviewed": true,
+    "allCuesUnreviewed": true,
+    "productionRevision": 6,
+    "baseRevision": 6,
+    "unadopted": true
+  },
+  "finalRecordedFlows": {
+    "freshExample": {
+      "revision": 7,
+      "garmentRecordings": 5,
+      "makeupRecordings": 1,
+      "seededApprovals": 0,
+      "allFiveGarmentImagesLoaded": true
+    },
+    "charcoalReplacement": {
+      "passed": true,
+      "image": "/examples/previews/nora-charcoal.webp",
+      "pixels": [1024, 1536]
+    },
+    "celesteRecast": {
+      "passed": true,
+      "garmentImage": "/examples/previews/nora-celeste.webp",
+      "makeupImage": "/examples/beauty/nora-celeste-berry.webp",
+      "garmentPixels": [1024, 1536],
+      "makeupPixels": [800, 1000],
+      "separateReplacementFaceConfirmed": true
+    },
+    "additionalProviderUnits": 0
+  },
+  "recordingCorrection": {
+    "observedIssue": "The first deployment rejected garment recording matches while attaching makeup.",
+    "runtimeCauseProven": false,
+    "resolution": "Thirteen frozen public fixture JPEGs preserve all sixteen original recording input references and strict matching. Final deployed fresh example, charcoal repair and Celeste garment/makeup flows passed.",
+    "originalRecordingManifestsAndOutputsUnchanged": true,
+    "privateUploadPathUnchanged": true
+  },
+  "finalLogSample": {
+    "requestSample": 50,
+    "responseStatuses": {
+      "200": 49,
+      "201": 1
+    },
+    "requestLevels": {
+      "info": 50
+    },
+    "nestedLogLevels": {},
+    "failedRequests": 0,
+    "scope": "Latest 50 requests on the final deployment; sampled logs, not an exhaustive operational audit."
+  },
+  "limits": [
+    "All cast and scripts in this verification are synthetic. No human practitioner or participant study was conducted.",
+    "Generated appearance does not establish identity fidelity, physical fit, real makeup application, supplier stock or commercial outcomes.",
+    "HTTP isolation and sampled logs establish the described observations, not comprehensive security certification.",
+    "Private provider task IDs, session cookies, credentials, project IDs and asset IDs are omitted."
+  ]
+}

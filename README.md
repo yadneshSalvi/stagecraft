@@ -67,6 +67,7 @@ STAGECRAFT and STEADY have independent repositories, deployments, databases, sto
 - [Independent AI review of actual garment outputs](docs/evaluation-ai.md)
 - [Observed live script extraction](docs/evidence/live-script-review.json)
 - [Observed manual browser review](docs/evidence/browser-review.json)
+- [Verified production release](docs/evidence/production-review.json)
 - [Operations and deployment](docs/operations.md)
 - [Release checks](docs/release-checklist.md)
 - [Asset provenance and font licenses](docs/asset-licenses.md)
