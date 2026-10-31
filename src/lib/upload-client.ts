@@ -9,6 +9,13 @@ export async function uploadImage(
   purpose: "performer" | "garment" | "face",
   subjectId: string,
 ) {
+  if (
+    /\.(heic|heif)$/i.test(file.name) ||
+    ["image/heic", "image/heif"].includes(file.type)
+  )
+    throw new Error(
+      "HEIC and HEIF photos are not supported yet. Export this photo as JPEG or PNG, then upload that copy.",
+    );
   if (file.size >= 10_000_000)
     throw new Error("Please choose an image smaller than 10 MB.");
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))

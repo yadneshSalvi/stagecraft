@@ -16,22 +16,54 @@ export function PreviewJobStatus({
 }: {
   state: ReturnType<typeof usePreviewJob>;
 }) {
-  const { job, pending, working, intent, recover, control } = state;
+  const {
+    job,
+    pending,
+    working,
+    intent,
+    recordedIntent,
+    recordedWorking,
+    recoveryMessage,
+    notFound,
+    recover,
+    retrySaved,
+    control,
+  } = state;
   const current = stages.findIndex((stage) => stage.state === job?.state);
   return (
     <>
-      {intent && !working && (
+      {(intent || recordedIntent) && !(working || recordedWorking) && (
         <div className="saved-request-recovery">
           <Notice tone="warning">
-            This request was interrupted before the browser received
-            confirmation. Recovery reuses its original request identifier.
+            {recoveryMessage ||
+              "A request is saved in this browser. Check its status before sending it again."}
           </Notice>
-          <Button busy={working} onClick={() => void recover()}>
+          <Button
+            busy={working || recordedWorking}
+            onClick={() => void recover()}
+          >
             <RotateCw size={14} />
-            Recover saved request
+            Check saved request status
           </Button>
+          {intent && recordedIntent && (
+            <Button onClick={() => void recover("recorded")}>
+              Check recorded request status
+            </Button>
+          )}
+          {notFound && (
+            <Button onClick={() => void retrySaved()}>
+              Retry the same saved request
+            </Button>
+          )}
         </div>
       )}
+      {state.recordedJob?.state === "succeeded" &&
+        job?.id !== state.recordedJob.id && (
+          <Notice tone="success">
+            A matching recorded result was attached. The fresh attempt keeps its
+            own status below.
+          </Notice>
+        )}
       {job && (
         <div className={`job-progress job-${job.state}`} aria-live="polite">
           <div className="job-state">
@@ -61,9 +93,8 @@ export function PreviewJobStatus({
           )}
           {job.state === "ambiguous" && (
             <p>
-              The provider may have received the request. This attempt is never
-              submitted again automatically. A fresh generation is a separate
-              paid attempt.
+              YouCam may have received this attempt. It will not be submitted
+              again automatically. Recorded results remain available.
             </p>
           )}
           {job.state === "failed" && (
@@ -74,11 +105,7 @@ export function PreviewJobStatus({
           )}
           {pending && (
             <>
-              <p>
-                You can leave this page. The saved job continues. Cancelling
-                stops adoption of its result; it does not reverse a provider
-                charge.
-              </p>
+              <p>You can leave this page; the saved job continues.</p>
               <div className="job-controls">
                 <Button
                   variant="quiet"
@@ -97,6 +124,10 @@ export function PreviewJobStatus({
                   Cancel attempt
                 </Button>
               </div>
+              <small>
+                Cancelling prevents adoption; it cannot reverse a provider
+                charge.
+              </small>
             </>
           )}
         </div>

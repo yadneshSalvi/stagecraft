@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { ArrowRight, Plus, Upload, UserRound } from "lucide-react";
 import type { Character, Look, Performer } from "@/lib/types";
-import { commandProject } from "@/lib/client";
+import { commandProject, requestPreview } from "@/lib/client";
 import { uploadImage } from "@/lib/upload-client";
 import { useProduction } from "./production-context";
 import { Badge, Button, Field, Modal, Notice, Photo } from "./ui";
@@ -350,11 +350,14 @@ export function CastManager({
 export function NewLookDialog({
   open,
   onClose,
+  onCreated,
 }: {
   open: boolean;
   onClose: () => void;
+  onCreated?: (lookId: string) => void;
 }) {
-  const { project, send, busy, error } = useProduction();
+  const { project, send, busy, error, refresh, setError } = useProduction();
+  const [attaching, setAttaching] = useState(false);
   const [characterId, setCharacterId] = useState(
     project.characters[0]?.id || "",
   );
@@ -365,7 +368,7 @@ export function NewLookDialog({
   const unit = project.units.find((u) => u.id === unitId);
   async function create(event: React.FormEvent) {
     event.preventDefault();
-    if (!character || !unit) return;
+    if (!character || !unit || attaching) return;
     const selectedScenes = project.scenes.filter((s) =>
       sceneIds.includes(s.id),
     );
@@ -397,7 +400,27 @@ export function NewLookDialog({
     };
     const result = await send({ type: "create_look", look });
     if (result) {
+      const performer = result.performers.find(
+        (person) => person.id === character.performerId,
+      );
+      if (
+        (performer?.librarySourceId || result.fixture) &&
+        (unit.librarySourceId || result.fixture)
+      ) {
+        setAttaching(true);
+        try {
+          await requestPreview(result, look.id, "recorded");
+          await refresh();
+        } catch {
+          setError(
+            "The look is saved. A matching recording could not be attached; its preview controls remain available in the studio.",
+          );
+        } finally {
+          setAttaching(false);
+        }
+      }
       onClose();
+      onCreated?.(look.id);
       setTitle("");
       setSceneIds([]);
     }
@@ -406,7 +429,7 @@ export function NewLookDialog({
     <Modal
       open={open}
       onClose={() => {
-        if (!busy) onClose();
+        if (!busy && !attaching) onClose();
       }}
       title="A look for a story state"
       description="Choose exact references. You can refine makeup, hair, and continuity notes in the studio."
@@ -424,7 +447,10 @@ export function NewLookDialog({
         <Field label="Character">
           <select
             value={characterId}
-            onChange={(event) => setCharacterId(event.target.value)}
+            onChange={(event) => {
+              setCharacterId(event.target.value);
+              setSceneIds([]);
+            }}
             required
           >
             <option value="">Choose a character</option>
@@ -453,24 +479,36 @@ export function NewLookDialog({
         </Field>
         <fieldset className="scene-choice">
           <legend>Appears in these scenes</legend>
-          {project.scenes.map((scene) => (
-            <label className="checkbox-field" key={scene.id}>
-              <input
-                type="checkbox"
-                checked={sceneIds.includes(scene.id)}
-                onChange={(event) =>
-                  setSceneIds(
-                    event.target.checked
-                      ? [...sceneIds, scene.id]
-                      : sceneIds.filter((id) => id !== scene.id),
-                  )
-                }
-              />
-              <span>
-                <span className="mono">SC {scene.number}</span> {scene.title}
-              </span>
-            </label>
-          ))}
+          {project.scenes
+            .filter((scene) => scene.characterIds.includes(characterId))
+            .map((scene) => (
+              <label className="checkbox-field" key={scene.id}>
+                <input
+                  type="checkbox"
+                  checked={sceneIds.includes(scene.id)}
+                  disabled={project.looks.some(
+                    (existing) =>
+                      existing.characterId === characterId &&
+                      existing.sceneIds.includes(scene.id),
+                  )}
+                  onChange={(event) =>
+                    setSceneIds(
+                      event.target.checked
+                        ? [...sceneIds, scene.id]
+                        : sceneIds.filter((id) => id !== scene.id),
+                    )
+                  }
+                />
+                <span>
+                  <span className="mono">SC {scene.number}</span> {scene.title}
+                  {project.looks.some(
+                    (existing) =>
+                      existing.characterId === characterId &&
+                      existing.sceneIds.includes(scene.id),
+                  ) && " · already has a look"}
+                </span>
+              </label>
+            ))}
           {!project.scenes.length && (
             <p className="muted">
               Import and review a script to establish scenes first.
@@ -498,7 +536,7 @@ export function NewLookDialog({
           <Button
             variant="primary"
             type="submit"
-            busy={busy}
+            busy={busy || attaching}
             disabled={
               !character ||
               !unit ||

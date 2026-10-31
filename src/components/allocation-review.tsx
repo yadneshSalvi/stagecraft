@@ -1,19 +1,48 @@
 "use client";
+import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
 import type { AllocationResult } from "@/lib/types";
 import { money, revision, time } from "@/lib/format";
 import { useProduction } from "./production-context";
 import { Badge, Button } from "./ui";
 import { FindingSummary } from "./finding-summary";
+import { AllocationChoices } from "./allocation-choices";
 
-export function AllocationReview({ result }: { result: AllocationResult }) {
+export function AllocationReview({
+  result,
+  focusRequest = 0,
+}: {
+  result: AllocationResult;
+  focusRequest?: number;
+}) {
   const { project, send, busy } = useProduction();
+  const ref = useRef<HTMLElement>(null);
+  const [localFocus, setLocalFocus] = useState(0);
+  useEffect(() => {
+    if (!focusRequest && !localFocus) return;
+    const frame = requestAnimationFrame(() => {
+      ref.current?.focus({ preventScroll: true });
+      ref.current?.scrollIntoView({
+        block: "start",
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [focusRequest, localFocus]);
   const canAdopt =
-    result.independentlyChecked &&
+    (result.constraintChecked || result.independentlyChecked) &&
     ["FEASIBLE", "OPTIMAL"].includes(result.status) &&
     result.sourceRevision === project.revision;
   return (
-    <section className="allocation-result" aria-live="polite">
+    <section
+      ref={ref}
+      tabIndex={-1}
+      className="allocation-result"
+      aria-live="polite"
+      aria-label="Allocation result"
+    >
       <header>
         <div>
           <p className="eyebrow">
@@ -33,7 +62,7 @@ export function AllocationReview({ result }: { result: AllocationResult }) {
           tone={
             result.status === "INFEASIBLE" || result.status === "INVALID_INPUT"
               ? "danger"
-              : result.independentlyChecked
+              : result.constraintChecked || result.independentlyChecked
                 ? "success"
                 : "warning"
           }
@@ -48,11 +77,12 @@ export function AllocationReview({ result }: { result: AllocationResult }) {
           {money(project.budgetCents, project.currency)} budget
         </span>
         <span>
-          {result.independentlyChecked
-            ? "Independent checker passed"
-            : "Not independently verified"}
+          {result.constraintChecked || result.independentlyChecked
+            ? "Constraint check passed"
+            : "Constraint check incomplete"}
         </span>
       </div>
+      <AllocationChoices project={project} result={result} />
       <FindingSummary findings={result.findings} />
       {result.assignments.length > 0 && (
         <details className="assignment-details">
@@ -115,7 +145,10 @@ export function AllocationReview({ result }: { result: AllocationResult }) {
         </p>
         {result.sourceRevision !== project.revision ? (
           <Button
-            onClick={() => void send({ type: "solve_allocation" })}
+            onClick={async () => {
+              if (await send({ type: "solve_allocation" }))
+                setLocalFocus((value) => value + 1);
+            }}
             busy={busy}
           >
             Recompute against current revision

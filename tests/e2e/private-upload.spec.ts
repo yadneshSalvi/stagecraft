@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import path from "node:path";
 import type { Production } from "../../src/lib/types";
 import { authenticate } from "./helpers";
+import { newIsolatedAppContext } from "./support/deployment-context";
 
 test("private upload persists, invalidates its actor, rejects another browser and permits withdrawal", async ({
   page,
@@ -58,7 +59,7 @@ test("private upload persists, invalidates its actor, rejects another browser an
     const ownImage = await page.request.get(ada.imageUrl!);
     expect(ownImage.status()).toBe(200);
     expect(ownImage.headers()["content-type"]).toMatch(/^image\//);
-    const stranger = await browser.newContext({ baseURL: origin });
+    const stranger = await newIsolatedAppContext(browser, { baseURL: origin });
     try {
       await authenticate(stranger.request, origin);
       expect(

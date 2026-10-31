@@ -12,6 +12,7 @@ import { useProduction } from "./production-context";
 import { Badge, Button, EmptyState, PageHeading, Photo } from "./ui";
 import { UnitDialog, AddUnitDialog } from "./wardrobe-dialogs";
 import { ChangeReview } from "./change-review";
+import { LibraryDialog } from "./example-library";
 
 export function WardrobeWorkspace() {
   const { project } = useProduction();
@@ -19,6 +20,7 @@ export function WardrobeWorkspace() {
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [library, setLibrary] = useState(false);
   const [changeId, setChangeId] = useState<string | null>(null);
   const units = project.units.filter(
     (unit) =>
@@ -37,15 +39,25 @@ export function WardrobeWorkspace() {
         eyebrow="THE WARDROBE / A PHOTOGRAPHIC LEDGER"
         title="Beautiful things. Real commitments."
         action={
-          <Button variant="primary" onClick={() => setAdding(true)}>
-            <Plus size={16} />
-            Add a physical unit
-          </Button>
+          <>
+            <Button onClick={() => setLibrary(true)}>
+              Example garment library
+            </Button>
+            <Button variant="primary" onClick={() => setAdding(true)}>
+              <Plus size={16} />
+              Add a physical unit
+            </Button>
+          </>
         }
       >
         Every row is one garment you can locate, measure, allocate, and account
         for.
       </PageHeading>
+      <LibraryDialog
+        open={library}
+        onClose={() => setLibrary(false)}
+        initialKind="wardrobe"
+      />
       <div className="wardrobe-toolbar">
         <label className="search-field">
           <Search size={16} />

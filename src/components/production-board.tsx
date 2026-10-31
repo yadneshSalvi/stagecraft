@@ -23,14 +23,27 @@ import {
 import { day, time, revision } from "@/lib/format";
 import { useProduction } from "./production-context";
 import { ChangeReview } from "./change-review";
+import { ContinuityWall } from "./continuity-wall";
+import { ProvenanceChip } from "./provenance-chip";
+import { ExampleDecisions } from "./example-decisions";
+import { LibraryDialog } from "./example-library";
 import { Button, PageHeading, Photo } from "./ui";
 
-export function ProductionBoard() {
+export function ProductionBoard({
+  initialUnitId,
+  initialCharacterId,
+  initialReplacementId,
+}: {
+  initialUnitId?: string;
+  initialCharacterId?: string;
+  initialReplacementId?: string;
+}) {
   const { project } = useProduction();
   const [storyDay, setStoryDay] = useState<number | null>(null);
   const [list, setList] = useState(false);
   const [focus, setFocus] = useState(false);
-  const [change, setChange] = useState(false);
+  const [change, setChange] = useState(!!(initialUnitId || initialCharacterId));
+  const [library, setLibrary] = useState(false);
   const ready = getReadiness(project);
   const days = [...new Set(project.scenes.map((scene) => scene.storyDay))].sort(
     (a, b) => a - b,
@@ -74,6 +87,9 @@ export function ProductionBoard() {
               Import your script
               <ArrowRight size={16} />
             </Link>
+            <Button variant="quiet" onClick={() => setLibrary(true)}>
+              Explore the example cast & wardrobe
+            </Button>
           </div>
           <div className="onboarding-steps">
             {[
@@ -107,6 +123,7 @@ export function ProductionBoard() {
             ))}
           </div>
         </div>
+        <LibraryDialog open={library} onClose={() => setLibrary(false)} />
       </>
     );
   return (
@@ -154,36 +171,8 @@ export function ProductionBoard() {
           {ready.appearanceApproved} of {ready.looksTotal} looks visually
           approved
         </span>
-        <span className="production-meta-note">
-          {project.fixture
-            ? "FICTIONAL CAST · REAL PROVIDER PREVIEWS"
-            : "PRIVATE PRODUCTION"}
-        </span>
+        {project.fixture && <ProvenanceChip kind="synthetic" />}
       </div>
-      {project.fixture &&
-        !project.proposals.length &&
-        ready.appearanceApproved < 2 && (
-          <div className="example-walkthrough">
-            <div>
-              <span className="eyebrow">A CONTINUITY REHEARSAL</span>
-              <p>
-                Inspect Nora and Mae, record your decisions, then review the
-                missing coat. See exactly which approval changes and which stays
-                valid.
-              </p>
-            </div>
-            <div>
-              <Link href={`${base}/looks?look=look-nora`}>
-                Review Nora
-                <ArrowRight size={13} />
-              </Link>
-              <Link href={`${base}/looks?look=look-mae`}>
-                Review Mae
-                <ArrowRight size={13} />
-              </Link>
-            </div>
-          </div>
-        )}
       <div className="board-layout">
         <div className="board-main">
           <div className="board-toolbar">
@@ -278,6 +267,8 @@ export function ProductionBoard() {
                 </tbody>
               </table>
             </div>
+          ) : storyDay === null ? (
+            <ContinuityWall project={project} />
           ) : (
             <div className="cast-stage">
               {project.characters.map((character, index) => {
@@ -292,8 +283,8 @@ export function ProductionBoard() {
                 const performer = project.performers.find(
                   (p) => p.id === (look?.performerId || character.performerId),
                 );
-                const preview = look && getCurrentPreview(look);
-                const approval = look && getCurrentApproval(look);
+                const preview = look && getCurrentPreview(look, project);
+                const approval = look && getCurrentApproval(look, project);
                 const absent =
                   storyDay !== null &&
                   !scenes.some((s) => s.characterIds.includes(character.id));
@@ -361,7 +352,6 @@ export function ProductionBoard() {
             </span>
             <span>Original sources stay inspectable.</span>
           </div>
-          <StoryThread />
           <section className="call-track">
             <div>
               <CalendarDays size={18} />
@@ -387,6 +377,7 @@ export function ProductionBoard() {
           </section>
         </div>
         <aside className="board-inspector">
+          <ExampleDecisions />
           <section className="inspector-next">
             <p className="eyebrow">NEXT ON THE CALL SHEET</p>
             {nextCall ? (
@@ -468,6 +459,28 @@ export function ProductionBoard() {
                 </span>
                 <ArrowRight size={14} />
               </Link>
+              {(ready.detailsTotal || 0) > 0 && (
+                <Link
+                  href={`${base}/looks?look=${project.looks.find((look) => look.details?.length)?.id || ""}&detail=${project.looks.find((look) => look.details?.length)?.details?.[0]?.kind || "hair_color"}`}
+                >
+                  <span
+                    className={
+                      ready.detailsApproved === ready.detailsTotal
+                        ? "check-dot complete"
+                        : "check-dot"
+                    }
+                  />
+                  <span>
+                    Hair & accessory approvals
+                    <small>
+                      {ready.detailsApproved || 0} / {ready.detailsTotal}{" "}
+                      configured details
+                    </small>
+                  </span>
+                  <ArrowRight size={14} />
+                </Link>
+              )}
+
               <Link href={`${base}/handoff`}>
                 <span className="check-dot" />
                 <span>
@@ -529,86 +542,13 @@ export function ProductionBoard() {
           </p>
         )}
       </section>
-      <ChangeReview open={change} onClose={() => setChange(false)} />
+      <ChangeReview
+        open={change}
+        onClose={() => setChange(false)}
+        initialUnitId={initialUnitId}
+        initialCharacterId={initialCharacterId}
+        initialReplacementId={initialReplacementId}
+      />
     </div>
-  );
-}
-
-function StoryThread() {
-  const { project } = useProduction();
-  const base = `/production/${project.id}`;
-  const days = [...new Set(project.scenes.map((s) => s.storyDay))].sort(
-    (a, b) => a - b,
-  );
-  return (
-    <section className="continuity-section">
-      <div className="section-title">
-        <h2>The story thread</h2>
-        <span className="muted">
-          Appearance follows the story. Calls follow the schedule.
-        </span>
-      </div>
-      <div className="continuity-scroll">
-        <table className="continuity-table">
-          <thead>
-            <tr>
-              <th>CHARACTER</th>
-              {days.map((day) => (
-                <th key={day}>
-                  <span className="mono">STORY DAY {day}</span>
-                  <span>
-                    {project.scenes
-                      .filter((s) => s.storyDay === day)
-                      .map((s) => s.number)
-                      .join(" / ")}
-                  </span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {project.characters.map((character) => (
-              <tr key={character.id}>
-                <th>{character.name}</th>
-                {days.map((day) => {
-                  const looks = project.looks.filter(
-                    (look) =>
-                      look.characterId === character.id &&
-                      look.storyDays.includes(day),
-                  );
-                  return (
-                    <td key={day}>
-                      {looks.length ? (
-                        looks.map((look) => (
-                          <Link
-                            className={`continuity-look ${getCurrentApproval(look) ? "approved" : ""}`}
-                            key={look.id}
-                            href={`${base}/looks?look=${look.id}`}
-                          >
-                            <span className="thread-node" />
-                            {look.title}
-                            <small>
-                              {look.sceneIds
-                                .map((id) =>
-                                  project.scenes.find((s) => s.id === id),
-                                )
-                                .filter((s) => s?.storyDay === day)
-                                .map((s) => s!.number)
-                                .join(" · ")}
-                            </small>
-                          </Link>
-                        ))
-                      ) : (
-                        <span className="offstage">—</span>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
   );
 }

@@ -95,9 +95,15 @@ export function HandoffWorkspace() {
       <section className="sourcing-section">
         <div className="section-title">
           <h2>The sourcing book</h2>
-          <span className="muted">
-            Manual response workflow · no live supplier integration
-          </span>
+          {project.sourcing.length > 0 && (
+            <Link
+              className="button"
+              href={`/production/${project.id}/handoff/orders`}
+            >
+              <ReceiptText size={15} />
+              Export supplier orders
+            </Link>
+          )}
         </div>
         {project.sourcing.length ? (
           <div className="sourcing-grid">

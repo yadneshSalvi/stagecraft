@@ -127,6 +127,10 @@ export function Modal({
     }
     return () => {
       document.body.classList.remove("dialog-open");
+      if (dialog.open) {
+        dialog.close();
+        previousFocus.current?.focus();
+      }
     };
   }, [open]);
   return (

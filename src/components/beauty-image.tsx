@@ -1,8 +1,9 @@
 "use client";
-import { ArrowRight, Image as ImageIcon, ScanFace } from "lucide-react";
+import { ArrowRight, ScanFace } from "lucide-react";
 import type { BeautyPreview, Performer } from "@/lib/types";
 import { provenanceLabel } from "@/lib/format";
 import { Button, Photo } from "./ui";
+import { ProvenanceChip } from "./provenance-chip";
 
 export type BeautyView = "preview" | "source" | "compare";
 export function BeautyImage({
@@ -107,11 +108,21 @@ export function BeautyImage({
         </div>
       )}
       <div className="look-image-footer">
-        <span>
-          <ImageIcon size={13} />
-          Separate source and output. Garment and makeup approvals stay
-          distinct.
-        </span>
+        <div className="provenance-row">
+          {source && (
+            <ProvenanceChip kind={face?.synthetic ? "synthetic" : "photo"} />
+          )}
+          {preview && view !== "source" && (
+            <ProvenanceChip
+              kind={
+                preview.provenance === "recorded_provider"
+                  ? "recorded"
+                  : "fresh"
+              }
+            />
+          )}
+        </div>
+        <span>Independent makeup evidence.</span>
       </div>
     </>
   );

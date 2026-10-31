@@ -8,6 +8,10 @@ import { useProduction } from "./production-context";
 import { Badge, Button, Field, Modal, Notice, Photo } from "./ui";
 import { PreviewJobStatus } from "./preview-job-status";
 import type { usePreviewJob } from "./use-preview-job";
+import {
+  PreviewAvailability,
+  freshPreviewAvailable,
+} from "./preview-availability";
 
 export function RecipeInspector({
   look,
@@ -40,7 +44,13 @@ export function RecipeInspector({
   const [essential, setEssential] = useState(
     character?.direction.essential.join("\n") || "",
   );
-  const [designer, setDesigner] = useState("");
+  const [paletteText, setPaletteText] = useState(
+    character?.direction.palette.join(", ") || "",
+  );
+  const palette = paletteText.split(/[\s,;]+/).filter(Boolean);
+  const paletteValid =
+    palette.length <= 10 &&
+    palette.every((color) => /^#[0-9a-f]{6}$/i.test(color));
   const unit = project.units.find((u) => u.id === unitId);
   const changed =
     unitId !== look.unitIds[0] ||
@@ -66,16 +76,16 @@ export function RecipeInspector({
   }
   async function saveDirection(event: React.FormEvent) {
     event.preventDefault();
-    if (!character) return;
+    if (!character || !paletteValid) return;
     const result = await send({
-      type: "update_direction",
+      type: "edit_direction",
       characterId: character.id,
       text: direction,
+      palette,
       essential: essential
         .split("\n")
         .map((v) => v.trim())
         .filter(Boolean),
-      approvedBy: designer,
     });
     if (result) setDirectionOpen(false);
   }
@@ -237,8 +247,7 @@ export function RecipeInspector({
               disabled={
                 changed ||
                 !!jobState.intent ||
-                !config?.youcam ||
-                config.generationPaused ||
+                !freshPreviewAvailable(config) ||
                 unit?.status === "unavailable"
               }
               onClick={() => void generate("live")}
@@ -250,20 +259,11 @@ export function RecipeInspector({
               Est. 2 YouCam units · {config?.ownerDailyJobLimit || 4} fresh jobs
               per browser / day
             </span>
-            {config?.generationPaused && (
-              <Notice tone="warning">
-                Fresh generation is paused. Recorded results remain available.
-              </Notice>
-            )}
-            {!config?.youcam && (
-              <Notice>
-                Fresh generation is currently unavailable. You can still review
-                saved outputs.
-              </Notice>
-            )}
-            {project.fixture && (config?.recordedPreviews || 0) > 0 && (
+            <PreviewAvailability config={config} />
+            {(config?.recordedPreviews ?? 1) > 0 && (
               <Button
-                disabled={changed || pending || !!jobState.intent}
+                busy={jobState.recordedWorking || jobState.recordedPending}
+                disabled={changed || !!jobState.recordedIntent}
                 onClick={() => void generate("recorded")}
               >
                 Use matching recorded result
@@ -311,22 +311,39 @@ export function RecipeInspector({
               maxLength={1800}
             />
           </Field>
-          <Field label="Designer name or role">
+          <Field
+            label="Character colour palette"
+            hint="Up to ten six-digit hex colours, separated by commas; leave empty to clear."
+          >
             <input
-              required
-              value={designer}
-              onChange={(event) => setDesigner(event.target.value)}
-              minLength={2}
+              value={paletteText}
+              onChange={(event) => setPaletteText(event.target.value)}
               maxLength={100}
+              aria-invalid={!paletteValid || undefined}
             />
           </Field>
+          {!paletteValid && (
+            <p className="text-danger">
+              Use colours such as #6B2948, with at most ten entries.
+            </p>
+          )}
+          <p className="muted">
+            Saving clears the direction’s approval and affected appearance
+            decisions. Existing images remain available for a new review when
+            their provider inputs have not changed.
+          </p>
           {error && <Notice tone="danger">{error}</Notice>}
           <div className="modal-actions">
             <Button type="button" onClick={() => setDirectionOpen(false)}>
               Cancel
             </Button>
-            <Button variant="primary" busy={busy} type="submit">
-              Record direction
+            <Button
+              variant="primary"
+              busy={busy}
+              disabled={!paletteValid}
+              type="submit"
+            >
+              Save direction for review
             </Button>
           </div>
         </form>

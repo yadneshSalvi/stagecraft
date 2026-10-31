@@ -3,6 +3,20 @@ import AxeBuilder from "@axe-core/playwright";
 import type { Production } from "../../src/lib/types";
 import { authenticate } from "./helpers";
 
+const surfaces = [
+  ["production", ""],
+  ["costume", "/looks"],
+  ["makeup", "/looks?look=look-nora&detail=makeup"],
+  ["alternatives", "/looks?look=look-nora&detail=alternatives"],
+  ["hair-colour", "/looks?look=look-mae&detail=hair_color"],
+  ["necklace", "/looks?look=look-nora&detail=necklace"],
+  ["script", "/script"],
+  ["schedule", "/schedule"],
+  ["wardrobe", "/wardrobe"],
+  ["handoff", "/handoff"],
+  ["supplier-orders", "/handoff/orders"],
+] as const;
+
 async function example(page: Page): Promise<Production> {
   await authenticate(page.request);
   const created = await page.request.post("/api/projects", {
@@ -15,20 +29,12 @@ async function example(page: Page): Promise<Production> {
 test("every primary surface is reachable and passes automated WCAG checks", async ({
   page,
 }, testInfo) => {
-  test.setTimeout(240_000);
+  test.setTimeout(300_000);
   const failures: string[] = [];
   page.on("pageerror", (error) => failures.push(error.message));
   const project = await example(page);
   try {
-    for (const suffix of [
-      "",
-      "/looks",
-      "/looks?look=look-nora&detail=makeup",
-      "/script",
-      "/schedule",
-      "/wardrobe",
-      "/handoff",
-    ]) {
+    for (const [label, suffix] of surfaces) {
       await page.goto(`/production/${project.id}${suffix}`);
       await expect(page.locator("h1")).toBeVisible();
       await expect(
@@ -42,9 +48,7 @@ test("every primary surface is reachable and passes automated WCAG checks", asyn
         `${suffix || "board"}: ${JSON.stringify(result.violations.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) })))}`,
       ).toEqual([]);
       await page.screenshot({
-        path: testInfo.outputPath(
-          `${suffix.includes("detail=makeup") ? "makeup" : suffix.slice(1) || "production"}-desktop.png`,
-        ),
+        path: testInfo.outputPath(`${label}-desktop.png`),
         fullPage: true,
       });
     }
@@ -57,19 +61,11 @@ test("every primary surface is reachable and passes automated WCAG checks", asyn
 test("390px primary surfaces and scene list retain access without page overflow", async ({
   page,
 }, testInfo) => {
-  test.setTimeout(180_000);
+  test.setTimeout(300_000);
   const project = await example(page);
   await page.setViewportSize({ width: 390, height: 844 });
   try {
-    for (const suffix of [
-      "",
-      "/looks",
-      "/looks?look=look-nora&detail=makeup",
-      "/script",
-      "/schedule",
-      "/wardrobe",
-      "/handoff",
-    ]) {
+    for (const [label, suffix] of surfaces) {
       await page.goto(`/production/${project.id}${suffix}`);
       await expect(page.locator("h1")).toBeVisible();
       expect(
@@ -83,9 +79,7 @@ test("390px primary surfaces and scene list retain access without page overflow"
         `${suffix || "board"}: mobile accessibility`,
       ).toEqual([]);
       await page.screenshot({
-        path: testInfo.outputPath(
-          `${suffix.includes("detail=makeup") ? "makeup" : suffix.slice(1) || "production"}-mobile.png`,
-        ),
+        path: testInfo.outputPath(`${label}-mobile.png`),
         fullPage: true,
       });
     }

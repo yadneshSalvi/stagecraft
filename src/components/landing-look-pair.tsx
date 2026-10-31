@@ -33,7 +33,8 @@ export function LandingLookPair() {
           <ArrowRight size={15} />
         </Link>
         <small>
-          Open the example, then choose Makeup detail in the look studio.
+          Open the example for makeup, Mae’s hair-colour studies and Nora’s
+          independent necklace detail.
         </small>
       </div>
       <div className="look-pair-images">

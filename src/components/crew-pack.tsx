@@ -16,6 +16,7 @@ import { dateTime, day, time, revision } from "@/lib/format";
 import { useProduction } from "./production-context";
 import { Badge, Button, EmptyState, Notice, Photo } from "./ui";
 import { CrewBeautyEvidence } from "./crew-beauty-evidence";
+import { CrewDetailEvidence } from "./crew-detail-evidence";
 
 export function CrewPackView({ packId }: { packId: string }) {
   const { project, send, busy } = useProduction();
@@ -39,6 +40,14 @@ export function CrewPackView({ packId }: { packId: string }) {
       </EmptyState>
     );
   const snapshot = pack.snapshot;
+  const frozenProject = {
+    ...project,
+    ...snapshot,
+    ...snapshot.appearanceContext,
+    appearanceCandidates: snapshot.appearanceCandidates || [],
+    detailReferences: snapshot.detailReferences || [],
+    revision: pack.sourceRevision,
+  };
   const zone = snapshot.timeZone || project.timeZone;
   const characters = snapshot.characters || project.characters;
   const permissionMissing = snapshot.performers.some(
@@ -185,8 +194,8 @@ export function CrewPackView({ packId }: { packId: string }) {
                   const character = characters.find(
                     (c) => c.id === look.characterId,
                   );
-                  const preview = getCurrentPreview(look);
-                  const approval = getCurrentApproval(look);
+                  const preview = getCurrentPreview(look, frozenProject);
+                  const approval = getCurrentApproval(look, frozenProject);
                   const units = snapshot.units.filter((u) =>
                     look.unitIds.includes(u.id),
                   );
@@ -259,6 +268,13 @@ export function CrewPackView({ packId }: { packId: string }) {
                           currentPerformer={project.performers.find(
                             (person) => person.id === look.performerId,
                           )}
+                        />
+                        <CrewDetailEvidence
+                          look={look}
+                          currentPerformer={project.performers.find(
+                            (person) => person.id === look.performerId,
+                          )}
+                          frozenProject={frozenProject}
                         />
                         <div className="crew-units">
                           {units.map((unit) => {

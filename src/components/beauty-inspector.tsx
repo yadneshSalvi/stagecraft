@@ -10,6 +10,11 @@ import {
   defaultBeautyRecipe,
 } from "./beauty-recipe-fields";
 import { Badge, Button, Notice, Photo } from "./ui";
+import {
+  PreviewAvailability,
+  freshPreviewAvailable,
+} from "./preview-availability";
+import { ProvenanceChip } from "./provenance-chip";
 
 export function BeautyInspector({
   look,
@@ -56,11 +61,9 @@ export function BeautyInspector({
           />
           <div>
             <strong>{performer?.name || "Assign a performer"}</strong>
-            <p>
-              {face?.synthetic
-                ? "Synthetic face capture, derived from the fictional cast reference."
-                : "An independently permitted face image for this performer."}
-            </p>
+            {face && (
+              <ProvenanceChip kind={face.synthetic ? "synthetic" : "photo"} />
+            )}
             <Button variant="quiet" onClick={onSource}>
               <UserRound size={13} />
               {face?.consent.granted
@@ -116,11 +119,7 @@ export function BeautyInspector({
               variant="primary"
               busy={pending}
               disabled={
-                changed ||
-                !!state.intent ||
-                !config?.youcam ||
-                !config.storage ||
-                config.generationPaused
+                changed || !!state.intent || !freshPreviewAvailable(config)
               }
               onClick={() => void state.generate("live")}
             >
@@ -130,9 +129,10 @@ export function BeautyInspector({
             <span className="generation-cost">
               Est. 1 YouCam unit · shares the production’s generation limits
             </span>
-            {project.fixture && (
+            {(config?.recordedBeautyPreviews ?? 1) > 0 && (
               <Button
-                disabled={changed || pending || !!state.intent}
+                busy={state.recordedWorking || state.recordedPending}
+                disabled={changed || !!state.recordedIntent}
                 onClick={() => void state.generate("recorded")}
               >
                 Use matching recorded makeup
@@ -144,17 +144,7 @@ export function BeautyInspector({
                 Save the makeup recipe before generating.
               </p>
             )}
-            {config?.generationPaused && (
-              <Notice tone="warning">
-                Fresh generation is paused. Recorded details remain available.
-              </Notice>
-            )}
-            {!config?.youcam && (
-              <Notice>
-                Fresh makeup generation is unavailable. Saved details can still
-                be reviewed.
-              </Notice>
-            )}
+            <PreviewAvailability config={config} />
           </>
         ) : (
           <Notice tone="warning">

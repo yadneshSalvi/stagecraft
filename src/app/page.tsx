@@ -19,7 +19,7 @@ export default function HomePage() {
         <Brand />
         <nav aria-label="Main navigation">
           <Link href="#inside">The working book</Link>
-          <Link href="/evidence">Behind the scenes</Link>
+          <Link href="/evidence">Evidence &amp; limits</Link>
           <Link className="nav-workspace" href="/productions">
             My productions
             <ArrowRight size={15} />
@@ -59,7 +59,7 @@ export default function HomePage() {
             <div className="hero-footnote">
               <span className="youcam-mark">✳</span>
               <span>
-                Actor-specific costume + makeup previews
+                Costume, makeup &amp; character details
                 <br />
                 <strong>Powered by YouCam AI</strong>
               </span>
@@ -145,8 +145,8 @@ export default function HomePage() {
             <ScanLine size={22} />
             <h3>See the look on your cast.</h3>
             <p>
-              Inspect real garment and separate makeup previews. Approve each
-              exact actor, source and recipe.
+              Inspect costume, makeup, hair colour and necklace previews.
+              Approve each exact actor, source and recipe.
             </p>
           </article>
           <article>
@@ -170,7 +170,7 @@ export default function HomePage() {
       <footer className="site-footer">
         <Brand />
         <p>Made for the work behind the performance.</p>
-        <Link href="/evidence">Evidence & privacy</Link>
+        <Link href="/evidence">Evidence &amp; limits</Link>
         <a
           href="https://github.com/yadneshSalvi/stagecraft"
           target="_blank"

@@ -6,9 +6,17 @@ import type { SourcingRequest } from "@/lib/types";
 import { dateTime, day, money, revision } from "@/lib/format";
 import { fromLocalDateTime, toLocalDateTime } from "@/lib/datetime";
 import { useProduction } from "./production-context";
+import { suggestedSourcingWindow } from "@/lib/sourcing-window";
 import { Badge, Button, Field, Modal, Notice, Photo } from "./ui";
 
-export function NewSourcingDialog({
+export function NewSourcingDialog(props: {
+  open: boolean;
+  onClose: () => void;
+  initialUnitId?: string;
+}) {
+  return props.open ? <NewSourcingSession {...props} /> : null;
+}
+function NewSourcingSession({
   open,
   onClose,
   initialUnitId,
@@ -24,17 +32,12 @@ export function NewSourcingDialog({
   const [units, setUnits] = useState<string[]>(
     initialUnitId ? [initialUnitId] : [],
   );
-  const first = [...project.occurrences].sort((a, b) =>
-    a.start.localeCompare(b.start),
-  )[0];
-  const last = [...project.occurrences].sort((a, b) =>
-    b.end.localeCompare(a.end),
-  )[0];
+  const planned = suggestedSourcingWindow(project, units);
   const [from, setFrom] = useState(
-    first ? toLocalDateTime(first.start, project.timeZone) : "",
+    planned ? toLocalDateTime(planned.from, project.timeZone) : "",
   );
   const [to, setTo] = useState(
-    last ? toLocalDateTime(last.end, project.timeZone) : "",
+    planned ? toLocalDateTime(planned.to, project.timeZone) : "",
   );
   const [note, setNote] = useState("");
   async function create(event: React.FormEvent) {
@@ -128,6 +131,24 @@ export function NewSourcingDialog({
             />
           </Field>
         </div>
+        {planned && (
+          <div className="sourcing-window-hint">
+            <p className="muted">
+              The suggested window includes recorded preparation and allocated
+              use. Add pickup or transport time with the custodian.
+            </p>
+            <Button
+              type="button"
+              variant="quiet"
+              onClick={() => {
+                setFrom(toLocalDateTime(planned.from, project.timeZone));
+                setTo(toLocalDateTime(planned.to, project.timeZone));
+              }}
+            >
+              Use current planned window
+            </Button>
+          </div>
+        )}
         <Field label="Pickup, return, measurement, and preparation notes">
           <textarea
             required

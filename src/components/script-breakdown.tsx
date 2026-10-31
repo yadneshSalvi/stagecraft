@@ -19,6 +19,7 @@ import type {
 } from "@/lib/types";
 import { api } from "@/lib/client";
 import { useProduction } from "./production-context";
+import { CharacterScope } from "./character-scope";
 import {
   Badge,
   Button,
@@ -291,6 +292,7 @@ export function ScriptBreakdown() {
           </div>
         </>
       )}
+      <CharacterScope />
       <Modal
         open={importing}
         onClose={() => {
@@ -327,11 +329,18 @@ export function ScriptBreakdown() {
               </div>
               <Badge tone="warning">Unreviewed extraction</Badge>
             </div>
-            {draft.notices.map((notice, index) => (
-              <Notice key={index} tone="warning">
-                {notice}
-              </Notice>
-            ))}
+            {draft.notices.length > 0 && (
+              <details className="draft-notices">
+                <summary>
+                  {draft.notices.length} extraction notes to inspect
+                </summary>
+                <ul>
+                  {draft.notices.map((notice, index) => (
+                    <li key={index}>{notice}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
             <div className="draft-scenes">
               {draft.scenes.map((s) => (
                 <article key={s.id}>

@@ -17,11 +17,14 @@ import { useProduction } from "./production-context";
 import { Badge, Button, EmptyState, Notice, PageHeading } from "./ui";
 import { AllocationReview } from "./allocation-review";
 import { OccurrenceDialog, TransitionDialog } from "./schedule-dialogs";
+import { ScheduleDraft } from "./schedule-draft";
 
 export function ScheduleWorkspace() {
   const { project, send, busy } = useProduction();
   const [edit, setEdit] = useState<Occurrence | "new" | null>(null);
   const [transitionOpen, setTransitionOpen] = useState(false);
+  const [focusResult, setFocusResult] = useState(0);
+  const [drafting, setDrafting] = useState(false);
   const result = project.allocationResult;
   const occurrences = [...project.occurrences].sort((a, b) =>
     a.start.localeCompare(b.start),
@@ -37,6 +40,15 @@ export function ScheduleWorkspace() {
         title="A place. A time. A real garment."
         action={
           <>
+            {project.scenes.some(
+              (scene) =>
+                !project.occurrences.some((call) => call.sceneId === scene.id),
+            ) && (
+              <Button onClick={() => setDrafting(true)}>
+                <CalendarDays size={15} />
+                Draft calls from script
+              </Button>
+            )}
             <Button onClick={() => setEdit("new")}>
               <Plus size={15} />
               Add a call
@@ -44,7 +56,10 @@ export function ScheduleWorkspace() {
             <Button
               variant="primary"
               busy={busy}
-              onClick={() => void send({ type: "solve_allocation" })}
+              onClick={async () => {
+                if (await send({ type: "solve_allocation" }))
+                  setFocusResult((value) => value + 1);
+              }}
             >
               <ShieldCheck size={16} />
               Check the allocation
@@ -55,6 +70,7 @@ export function ScheduleWorkspace() {
         Story chronology and production order are separate. Physical units can
         only be in one place at a time.
       </PageHeading>
+      {drafting && <ScheduleDraft onClose={() => setDrafting(false)} />}
       <div className="schedule-controls">
         <div className="segmented" aria-label="Production scheduling mode">
           {[
@@ -247,7 +263,9 @@ export function ScheduleWorkspace() {
           </aside>
         </div>
       )}
-      {result && <AllocationReview result={result} />}
+      {result && (
+        <AllocationReview result={result} focusRequest={focusResult} />
+      )}
       {(mode === "live_performance" || project.transitions.length > 0) && (
         <section className="transition-section">
           <div className="section-title">

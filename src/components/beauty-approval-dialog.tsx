@@ -7,6 +7,8 @@ import {
   getCurrentBeautyPreview,
 } from "@/lib/domain/selectors";
 import { revision } from "@/lib/format";
+import { appearanceIntentHash } from "@/lib/domain/lineage";
+import { ApprovalOutput } from "./approval-output";
 import { useProduction } from "./production-context";
 import { Button, Field, Modal, Notice } from "./ui";
 
@@ -15,11 +17,13 @@ export function BeautyApprovalDialog({
   open,
   onClose,
   targetId,
+  targetIntent,
 }: {
   look: Look;
   open: boolean;
   onClose: () => void;
   targetId: string | null;
+  targetIntent: string | null;
 }) {
   const { project, busy, send, error } = useProduction();
   const [author, setAuthor] = useState("");
@@ -29,7 +33,12 @@ export function BeautyApprovalDialog({
   const performer = project.performers.find(
     (person) => person.id === look.performerId,
   );
-  const changed = targetId !== preview?.id;
+  const targetPreview = look.beauty?.previews.find(
+    (item) => item.id === targetId,
+  );
+  const changed =
+    targetId !== preview?.id ||
+    targetIntent !== appearanceIntentHash(project, [look.id]);
   async function approve(event: React.FormEvent) {
     event.preventDefault();
     if (!preview || changed) return;
@@ -55,6 +64,15 @@ export function BeautyApprovalDialog({
       }
       description={`${performer?.name} · Makeup ${revision(look.beauty?.revision || 1)} · face capture ${preview?.faceCaptureVersion || "pending"}`}
     >
+      <ApprovalOutput
+        imageUrl={
+          performer?.faceCapture?.consent.granted
+            ? targetPreview?.imageUrl
+            : null
+        }
+        subject={`${performer?.name} · makeup detail`}
+        provenance={targetPreview?.provenance}
+      />
       {approval ? (
         <div className="form-stack">
           <Notice tone="success" title={`Approved by ${approval.approvedBy}`}>
@@ -70,9 +88,8 @@ export function BeautyApprovalDialog({
       ) : (
         <form className="form-stack" onSubmit={approve}>
           <Notice tone="warning">
-            Review the actual output and original face source. Zero smoothing is
-            a request setting; it does not guarantee unchanged texture or exact
-            physical colour reproduction.
+            Approves this makeup appearance only; physical application is
+            checked separately.
           </Notice>
           <Field label="Makeup reviewer name or role">
             <input
@@ -99,8 +116,9 @@ export function BeautyApprovalDialog({
           </Field>
           {changed && (
             <Notice tone="warning">
-              A different output is now current. Close this dialog and inspect
-              it before approving. Your written notes remain here.
+              A different output or creative intent is now current. Close this
+              dialog and inspect the current makeup before approving. Your
+              written notes remain here.
             </Notice>
           )}
           {error && <Notice tone="danger">{error}</Notice>}

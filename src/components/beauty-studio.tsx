@@ -7,6 +7,7 @@ import {
   getCurrentBeautyPreview,
 } from "@/lib/domain/selectors";
 import { revision } from "@/lib/format";
+import { appearanceIntentHash } from "@/lib/domain/lineage";
 import { useProduction } from "./production-context";
 import { usePreviewJob } from "./use-preview-job";
 import { BeautyInspector } from "./beauty-inspector";
@@ -25,7 +26,8 @@ export function BeautyStudio({ look }: { look: Look }) {
   );
   const preview = getCurrentBeautyPreview(look);
   const approval = getCurrentBeautyApproval(look);
-  const [view, setView] = useState<BeautyView>(preview ? "preview" : "source");
+  const [viewOverride, setView] = useState<BeautyView | null>(null);
+  const view: BeautyView = !preview ? "source" : viewOverride || "preview";
   const [sourceOpen, setSourceOpen] = useState(false);
   const [sourcePerformerId, setSourcePerformerId] = useState(look.performerId);
   const openSource = () => {
@@ -34,6 +36,7 @@ export function BeautyStudio({ look }: { look: Look }) {
   };
   const [approving, setApproving] = useState(false);
   const [targetId, setTargetId] = useState<string | null>(null);
+  const [targetIntent, setTargetIntent] = useState<string | null>(null);
   const viewChosen = useRef(false);
   const showPreview = useCallback(() => {
     if (!viewChosen.current) setView("preview");
@@ -118,6 +121,8 @@ export function BeautyStudio({ look }: { look: Look }) {
             disabled={!preview || busy}
             onClick={() => {
               setTargetId(preview?.id || null);
+              setTargetIntent(appearanceIntentHash(project, [look.id]));
+              setView("preview");
               setError(null);
               setApproving(true);
             }}
@@ -145,8 +150,12 @@ export function BeautyStudio({ look }: { look: Look }) {
           </summary>
           {look.beauty?.approvals.map((entry) => (
             <div key={entry.id}>
-              <Badge tone={entry.state === "current" ? "success" : "neutral"}>
-                {entry.state.replaceAll("_", " ")}
+              <Badge tone={entry.id === approval?.id ? "success" : "neutral"}>
+                {entry.id === approval?.id
+                  ? "Current approval"
+                  : entry.state === "current"
+                    ? "Earlier output"
+                    : entry.state.replaceAll("_", " ")}
               </Badge>
               <p>
                 {entry.approvedBy} · makeup {revision(entry.beautyRevision)} ·
@@ -185,6 +194,7 @@ export function BeautyStudio({ look }: { look: Look }) {
         open={approving}
         onClose={() => setApproving(false)}
         targetId={targetId}
+        targetIntent={targetIntent}
       />
     </>
   );

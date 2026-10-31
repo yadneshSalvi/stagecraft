@@ -6,12 +6,13 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  Image as ImageIcon,
   Layers3,
   Plus,
   Users,
   Shirt,
   Palette,
+  Gem,
+  Scissors,
 } from "lucide-react";
 import {
   getCurrentApproval,
@@ -24,8 +25,18 @@ import { provenanceLabel, revision } from "@/lib/format";
 import { useProduction } from "./production-context";
 import { Badge, Button, EmptyState, Field, Modal, Notice, Photo } from "./ui";
 import { RecipeInspector } from "./recipe-inspector";
+import { ApprovalOutput } from "./approval-output";
 import { usePreviewJob } from "./use-preview-job";
 import { BeautyStudio } from "./beauty-studio";
+import { CandidateStudio } from "./candidate-studio";
+import { DetailStudio } from "./detail-studio";
+import {
+  getCurrentDetailApproval,
+  getCurrentDetailPreview,
+} from "@/lib/domain/details";
+import { LibraryDialog } from "./example-library";
+import { ProvenanceChip } from "./provenance-chip";
+import { appearanceIntentHash } from "@/lib/domain/lineage";
 import { CastManager, NewLookDialog } from "./cast-manager";
 
 export function LooksStudio() {
@@ -35,20 +46,35 @@ export function LooksStudio() {
   const selected =
     project.looks.find((look) => look.id === search.get("look")) ||
     project.looks[0];
-  const detail = search.get("detail") === "makeup" ? "makeup" : "costume";
+  const detail =
+    search.get("detail") === "makeup"
+      ? "makeup"
+      : search.get("detail") === "alternatives"
+        ? "alternatives"
+        : search.get("detail") === "hair_color"
+          ? "hair_color"
+          : search.get("detail") === "necklace"
+            ? "necklace"
+            : "costume";
   const intendedDetail = useRef(detail);
   useEffect(() => {
     intendedDetail.current = detail;
   }, [detail]);
-  const showDetail = (next: "costume" | "makeup") => {
+  const showDetail = (
+    next: "costume" | "makeup" | "alternatives" | "hair_color" | "necklace",
+  ) => {
     intendedDetail.current = next;
-    router.replace(
-      `/production/${project.id}/looks?look=${selected.id}${next === "makeup" ? "&detail=makeup" : ""}`,
-      { scroll: false },
-    );
+    const params = new URLSearchParams(search.toString());
+    params.set("look", selected.id);
+    if (next === "costume") params.delete("detail");
+    else params.set("detail", next);
+    router.replace(`/production/${project.id}/looks?${params}`, {
+      scroll: false,
+    });
   };
   const [cast, setCast] = useState(false);
   const [newLook, setNewLook] = useState(false);
+  const [library, setLibrary] = useState(false);
   return (
     <>
       <div className="studio-titlebar">
@@ -58,6 +84,9 @@ export function LooksStudio() {
         </Link>
         <span className="eyebrow">THE LOOK STUDIO</span>
         <div>
+          <Button variant="quiet" onClick={() => setLibrary(true)}>
+            Example library
+          </Button>
           <Button onClick={() => setCast(true)}>
             <Users size={15} />
             Cast & sources
@@ -87,8 +116,32 @@ export function LooksStudio() {
               <Palette size={15} />
               Makeup detail
             </button>
+            <button
+              aria-pressed={detail === "alternatives"}
+              className={detail === "alternatives" ? "active" : ""}
+              onClick={() => showDetail("alternatives")}
+            >
+              <Layers3 size={15} />
+              Alternatives
+            </button>
+            <button
+              aria-pressed={detail === "hair_color"}
+              className={detail === "hair_color" ? "active" : ""}
+              onClick={() => showDetail("hair_color")}
+            >
+              <Scissors size={15} />
+              Hair colour
+            </button>
+            <button
+              aria-pressed={detail === "necklace"}
+              className={detail === "necklace" ? "active" : ""}
+              onClick={() => showDetail("necklace")}
+            >
+              <Gem size={15} />
+              Necklace
+            </button>
           </div>
-          <span>Two views. Independently sourced, generated and approved.</span>
+          <span>Each output has its own evidence and decision.</span>
         </div>
       )}
       {!selected ? (
@@ -124,26 +177,42 @@ export function LooksStudio() {
               const currentApproval =
                 detail === "makeup"
                   ? getCurrentBeautyApproval(look)
-                  : getCurrentApproval(look);
+                  : detail === "hair_color" || detail === "necklace"
+                    ? getCurrentDetailApproval(look, detail, project)
+                    : getCurrentApproval(look, project);
               const currentPreview =
                 detail === "makeup"
                   ? getCurrentBeautyPreview(look)
-                  : getCurrentPreview(look);
+                  : detail === "hair_color" || detail === "necklace"
+                    ? getCurrentDetailPreview(look, detail, project)
+                    : getCurrentPreview(look, project);
               return (
                 <button
                   key={look.id}
-                  onClick={() =>
+                  onClick={() => {
+                    const params = new URLSearchParams(search.toString());
+                    params.set("look", look.id);
+                    if (intendedDetail.current === "costume")
+                      params.delete("detail");
+                    else params.set("detail", intendedDetail.current);
+                    if (look.characterId !== selected.characterId) {
+                      params.delete("repair");
+                      params.delete("recast");
+                      params.delete("performer");
+                    }
                     router.replace(
-                      `/production/${project.id}/looks?look=${look.id}${intendedDetail.current === "makeup" ? "&detail=makeup" : ""}`,
+                      `/production/${project.id}/looks?${params}`,
                       { scroll: false },
-                    )
-                  }
+                    );
+                  }}
                   className={selected.id === look.id ? "selected" : ""}
                   aria-pressed={selected.id === look.id}
                 >
                   <Photo
                     src={
-                      detail === "makeup"
+                      detail === "makeup" ||
+                      detail === "hair_color" ||
+                      detail === "necklace"
                         ? performer?.faceCapture?.consent.granted
                           ? performer.faceCapture.imageUrl
                           : performer?.imageUrl
@@ -160,7 +229,11 @@ export function LooksStudio() {
                       {currentApproval
                         ? detail === "makeup"
                           ? "Makeup approved"
-                          : "Approved appearance"
+                          : detail === "hair_color"
+                            ? "Hair colour approved"
+                            : detail === "necklace"
+                              ? "Necklace approved"
+                              : "Approved appearance"
                         : currentPreview
                           ? "Ready for review"
                           : detail === "makeup" &&
@@ -185,9 +258,28 @@ export function LooksStudio() {
           </aside>
           {detail === "makeup" ? (
             <BeautyStudio key={selected.id} look={selected} />
+          ) : detail === "alternatives" ? (
+            <CandidateStudio
+              key={`${selected.id}-${search.get("performer") || "current"}`}
+              look={selected}
+              prospectivePerformerId={search.get("performer") || undefined}
+              returnHref={
+                search.get("repair")
+                  ? `/production/${project.id}?change=${encodeURIComponent(search.get("repair")!)}`
+                  : search.get("recast") && search.get("performer")
+                    ? `/production/${project.id}?recast=${encodeURIComponent(search.get("recast")!)}&performer=${encodeURIComponent(search.get("performer")!)}`
+                    : undefined
+              }
+            />
+          ) : detail === "hair_color" || detail === "necklace" ? (
+            <DetailStudio
+              key={`${selected.id}-${detail}`}
+              look={selected}
+              kind={detail}
+            />
           ) : (
             <LookCanvas
-              key={selected.id}
+              key={`${selected.id}-${selected.activeCandidateId || "base"}`}
               look={selected}
               onCast={() => setCast(true)}
             />
@@ -195,7 +287,14 @@ export function LooksStudio() {
         </div>
       )}
       <CastManager open={cast} onClose={() => setCast(false)} />
-      <NewLookDialog open={newLook} onClose={() => setNewLook(false)} />
+      <LibraryDialog open={library} onClose={() => setLibrary(false)} />
+      <NewLookDialog
+        open={newLook}
+        onClose={() => setNewLook(false)}
+        onCreated={(lookId) =>
+          router.replace(`/production/${project.id}/looks?look=${lookId}`)
+        }
+      />
     </>
   );
 }
@@ -204,25 +303,42 @@ function LookCanvas({ look, onCast }: { look: Look; onCast: () => void }) {
   const { project, config, send, busy, error, setError } = useProduction();
   const character = project.characters.find((c) => c.id === look.characterId);
   const performer = project.performers.find((p) => p.id === look.performerId);
-  const preview = getCurrentPreview(look);
-  const approval = getCurrentApproval(look);
-  const [view, setView] = useState<"preview" | "source" | "compare">(
-    preview ? "preview" : "source",
-  );
+  const preview = getCurrentPreview(look, project);
+  const approval = getCurrentApproval(look, project);
+  const [viewOverride, setView] = useState<
+    "preview" | "source" | "compare" | null
+  >(null);
+  const view = !preview ? "source" : viewOverride || "preview";
   const [approving, setApproving] = useState(false);
   const [approvalTarget, setApprovalTarget] = useState<string | null>(null);
+  const [approvalIntent, setApprovalIntent] = useState<string | null>(null);
   const [author, setAuthor] = useState("");
   const [rationale, setRationale] = useState("");
   const viewChosen = useRef(false);
   const showPreview = useCallback(() => {
     if (!viewChosen.current) setView("preview");
-  }, []);
+  }, [setView]);
   const selectView = (next: "source" | "preview" | "compare") => {
     viewChosen.current = true;
     setView(next);
   };
-  const jobState = usePreviewJob(look.id, "garment", showPreview);
-  const outputChanged = approving && approvalTarget !== preview?.id;
+  const jobState = usePreviewJob(
+    look.id,
+    "garment",
+    showPreview,
+    look.activeCandidateId,
+  );
+  const targetPreview = [
+    ...look.previews,
+    ...(project.appearanceCandidates?.find(
+      (candidate) => candidate.id === look.activeCandidateId,
+    )?.previews || []),
+  ].find((item) => item.id === approvalTarget);
+  const scopeLookIds = preview?.scopeLookIds || [look.id];
+  const outputChanged =
+    approving &&
+    (approvalTarget !== preview?.id ||
+      approvalIntent !== appearanceIntentHash(project, scopeLookIds));
   async function approve(event: React.FormEvent) {
     event.preventDefault();
     if (!preview || outputChanged) return;
@@ -331,13 +447,21 @@ function LookCanvas({ look, onCast }: { look: Look; onCast: () => void }) {
           </figure>
         </div>
         <div className="look-image-footer">
-          <span>
-            <ImageIcon size={13} />
-            {view === "source"
-              ? "Original pixels. No appearance judgment."
-              : "Generated appearance. Physical fit remains unverified."}
-          </span>
-          {performer?.synthetic && <span>Synthetic adult performer</span>}
+          <div className="provenance-row">
+            <ProvenanceChip
+              kind={performer?.synthetic ? "synthetic" : "photo"}
+            />
+            {preview && view !== "source" && (
+              <ProvenanceChip
+                kind={
+                  preview.provenance === "recorded_provider"
+                    ? "recorded"
+                    : "fresh"
+                }
+              />
+            )}
+          </div>
+          <span>Original sources stay inspectable.</span>
         </div>
         {look.reviewReason && (
           <Notice tone="warning" title="This look needs a fresh review.">
@@ -374,7 +498,9 @@ function LookCanvas({ look, onCast }: { look: Look; onCast: () => void }) {
             disabled={!preview || busy}
             onClick={() => {
               setApprovalTarget(preview?.id || null);
+              setApprovalIntent(appearanceIntentHash(project, scopeLookIds));
               setError(null);
+              setView("preview");
               setApproving(true);
             }}
           >
@@ -400,8 +526,12 @@ function LookCanvas({ look, onCast }: { look: Look; onCast: () => void }) {
           </summary>
           {look.approvals.map((entry) => (
             <div key={entry.id}>
-              <Badge tone={entry.state === "current" ? "success" : "neutral"}>
-                {entry.state.replace("_", " ")}
+              <Badge tone={entry.id === approval?.id ? "success" : "neutral"}>
+                {entry.id === approval?.id
+                  ? "Current approval"
+                  : entry.state === "current"
+                    ? "Earlier output"
+                    : entry.state.replaceAll("_", " ")}
               </Badge>
               <p>
                 {entry.approvedBy} · recipe {revision(entry.recipeRevision)}
@@ -443,24 +573,26 @@ function LookCanvas({ look, onCast }: { look: Look; onCast: () => void }) {
         }
         description={`${character?.name} · ${performer?.name} · Recipe ${revision(look.revision)}`}
       >
+        <ApprovalOutput
+          imageUrl={performer?.consent.granted ? targetPreview?.imageUrl : null}
+          subject={`${character?.name} · ${performer?.name}`}
+          provenance={targetPreview?.provenance}
+        />
         {approval ? (
           <div className="form-stack">
             <Notice tone="success" title={`Approved by ${approval.approvedBy}`}>
               {approval.rationale}
             </Notice>
             <p className="muted">
-              This approval references the exact preview and recipe. Garment
-              availability, physical fitting, and preparation are separate
-              requirements.
+              This decision references the exact output, performer and current
+              creative intent.
             </p>
             <Button onClick={() => setApproving(false)}>Close approval</Button>
           </div>
         ) : (
           <form className="form-stack" onSubmit={approve}>
             <Notice tone="warning">
-              This approves visual direction only. It does not confirm physical
-              fit, exact garment reproduction, supplier availability, or
-              dressing time.
+              Approves appearance only; fit is checked at fitting.
             </Notice>
             <Field label="Reviewer name or role">
               <input
@@ -487,8 +619,9 @@ function LookCanvas({ look, onCast }: { look: Look; onCast: () => void }) {
             </Field>
             {outputChanged && (
               <Notice tone="warning">
-                A different output is now current. Close this dialog and inspect
-                that image before approving it. Your written notes remain here.
+                A different output or creative intent is now current. Close this
+                dialog and inspect the current look before approving it. Your
+                written notes remain here.
               </Notice>
             )}
             {error && <Notice tone="danger">{error}</Notice>}

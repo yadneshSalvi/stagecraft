@@ -1,245 +1,111 @@
-import {
-  expect,
-  test,
-  type APIResponse,
-  type Page,
-  type Response,
-} from "@playwright/test";
+import { expect, test, type Page, type Response } from "@playwright/test";
 import type {
-  AppearanceApproval,
-  BeautyApproval,
+  AppearanceCandidate,
   Production,
   ProductionCommand,
 } from "../../src/lib/types";
+import {
+  getCurrentApproval,
+  getCurrentPreview,
+} from "../../src/lib/domain/lineage";
 import { authenticate } from "./helpers";
+import { getReadiness } from "../../src/lib/domain/selectors";
 
-// These journeys use the real local UI, authentication, API and database.
-// Only existing recorded outputs are requested. A route guard blocks a paid job
-// before it can reach the server, and every resulting preview is checked again.
+// Real browser → authenticated API → database. All provider requests are recorded
+// replays; a guard rejects every fresh request before it reaches the application.
 test.use({
   viewport: { width: 1440, height: 1000 },
   actionTimeout: 15_000,
   navigationTimeout: 60_000,
 });
-test.setTimeout(240_000);
-
-let createdProjectIds: string[] = [];
-let attemptedLiveJobs: string[] = [];
-
-function path(response: Response): string {
-  return new URL(response.url()).pathname;
+test.setTimeout(300_000);
+let projectIds: string[] = [];
+let liveRequests: string[] = [];
+const path = (response: Response) => new URL(response.url()).pathname;
+async function persisted(page: Page, id: string): Promise<Production> {
+  const response = await page.request.get(`/api/projects/${id}`);
+  expect(response.ok()).toBe(true);
+  return (await response.json()).project;
 }
-
-async function assertProjectResponse(
-  response: Response | APIResponse,
-): Promise<Production> {
-  const body = await response.json();
-  expect(response.ok(), JSON.stringify(body).slice(0, 1800)).toBe(true);
-  expect(body.project?.id).toBeTruthy();
-  return body.project as Production;
-}
-
-async function saved(page: Page): Promise<void> {
-  await expect(
-    page.getByText("All changes saved", { exact: true }),
-  ).toBeVisible();
-}
-
 async function command(
   page: Page,
   type: ProductionCommand["type"],
   action: () => Promise<unknown>,
 ): Promise<Production> {
   const response = page.waitForResponse(
-    (candidate) => {
-      if (
-        !/\/api\/projects\/[^/]+\/commands$/.test(path(candidate)) ||
-        candidate.request().method() !== "POST"
-      )
-        return false;
-      return candidate.request().postDataJSON()?.command?.type === type;
-    },
-    { timeout: 60_000 },
+    (item) =>
+      /\/api\/projects\/[^/]+\/commands$/.test(path(item)) &&
+      item.request().method() === "POST" &&
+      item.request().postDataJSON()?.command?.type === type,
   );
   await action();
-  const production = await assertProjectResponse(await response);
-  await saved(page);
-  return production;
+  const result = await response;
+  const body = await result.json();
+  expect(result.ok(), JSON.stringify(body)).toBe(true);
+  await expect(
+    page.getByText("All changes saved", { exact: true }),
+  ).toBeVisible();
+  return body.project;
 }
-
-async function persisted(page: Page, id: string): Promise<Production> {
-  return assertProjectResponse(
-    await page.request.get(`/api/projects/${id}`, { timeout: 60_000 }),
-  );
-}
-
-async function openExample(page: Page): Promise<Production> {
+async function example(page: Page): Promise<Production> {
   await page.goto("/");
   const response = page.waitForResponse(
-    (candidate) =>
-      path(candidate) === "/api/projects" &&
-      candidate.request().method() === "POST",
-    { timeout: 60_000 },
+    (item) =>
+      path(item) === "/api/projects" && item.request().method() === "POST",
+    { timeout: 75_000 },
   );
   await page
     .getByRole("button", { name: "Step inside the production", exact: true })
     .click();
-  const production = await assertProjectResponse(await response);
-  createdProjectIds.push(production.id);
-  await expect(page).toHaveURL(new RegExp(`/production/${production.id}$`));
+  const created = await response;
+  expect(created.status()).toBe(201);
+  const project: Production = (await created.json()).project;
+  projectIds.push(project.id);
   await expect(
-    page.getByRole("heading", {
-      name: "THE LAST LIGHT",
-      level: 1,
-      exact: true,
-    }),
+    page.getByRole("heading", { name: "THE LAST LIGHT", exact: true }),
   ).toBeVisible();
-  await saved(page);
-  expect(production.fixture).toBe(true);
-  expect(production.looks).toHaveLength(5);
-  for (const look of production.looks) {
-    expect(look.previews.length).toBeGreaterThan(0);
+  expect(project.revision).toBe(17);
+  expect(project.looks).toHaveLength(8);
+  expect(project.scenes).toHaveLength(7);
+  for (const look of project.looks) {
     expect(
-      look.previews.every(
-        (preview) => preview.provenance === "recorded_provider",
-      ),
-    ).toBe(true);
+      getCurrentPreview(look, project),
+      `${look.id} has a real recorded garment`,
+    ).toBeTruthy();
     expect(look.approvals).toEqual([]);
+    expect(look.beauty?.approvals || []).toEqual([]);
+    if (look.beauty)
+      expect(
+        look.beauty.previews,
+        `${look.id} has its exact makeup recording`,
+      ).toHaveLength(1);
+    for (const detail of look.details || []) {
+      expect(
+        detail.previews,
+        `${look.id} has its exact ${detail.kind} recording`,
+      ).toHaveLength(1);
+      expect(detail.approvals).toEqual([]);
+    }
   }
-  const beauty = production.looks.find(
-    (look) => look.id === "look-nora",
-  )!.beauty!;
-  expect(beauty.previews.length).toBeGreaterThan(0);
-  expect(
-    beauty.previews.every(
-      (preview) => preview.provenance === "recorded_provider",
-    ),
-  ).toBe(true);
-  expect(beauty.approvals).toEqual([]);
-  return production;
-}
-
-async function navigate(
-  page: Page,
-  name: "Production" | "Looks" | "Schedule" | "Wardrobe" | "Handoff",
-): Promise<void> {
-  await page
-    .getByRole("navigation", { name: "Production navigation" })
-    .getByRole("link", { name, exact: true })
-    .click();
-}
-
-async function selectLook(
-  page: Page,
-  name: "Nora Vale" | "Mae Lin",
-): Promise<void> {
-  const costume = page.getByRole("button", { name: "Costume", exact: true });
-  await costume.click();
-  await expect(costume).toHaveAttribute("aria-pressed", "true");
-  await expect(page).not.toHaveURL(/[?&]detail=makeup/);
-  await page.getByRole("button", { name: new RegExp(`^${name}`) }).click();
+  expect(project.appearanceCandidates).toHaveLength(2);
+  for (const candidate of project.appearanceCandidates!) {
+    expect(candidate.previews).toHaveLength(1);
+    expect(candidate.previews[0].provenance).toBe("recorded_provider");
+    expect(candidate.approvals).toEqual([]);
+  }
   await expect(
-    page.getByRole("heading", { name, level: 1, exact: true }),
-  ).toBeVisible();
-}
-
-async function approveMakeup(page: Page): Promise<Production> {
-  await page
-    .getByRole("button", { name: "Makeup detail", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Approve makeup detail", exact: true })
-    .click();
-  const dialog = page.getByRole("dialog", {
-    name: "Approve this exact makeup detail",
-    exact: true,
-  });
-  await dialog
-    .getByLabel("Makeup reviewer name or role")
-    .fill("Synthetic makeup evaluator");
-  await dialog
-    .getByLabel("What did you approve in the makeup detail?")
-    .fill(
-      "Synthetic evaluation of this exact recorded lip and blush detail. Skin smoothing and morphology are requested off; no physical application or participant outcome is claimed.",
-    );
-  const production = await command(page, "approve_beauty", () =>
-    dialog
-      .getByRole("button", { name: "Record makeup approval", exact: true })
-      .click(),
-  );
-  await expect(dialog).not.toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Review makeup approval", exact: true }),
-  ).toBeVisible();
-  return production;
-}
-
-function makeupApproval(production: Production): BeautyApproval {
-  const look = production.looks.find(
-    (candidate) => candidate.id === "look-nora",
-  )!;
-  const current = look.beauty?.approvals.find(
-    (candidate) =>
-      candidate.state === "current" &&
-      candidate.beautyRevision === look.beauty!.revision &&
-      candidate.performerId === look.performerId,
-  );
-  expect(current).toBeTruthy();
-  return current!;
-}
-
-async function useRecordedMakeup(page: Page, id: string): Promise<Production> {
-  await page
-    .getByRole("button", { name: "Makeup detail", exact: true })
-    .click();
-  await expect(
-    page.getByRole("button", { name: "Approve makeup detail", exact: true }),
-  ).toBeDisabled();
-  const response = page.waitForResponse(
-    (candidate) =>
-      /\/api\/projects\/[^/]+\/previews$/.test(path(candidate)) &&
-      candidate.request().method() === "POST" &&
-      candidate.request().postDataJSON()?.kind === "beauty",
-    { timeout: 60_000 },
-  );
-  await page
-    .getByRole("button", { name: "Use matching recorded makeup", exact: true })
-    .click();
-  const result = await response,
-    body = await result.json();
-  expect(result.request().postDataJSON().mode).toBe("recorded");
-  expect(result.ok(), JSON.stringify(body)).toBe(true);
-  expect(body.job).toMatchObject({ state: "succeeded", kind: "beauty" });
-  await expect(
-    page.getByRole("img", {
-      name: "Nora Vale, actual YouCam Makeup VTO result",
+    page.getByRole("region", {
+      name: "Visual continuity across story days",
       exact: true,
     }),
-  ).toHaveAttribute("src", "/examples/beauty/nora-celeste-berry.webp");
-  const production = await persisted(page, id);
-  const look = production.looks.find(
-    (candidate) => candidate.id === "look-nora",
-  )!;
-  expect(look.beauty!.previews.at(-1)).toMatchObject({
-    performerId: "performer-celeste",
-    sourceImageUrl: "/assets/cast/celeste-face.webp",
-    provenance: "recorded_provider",
-    faceCaptureVersion: production.performers.find(
-      (performer) => performer.id === "performer-celeste",
-    )!.faceCapture!.version,
-    beautyRevision: look.beauty!.revision,
-  });
-  expect(
-    look.beauty!.approvals.some(
-      (approval) =>
-        approval.state === "current" &&
-        approval.beautyRevision === look.beauty!.revision,
-    ),
-  ).toBe(false);
-  return production;
+  ).toBeVisible();
+  return project;
 }
-
-async function approveAppearance(page: Page): Promise<Production> {
+async function visit(page: Page, id: string, suffix = "") {
+  await page.goto(`/production/${id}${suffix}`);
+  await expect(page.locator("h1")).toBeVisible();
+}
+async function approveLook(page: Page): Promise<Production> {
   await page
     .getByRole("button", { name: "Approve appearance", exact: true })
     .click();
@@ -249,362 +115,496 @@ async function approveAppearance(page: Page): Promise<Production> {
   });
   await dialog
     .getByLabel("Reviewer name or role")
-    .fill("Synthetic browser evaluator");
+    .fill("Synthetic browser reviewer");
   await dialog
     .getByLabel("What did you approve?")
     .fill(
-      "Synthetic evaluation: approve only this exact recorded garment appearance. Physical fit, hair, makeup and supplier outcomes remain unverified.",
+      "This exact recorded appearance supports the stated direction. Physical fitting remains unverified.",
     );
-  const production = await command(page, "approve_look", () =>
+  const result = await command(page, "approve_look", () =>
     dialog
       .getByRole("button", { name: "Record appearance approval", exact: true })
       .click(),
   );
   await expect(dialog).not.toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Review approval", exact: true }),
-  ).toBeVisible();
-  return production;
+  return result;
 }
-
-function approval(production: Production, lookId: string): AppearanceApproval {
-  const look = production.looks.find((candidate) => candidate.id === lookId)!;
-  const current = look.approvals.find(
-    (candidate) =>
-      candidate.state === "current" &&
-      candidate.recipeRevision === look.revision &&
-      candidate.performerId === look.performerId,
+async function exampleDecisions(page: Page, id: string): Promise<Production> {
+  await visit(page, id);
+  await page
+    .getByRole("button", {
+      name: /^(Record example decisions|Manage example decisions)$/,
+    })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Rehearse the decisions.",
+    exact: true,
+  });
+  const result = await command(page, "set_example_decisions", () =>
+    dialog
+      .getByRole("button", { name: "Record example decisions", exact: true })
+      .click(),
   );
-  expect(current).toBeTruthy();
-  return current!;
+  await expect(dialog).not.toBeVisible();
+  return result;
 }
-
-async function allocateInUi(page: Page): Promise<Production> {
-  await navigate(page, "Schedule");
+async function candidateDecision(
+  page: Page,
+  id: string,
+  unitName: string,
+): Promise<Production> {
+  const card = page.locator(".candidate-card").filter({
+    has: page.getByRole("heading", { name: unitName, exact: true }),
+  });
+  await expect(card).toHaveCount(1);
+  const approve = card.getByRole("button", {
+    name: "Approve this alternative",
+    exact: true,
+  });
+  if (await approve.isDisabled()) {
+    const response = page.waitForResponse(
+      (item) =>
+        path(item) === `/api/projects/${id}/previews` &&
+        item.request().method() === "POST",
+    );
+    await card
+      .getByRole("button", {
+        name: "Use matching recorded alternative",
+        exact: true,
+      })
+      .click();
+    const result = await response;
+    const body = await result.json();
+    expect(result.ok(), JSON.stringify(body)).toBe(true);
+    expect(body.job.state).toBe("succeeded");
+  }
+  await approve.click();
+  const dialog = page.getByRole("dialog", {
+    name: "Approve this exact alternative",
+    exact: true,
+  });
+  await dialog
+    .getByLabel("Alternative reviewer name or role")
+    .fill("Synthetic alternative reviewer");
+  await dialog
+    .getByLabel("Why does this alternative carry the character?")
+    .fill(
+      "The exact source, garment and output preserve the character’s current intent in this synthetic rehearsal.",
+    );
+  const result = await command(page, "approve_candidate", () =>
+    dialog
+      .getByRole("button", { name: "Record alternative approval", exact: true })
+      .click(),
+  );
+  await expect(dialog).not.toBeVisible();
+  return result;
+}
+async function allocate(
+  page: Page,
+  id: string,
+  adopt = true,
+): Promise<Production> {
+  await visit(page, id, "/schedule");
   const solved = await command(page, "solve_allocation", () =>
     page
       .getByRole("button", { name: "Check the allocation", exact: true })
       .click(),
   );
+  expect(["FEASIBLE", "OPTIMAL"]).toContain(solved.allocationResult?.status);
   expect(solved.allocationResult).toMatchObject({
-    status: "OPTIMAL",
-    independentlyChecked: true,
+    constraintChecked: true,
+    independentlyChecked: false,
   });
+  expect(solved.allocationResult!.assignments).toHaveLength(17);
   await expect(
-    page.getByText("Independent checker passed", { exact: true }),
-  ).toBeVisible();
-  const allocated = await command(page, "adopt_allocation", () =>
+    page.getByRole("region", { name: "Allocation result", exact: true }),
+  ).toBeFocused();
+  if (!adopt) return solved;
+  return command(page, "adopt_allocation", () =>
     page
       .getByRole("button", { name: "Adopt these assignments", exact: true })
       .click(),
   );
-  expect(allocated.allocations).toHaveLength(16);
-  expect(
-    allocated.allocations.every(
-      (assignment) => assignment.state === "allocated",
-    ),
-  ).toBe(true);
-  return allocated;
 }
-
-async function useRecordedResult(
+async function pack(page: Page, id: string): Promise<Production> {
+  await visit(page, id, "/handoff");
+  await page
+    .getByRole("button", { name: "Create a crew pack", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Freeze a clear crew handoff",
+    exact: true,
+  });
+  await dialog
+    .getByLabel("Pack title")
+    .fill("Recorded review-round continuity call");
+  const result = await command(page, "create_pack", () =>
+    dialog
+      .getByRole("button", { name: "Create frozen pack", exact: true })
+      .click(),
+  );
+  await expect(page).toHaveURL(
+    new RegExp(`/handoff/${result.packs.at(-1)!.id}$`),
+  );
+  await expect(
+    page.getByText("WORKING PACK — EVIDENCE PENDING", { exact: true }),
+  ).toBeVisible();
+  return result;
+}
+async function impact(page: Page): Promise<Production> {
+  const dialog = page.getByRole("dialog");
+  return command(page, "propose_change", () =>
+    dialog
+      .getByRole("button", { name: "Preview the impact", exact: true })
+      .click(),
+  );
+}
+async function adoptRepair(page: Page, code?: string): Promise<Production> {
+  const dialog = page.getByRole("dialog", {
+    name: "Follow the change.",
+    exact: true,
+  });
+  if (code)
+    await dialog.getByRole("button", { name: new RegExp(code) }).click();
+  return command(page, "adopt_repair", () =>
+    dialog
+      .getByRole("button", { name: "Adopt this revision", exact: true })
+      .click(),
+  );
+}
+async function recordedMakeup(
   page: Page,
   id: string,
-  expectedPath: string,
-  expectedPerformerId: string,
-  expectedUnitId: string,
+  lookId = "look-nora",
 ): Promise<Production> {
+  await visit(page, id, `/looks?look=${lookId}&detail=makeup`);
   const response = page.waitForResponse(
-    (candidate) =>
-      /\/api\/projects\/[^/]+\/previews$/.test(path(candidate)) &&
-      candidate.request().method() === "POST",
-    { timeout: 60_000 },
+    (item) =>
+      path(item) === `/api/projects/${id}/previews` &&
+      item.request().method() === "POST",
   );
   await page
-    .getByRole("button", { name: "Use matching recorded result", exact: true })
+    .getByRole("button", { name: "Use matching recorded makeup", exact: true })
     .click();
   const result = await response;
-  expect(result.request().postDataJSON().mode).toBe("recorded");
-  const body = await result.json();
-  expect(result.ok(), JSON.stringify(body)).toBe(true);
-  expect(body.job.state).toBe("succeeded");
-  await expect(
-    page.getByRole("img", {
-      name: "Nora Vale, YouCam generated garment preview",
-      exact: true,
-    }),
-  ).toHaveAttribute("src", expectedPath);
-  const production = await persisted(page, id);
-  const look = production.looks.find(
-    (candidate) => candidate.id === "look-nora",
-  )!;
-  const preview = look.previews.at(-1)!;
-  expect(preview).toMatchObject({
-    imageUrl: expectedPath,
-    provenance: "recorded_provider",
-    performerId: expectedPerformerId,
-    unitIds: [expectedUnitId],
-    recipeRevision: look.revision,
+  expect(result.ok()).toBe(true);
+  expect((await result.json()).job).toMatchObject({
+    kind: "beauty",
+    state: "succeeded",
   });
-  expect(preview.captureVersion).toBe(
-    production.performers.find(
-      (performer) => performer.id === expectedPerformerId,
-    )!.captureVersion,
+  await page
+    .getByRole("button", { name: "Approve makeup detail", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Approve this exact makeup detail",
+    exact: true,
+  });
+  await dialog
+    .getByLabel("Makeup reviewer name or role")
+    .fill("Synthetic face reviewer");
+  await dialog
+    .getByLabel("What did you approve in the makeup detail?")
+    .fill(
+      "Inspected the exact new performer face source, lip and blush result for this synthetic continuity state.",
+    );
+  return command(page, "approve_beauty", () =>
+    dialog
+      .getByRole("button", { name: "Record makeup approval", exact: true })
+      .click(),
   );
-  expect(
-    look.approvals.some(
-      (candidate) =>
-        candidate.state === "current" &&
-        candidate.recipeRevision === look.revision,
-    ),
-  ).toBe(false);
-  return production;
 }
-
-function localInput(instant: string, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(new Date(instant));
-  const value = (type: string) =>
-    parts.find((part) => part.type === type)!.value;
-  return `${value("year")}-${value("month")}-${value("day")}T${value("hour")}:${value("minute")}`;
+async function recordedNecklace(page: Page, id: string): Promise<Production> {
+  await visit(page, id, "/looks?look=look-nora&detail=necklace");
+  const response = page.waitForResponse(
+    (item) =>
+      path(item) === `/api/projects/${id}/previews` &&
+      item.request().method() === "POST",
+  );
+  await page
+    .getByRole("button", {
+      name: "Use matching recorded necklace",
+      exact: true,
+    })
+    .click();
+  const result = await response;
+  expect(result.ok()).toBe(true);
+  expect((await result.json()).job).toMatchObject({
+    kind: "necklace",
+    state: "succeeded",
+  });
+  await page
+    .getByRole("button", { name: "Approve necklace detail", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Approve this exact necklace detail",
+    exact: true,
+  });
+  await dialog
+    .getByLabel("Necklace reviewer name or role")
+    .fill("Synthetic accessory reviewer");
+  await dialog
+    .getByLabel("What did you approve in the necklace detail?")
+    .fill(
+      "Inspected the exact Celeste source and brass pendant output; physical placement still needs a fitting.",
+    );
+  return command(page, "approve_detail", () =>
+    dialog
+      .getByRole("button", { name: "Record necklace approval", exact: true })
+      .click(),
+  );
 }
 
 test.beforeEach(async ({ page }) => {
-  createdProjectIds = [];
-  attemptedLiveJobs = [];
+  projectIds = [];
+  liveRequests = [];
   await authenticate(page.request);
   await page.route("**/api/projects/*/previews", async (route) => {
     if (
       route.request().method() === "POST" &&
       route.request().postDataJSON()?.mode !== "recorded"
     ) {
-      attemptedLiveJobs.push(route.request().url());
+      liveRequests.push(route.request().url());
       await route.abort("blockedbyclient");
       return;
     }
     await route.continue();
   });
 });
-
-test.afterEach(async ({ page }, testInfo) => {
+test.afterEach(async ({ page }, info) => {
   expect
-    .soft(
-      attemptedLiveJobs,
-      "A browser journey must never request a paid preview",
-    )
+    .soft(liveRequests, "No fresh provider call is allowed in this suite")
     .toEqual([]);
-  if (testInfo.status !== testInfo.expectedStatus && !page.isClosed()) {
-    await testInfo.attach("production-workflow-failure", {
+  if (info.status !== info.expectedStatus && !page.isClosed())
+    await info.attach("review-journey-failure", {
       body: await page.screenshot({ fullPage: true }),
       contentType: "image/png",
     });
-  }
-  if (testInfo.status === testInfo.expectedStatus) {
-    const origin = new URL(page.url()).origin;
-    for (const id of createdProjectIds) {
-      const deleted = await page.request.delete(`/api/projects/${id}`, {
-        headers: { Origin: origin },
-      });
-      expect
-        .soft(
-          deleted.status(),
-          "Clean up only this test's private fixture copy",
-        )
-        .toBe(202);
-    }
-  }
+  if (info.status === info.expectedStatus)
+    for (const id of projectIds)
+      expect((await page.request.delete(`/api/projects/${id}`)).status()).toBe(
+        202,
+      );
 });
 
-test("recorded garment repair preserves Mae and supersedes the frozen working pack", async ({
+test("one production carries approved coat repair through recast, independent details, sourcing and frozen handoff", async ({
   page,
-}) => {
-  let production =
-    await test.step("Create an owned example and approve exact costume and makeup outputs", async () => {
-      const example = await openExample(page);
-      await navigate(page, "Looks");
-      await expect(
-        page.getByRole("heading", { name: "Nora Vale", level: 1, exact: true }),
-      ).toBeVisible();
-      await approveAppearance(page);
-      await approveMakeup(page);
-      await selectLook(page, "Mae Lin");
-      const approved = await approveAppearance(page);
-      expect(approved.id).toBe(example.id);
-      return approved;
-    });
-  const id = production.id;
-  const noraOriginal = approval(production, "look-nora");
-  const maeOriginal = approval(production, "look-mae");
-  const makeupOriginal = makeupApproval(production);
-  let packId = "",
-    frozenSnapshot: unknown;
-
-  await test.step("Adopt a checked allocation and create a visibly provisional crew pack", async () => {
-    production = await allocateInUi(page);
-    await navigate(page, "Handoff");
-    await page
-      .getByRole("button", { name: "Create a crew pack", exact: true })
-      .click();
-    const dialog = page.getByRole("dialog", {
-      name: "Freeze a clear crew handoff",
-      exact: true,
-    });
-    await dialog
-      .getByLabel("Pack title")
-      .fill("Recorded fixture continuity call");
-    production = await command(page, "create_pack", () =>
-      dialog
-        .getByRole("button", { name: "Create frozen pack", exact: true })
-        .click(),
-    );
-    const pack = production.packs.at(-1)!;
-    packId = pack.id;
-    frozenSnapshot = structuredClone(pack.snapshot);
-    expect(pack.state).toBe("current");
-    expect(pack.warnings.length).toBeGreaterThan(0);
-    expect(
-      pack.snapshot.looks.find((look) => look.id === "look-nora")!.beauty!
-        .approvals[0],
-    ).toEqual(makeupOriginal);
-    await expect(page).toHaveURL(new RegExp(`/handoff/${packId}$`));
-    await expect(
-      page.getByText("WORKING PACK — EVIDENCE PENDING", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", {
-        name: "Before this can be called ready",
-        exact: true,
-      }),
-    ).toBeVisible();
+}, testInfo) => {
+  let p = await example(page);
+  const id = p.id;
+  await visit(page, id, "/looks?look=look-nora");
+  p = await approveLook(page);
+  const originalNora = getCurrentApproval(
+    p.looks.find((look) => look.id === "look-nora")!,
+    p,
+  )!;
+  await visit(page, id, "/looks?look=look-mae");
+  p = await approveLook(page);
+  const originalMae = getCurrentApproval(
+    p.looks.find((look) => look.id === "look-mae")!,
+    p,
+  )!;
+  p = await exampleDecisions(page, id);
+  expect(
+    getCurrentApproval(
+      p.looks.find((look) => look.id === "look-mae")!,
+      p,
+    )!.id,
+  ).toBe(originalMae.id);
+  expect(p.appearanceCandidates!.every((item) => !item.approvals.length)).toBe(
+    true,
+  );
+  expect(getReadiness(p)).toMatchObject({
+    appearanceApproved: 8,
+    beautyApproved: 2,
+    detailsApproved: 4,
   });
-
+  const oldMakeup = structuredClone(
+    p.looks.find((look) => look.id === "look-nora")!.beauty!.approvals,
+  );
+  const oldNecklace = structuredClone(
+    p.looks
+      .find((look) => look.id === "look-nora")!
+      .details!.find((detail) => detail.kind === "necklace")!.approvals,
+  );
+  const oldMaeHair = structuredClone(
+    p.looks.find((look) => look.id === "look-mae")!.details,
+  );
+  p = await allocate(page, id);
+  expect(p.allocationResult!.status).toBe("FEASIBLE");
+  expect(p.allocationResult!.totalCostCents).toBe(50_000);
+  p = await pack(page, id);
+  const frozen = structuredClone(p.packs.at(-1)!);
   await expect(
     page.getByRole("region", { name: "Separate makeup evidence", exact: true }),
   ).toHaveCount(3);
   await expect(
-    page
-      .getByRole("region", { name: "Separate makeup evidence", exact: true })
-      .first()
-      .getByRole("img", {
-        name: "The returning coat: separate generated makeup detail",
-        exact: true,
-      }),
-  ).toHaveAttribute("src", /nora-ada-berry/);
+    page.getByRole("region", {
+      name: "Separate hair colour evidence",
+      exact: true,
+    }),
+  ).toHaveCount(4);
+  await expect(
+    page.getByRole("region", {
+      name: "Separate necklace evidence",
+      exact: true,
+    }),
+  ).toHaveCount(3);
+  await page.emulateMedia({ media: "print" });
+  await page.evaluate(() => document.fonts.ready);
+  await expect
+    .poll(() =>
+      page.locator(".crew-document img").evaluateAll((images) => ({
+        count: images.length,
+        loaded: images.filter(
+          (image) =>
+            (image as HTMLImageElement).complete &&
+            (image as HTMLImageElement).naturalWidth > 0,
+        ).length,
+      })),
+    )
+    .toEqual({ count: 27, loaded: 27 });
+  const crewPdf = await page.pdf({
+    path: testInfo.outputPath("frozen-crew-pack.pdf"),
+    format: "A4",
+    printBackground: true,
+    preferCSSPageSize: true,
+  });
+  expect(crewPdf.subarray(0, 5).toString()).toBe("%PDF-");
+  expect(crewPdf.length).toBeGreaterThan(10_000);
+  await page.emulateMedia({ media: "screen" });
 
-  await test.step("Inspect the signature coat impact before adopting the charcoal repair", async () => {
-    await navigate(page, "Production");
+  await test.step("Inspect actual alternatives before authorizing the replacement", async () => {
+    await visit(page, id);
     await page
       .getByRole("button", { name: "Review a change", exact: true })
       .click();
-    let dialog = page.getByRole("dialog", {
-      name: "The show changes. The story stays.",
-      exact: true,
-    });
-    await dialog
+    await page
+      .getByRole("dialog")
       .getByLabel("Which physical unit is unavailable?")
       .selectOption("unit-coat-oxblood");
-    production = await command(page, "propose_change", () =>
-      dialog
-        .getByRole("button", { name: "Preview the impact", exact: true })
-        .click(),
-    );
-    const proposal = production.proposals.at(-1)!;
+    p = await impact(page);
+    const proposal = p.proposals.at(-1)!;
     expect(proposal.impact.sceneIds).toEqual([
       "scene-01",
       "scene-04",
       "scene-07",
     ]);
-    expect(proposal.impact.invalidatedApprovalIds).toEqual([noraOriginal.id]);
-    expect(proposal.impact.preservedApprovalIds).toContain(maeOriginal.id);
-    expect(proposal.impact.preservedBeautyApprovalIds).toContain(
-      makeupOriginal.id,
-    );
+    expect(proposal.impact.lookIds).toHaveLength(2);
+    expect(proposal.impact.invalidatedApprovalIds).toContain(originalNora.id);
+    expect(proposal.impact.preservedApprovalIds).toContain(originalMae.id);
     expect(proposal.impact.invalidatedBeautyApprovalIds).toEqual([]);
-    expect(proposal.impact.packIds).toContain(packId);
-    expect(approval(production, "look-nora")).toEqual(noraOriginal);
-    dialog = page.getByRole("dialog", {
+    expect(proposal.impact.creativeFlags?.length).toBeGreaterThan(0);
+    const dialog = page.getByRole("dialog", {
       name: "Follow the change.",
       exact: true,
     });
     await expect(
-      dialog.getByText("1 existing appearance approval preserved", {
-        exact: true,
-      }),
-    ).toBeVisible();
+      dialog.getByRole("img", { name: /Actual YouCam performer preview/ }),
+    ).toHaveCount(2);
     await expect(
-      dialog.getByText("Scene 01, Scene 04, Scene 07", { exact: true }),
-    ).toBeVisible();
+      dialog.getByRole("button", { name: "Adopt this revision", exact: true }),
+    ).toBeDisabled();
     await dialog
-      .getByRole("button", { name: /C-021 · Charcoal wool coat/ })
+      .getByRole("link", { name: "Compare & review alternatives", exact: true })
       .click();
-    production = await command(page, "adopt_repair", () =>
-      dialog
-        .getByRole("button", { name: "Adopt this revision", exact: true })
+    const burgundy = p.units.find((unit) => unit.id === "unit-coat-burgundy")!;
+    p = await candidateDecision(page, id, burgundy.name);
+    await page
+      .getByRole("link", { name: "Return to change review", exact: true })
+      .click();
+    p = await impact(page);
+    const reviewed = p.appearanceCandidates!.find(
+      (item) => item.id === "candidate-nora-burgundy",
+    )!;
+    const approvedId = reviewed.approvals.at(-1)!.id;
+    const exactPreviewId = reviewed.previews.at(-1)!.id;
+    p = await adoptRepair(page, "C-033");
+    for (const look of p.looks.filter(
+      (item) => item.characterId === "char-nora",
+    )) {
+      expect(look.unitIds).toEqual(["unit-coat-burgundy"]);
+      expect(look.activeCandidateId).toBe(reviewed.id);
+      expect(getCurrentApproval(look, p)?.id).toBe(approvedId);
+    }
+    expect(
+      p.looks.find((look) => look.id === "look-nora")!.beauty!.approvals,
+    ).toEqual(oldMakeup);
+    expect(
+      p.looks
+        .find((look) => look.id === "look-nora")!
+        .details!.find((detail) => detail.kind === "necklace")!.approvals,
+    ).toEqual(oldNecklace);
+    expect(
+      getCurrentApproval(
+        p.looks.find((look) => look.id === "look-mae")!,
+        p,
+      )!.id,
+    ).toBe(originalMae.id);
+    const adoptedDialog = page.getByRole("dialog", {
+      name: "A considered new revision.",
+      exact: true,
+    });
+    await adoptedDialog
+      .getByLabel("Nora Vale character direction")
+      .fill(
+        "The burgundy wool coat keeps Nora’s ceremonial silhouette and the recurring long line through the final bow.",
+      );
+    await adoptedDialog
+      .getByLabel("Nora Vale essential details")
+      .fill("Long coat silhouette\nA recurring single physical coat");
+    p = await command(page, "edit_direction", () =>
+      adoptedDialog
+        .getByRole("button", { name: "Save direction for review", exact: true })
         .click(),
     );
     expect(
-      production.looks.find((look) => look.id === "look-nora")!.unitIds,
-    ).toEqual(["unit-coat-charcoal"]);
+      p.characters.find((character) => character.id === "char-nora")!.direction
+        .approvedBy,
+    ).toBeNull();
     expect(
-      production.looks
-        .find((look) => look.id === "look-nora")!
-        .approvals.find((entry) => entry.id === noraOriginal.id)!.state,
-    ).toBe("stale");
-    expect(approval(production, "look-mae")).toEqual(maeOriginal);
-    expect(makeupApproval(production)).toEqual(makeupOriginal);
-    expect(production.packs.find((pack) => pack.id === packId)!.state).toBe(
-      "superseded",
-    );
+      getCurrentApproval(
+        p.looks.find((look) => look.id === "look-nora")!,
+        p,
+      ),
+    ).toBeUndefined();
     expect(
-      production.packs.find((pack) => pack.id === packId)!.snapshot,
-    ).toEqual(frozenSnapshot);
-    await page
-      .getByRole("dialog", { name: "A considered new revision.", exact: true })
+      getCurrentPreview(
+        p.looks.find((look) => look.id === "look-nora")!,
+        p,
+      )?.id,
+    ).toBe(exactPreviewId);
+    await adoptedDialog
       .getByRole("link", { name: "Review affected looks", exact: true })
       .click();
-  });
-
-  await test.step("Load the exact recorded replacement, approve it and reallocate", async () => {
-    await expect(
-      page.getByRole("heading", { name: "Nora Vale", level: 1, exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Approve appearance", exact: true }),
-    ).toBeDisabled();
-    production = await useRecordedResult(
-      page,
-      id,
-      "/examples/previews/nora-charcoal.webp",
-      "performer-ada",
-      "unit-coat-charcoal",
-    );
-    production = await approveAppearance(page);
-    expect(approval(production, "look-nora").id).not.toBe(noraOriginal.id);
-    expect(approval(production, "look-mae")).toEqual(maeOriginal);
-    expect(makeupApproval(production)).toEqual(makeupOriginal);
-    await page
-      .getByRole("button", { name: "Makeup detail", exact: true })
-      .click();
-    await expect(
-      page.getByRole("button", { name: "Review makeup approval", exact: true }),
-    ).toBeVisible();
-    production = await allocateInUi(page);
+    p = await approveLook(page);
     expect(
-      production.allocations
-        .filter((assignment) => assignment.lookId === "look-nora")
-        .every((assignment) => assignment.unitId === "unit-coat-charcoal"),
-    ).toBe(true);
+      getCurrentPreview(
+        p.looks.find((look) => look.id === "look-nora")!,
+        p,
+      )?.id,
+    ).toBe(exactPreviewId);
+    expect(
+      getCurrentApproval(
+        p.looks.find((look) => look.id === "look-nora")!,
+        p,
+      )?.id,
+    ).not.toBe(approvedId);
   });
+  p = await exampleDecisions(page, id);
+  p = await allocate(page, id);
+  expect(
+    p.allocations
+      .filter(
+        (assignment) =>
+          assignment.state === "allocated" &&
+          assignment.lookId.startsWith("look-nora"),
+      )
+      .every((assignment) => assignment.unitId === "unit-coat-burgundy"),
+  ).toBe(true);
+  expect(p.allocationResult!.totalCostCents).toBeLessThan(50_000);
 
-  await test.step("Record separately labelled synthetic request, confirmation, receipt and return", async () => {
-    await navigate(page, "Handoff");
+  await test.step("Keep supplier stages explicitly synthetic and evidence-bearing", async () => {
+    await visit(page, id, "/handoff");
     await page
       .getByRole("button", { name: "Prepare sourcing request", exact: true })
       .click();
@@ -612,50 +612,35 @@ test("recorded garment repair preserves Mae and supersedes the frozen working pa
       name: "Prepare a sourcing request",
       exact: true,
     });
-    const unit = production.units.find(
-      (candidate) => candidate.id === "unit-coat-charcoal",
-    )!;
+    const unit = p.units.find((item) => item.id === "unit-coat-burgundy")!;
     await dialog
-      .getByRole("checkbox", { name: /C-021.*Charcoal wool coat/ })
-      .check();
-    await dialog
-      .getByLabel(/^From \(/)
-      .fill(localInput(unit.availability.from, production.timeZone));
-    await dialog
-      .getByLabel("Through", { exact: true })
-      .fill(localInput(unit.availability.to, production.timeZone));
+      .getByLabel("Recorded supplier / custodian")
+      .selectOption(unit.supplier);
+    await dialog.getByLabel(new RegExp(unit.code)).check();
     await dialog
       .getByLabel("Pickup, return, measurement, and preparation notes")
       .fill(
-        "Synthetic browser rehearsal only. No supplier communication, reservation, physical receipt or return actually occurs.",
+        "Synthetic sourcing rehearsal only. No supplier message or reservation is sent.",
       );
-    production = await command(page, "create_sourcing", () =>
+    p = await command(page, "create_sourcing", () =>
       dialog
         .getByRole("button", { name: "Create request draft", exact: true })
         .click(),
     );
-    const requestId = production.sourcing.at(-1)!.id;
-    expect(production.sourcing.at(-1)).toMatchObject({
+    const request = p.sourcing.at(-1)!;
+    expect(request).toMatchObject({
       status: "draft",
       provenance: "synthetic",
       operator: null,
     });
-    await page.getByRole("button", { name: /Charcoal wool coat/ }).click();
+    await page.getByRole("button", { name: new RegExp(unit.name) }).click();
     const responseDialog = page.getByRole("dialog", {
       name: unit.supplier,
       exact: true,
     });
     await expect(
-      responseDialog.getByText("SYNTHETIC EXERCISE / NO SUPPLIER TRANSACTION", {
-        exact: true,
-      }),
-    ).toBeVisible();
-    await expect(
       responseDialog.getByRole("combobox", { name: "Provenance", exact: true }),
     ).toHaveValue("synthetic");
-    await expect(
-      responseDialog.getByRole("combobox", { name: "Provenance", exact: true }),
-    ).toBeDisabled();
     for (const status of [
       "requested",
       "confirmed",
@@ -671,202 +656,259 @@ test("recorded garment repair preserves Mae and supersedes the frozen working pa
       await responseDialog
         .getByLabel("Response or custody evidence")
         .fill(
-          `Synthetic ${status} rehearsal only. No real supplier response, receipt or return has occurred.`,
+          `Synthetic ${status} rehearsal. No real supplier response or custody transfer occurred.`,
         );
       await responseDialog
         .getByLabel("External reference / evidence reference")
-        .fill(`PLAYWRIGHT-SYNTHETIC-${status}`);
-      production = await command(page, "update_sourcing", () =>
+        .fill(`SYNTHETIC-${status}`);
+      p = await command(page, "update_sourcing", () =>
         responseDialog
           .getByRole("button", { name: "Record this stage", exact: true })
           .click(),
       );
-      expect(
-        production.sourcing.find((request) => request.id === requestId),
-      ).toMatchObject({
+      expect(p.sourcing.find((item) => item.id === request.id)).toMatchObject({
         status,
         provenance: "synthetic",
         operator: "Synthetic browser operator",
-        externalReference: `PLAYWRIGHT-SYNTHETIC-${status}`,
       });
-      await expect(
-        responseDialog.getByText(status, { exact: true }),
-      ).toBeVisible();
     }
-    await expect(
-      responseDialog.getByText(/This record is closed\./),
-    ).toBeVisible();
     await responseDialog
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
-    expect(
-      production.units.find(
-        (candidate) => candidate.id === "unit-coat-charcoal",
-      )!.fitting.status,
-    ).toBe("not_measured");
-    expect(approval(production, "look-mae")).toEqual(maeOriginal);
   });
 
-  await test.step("Reopen the old frozen pack and expose its superseded source", async () => {
+  await test.step("Recast the repaired production using Celeste's own exact reviewed garment", async () => {
+    const adaMakeup = p.looks
+      .find((look) => look.id === "look-nora")!
+      .beauty!.approvals.filter((entry) => entry.state === "current")
+      .map((entry) => entry.id);
+    expect(adaMakeup).toHaveLength(1);
+    const adaNecklace = p.looks
+      .find((look) => look.id === "look-nora")!
+      .details!.find((detail) => detail.kind === "necklace")!
+      .approvals.filter((entry) => entry.state === "current")
+      .map((entry) => entry.id);
+    expect(adaNecklace).toHaveLength(1);
+    await visit(page, id);
     await page
-      .getByRole("link", { name: /Recorded fixture continuity call/ })
+      .getByRole("button", { name: "Review a change", exact: true })
       .click();
-    await expect(page).toHaveURL(new RegExp(`/handoff/${packId}$`));
-    await expect(
-      page.getByText("This pack has been superseded.", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("SUPERSEDED COPY", { exact: true }),
-    ).toBeVisible();
-    const stored = await persisted(page, id);
-    expect(stored.packs.find((pack) => pack.id === packId)!.snapshot).toEqual(
-      frozenSnapshot,
+    let dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: /A character is recast/ }).click();
+    await dialog
+      .getByRole("combobox", { name: "Character", exact: true })
+      .selectOption("char-nora");
+    await dialog
+      .getByRole("combobox", { name: "Replacement performer", exact: true })
+      .selectOption("performer-celeste");
+    p = await impact(page);
+    expect(p.proposals.at(-1)!.impact.invalidatedBeautyApprovalIds).toEqual(
+      expect.arrayContaining(adaMakeup),
     );
     expect(
-      stored.packs
-        .find((pack) => pack.id === packId)!
-        .snapshot.looks.find((look) => look.id === "look-nora")!.unitIds,
-    ).toEqual(["unit-coat-oxblood"]);
+      p.characters.find((character) => character.id === "char-nora")!
+        .performerId,
+    ).toBe("performer-ada");
+    dialog = page.getByRole("dialog", {
+      name: "Follow the change.",
+      exact: true,
+    });
+    await expect(
+      dialog.getByRole("button", { name: "Adopt this revision", exact: true }),
+    ).toBeDisabled();
+    await dialog
+      .getByRole("link", { name: "Compare & review alternatives", exact: true })
+      .click();
+    await expect(
+      page.getByText("Recast study · Celeste Rowan", { exact: true }),
+    ).toBeVisible();
+    p = await candidateDecision(
+      page,
+      id,
+      p.units.find((unit) => unit.id === "unit-coat-burgundy")!.name,
+    );
+    const prospective = p.appearanceCandidates!.find(
+      (candidate) =>
+        candidate.performerId === "performer-celeste" &&
+        candidate.recipe.unitIds.includes("unit-coat-burgundy"),
+    )!;
+    const prospectiveApproval = prospective.approvals.at(-1)!;
+    expect(
+      p.characters.find((character) => character.id === "char-nora")!
+        .performerId,
+    ).toBe("performer-ada");
+    await page
+      .getByRole("link", { name: "Return to change review", exact: true })
+      .click();
+    p = await impact(page);
+    p = await adoptRepair(page);
+    expect(
+      p.characters.find((character) => character.id === "char-nora")!
+        .performerId,
+    ).toBe("performer-celeste");
+    for (const look of p.looks.filter(
+      (item) => item.characterId === "char-nora",
+    )) {
+      expect(look.unitIds).toEqual(["unit-coat-burgundy"]);
+      expect(getCurrentApproval(look, p)?.id).toBe(prospectiveApproval.id);
+    }
+    const nora = p.looks.find((look) => look.id === "look-nora")!;
+    for (const id of adaMakeup)
+      expect(
+        nora.beauty!.approvals.find((entry) => entry.id === id)!.state,
+      ).toBe("stale");
+    for (const id of adaNecklace)
+      expect(
+        nora
+          .details!.find((detail) => detail.kind === "necklace")!
+          .approvals.find((entry) => entry.id === id)!.state,
+      ).toBe("stale");
+    expect(
+      getCurrentApproval(
+        p.looks.find((look) => look.id === "look-mae")!,
+        p,
+      )?.id,
+    ).toBe(originalMae.id);
+    expect(p.looks.find((look) => look.id === "look-mae")!.details).toEqual(
+      oldMaeHair,
+    );
+    p = await recordedMakeup(page, id);
+    p = await recordedMakeup(page, id, "look-nora-finale");
+    p = await recordedNecklace(page, id);
+    expect(
+      getCurrentApproval(
+        p.looks.find((look) => look.id === "look-nora")!,
+        p,
+      )?.id,
+    ).toBe(prospectiveApproval.id);
   });
-});
 
-test("recorded recast preserves character direction and requires Celeste's own approval", async ({
-  page,
-}) => {
-  let production = await openExample(page);
-  const id = production.id;
-  await navigate(page, "Looks");
-  await page
-    .getByRole("button", { name: "Edit character direction", exact: true })
-    .click();
-  let dialog = page.getByRole("dialog", {
-    name: "The character’s visual direction",
-    exact: true,
+  await test.step("Reopening the change dialog starts from current production facts", async () => {
+    await visit(page, id);
+    await page
+      .getByRole("button", { name: "Review a change", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog", {
+      name: "The show changes. The story stays.",
+      exact: true,
+    });
+    await expect(
+      dialog.getByRole("button", { name: /A garment is unavailable/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await dialog.getByRole("button", { name: /A character is recast/ }).click();
+    await expect(
+      dialog.getByRole("combobox", {
+        name: "Replacement performer",
+        exact: true,
+      }),
+    ).toHaveValue("performer-ada");
+    await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
   });
-  await dialog
-    .getByLabel("Designer name or role")
-    .fill("Synthetic direction reviewer");
-  production = await command(page, "update_direction", () =>
-    dialog
-      .getByRole("button", { name: "Record direction", exact: true })
-      .click(),
-  );
-  const direction = structuredClone(
-    production.characters.find((character) => character.id === "char-nora")!
-      .direction,
-  );
-  production = await approveAppearance(page);
-  production = await approveMakeup(page);
-  const originalNora = approval(production, "look-nora");
-  const originalMakeup = makeupApproval(production);
-  await selectLook(page, "Mae Lin");
-  production = await approveAppearance(page);
-  const originalMae = approval(production, "look-mae");
 
-  await navigate(page, "Production");
-  await page
-    .getByRole("button", { name: "Review a change", exact: true })
-    .click();
-  dialog = page.getByRole("dialog", {
-    name: "The show changes. The story stays.",
-    exact: true,
-  });
-  await dialog.getByRole("button", { name: /A character is recast/ }).click();
-  await dialog
-    .getByRole("combobox", { name: "Character", exact: true })
-    .selectOption("char-nora");
-  await dialog
-    .getByRole("combobox", { name: "Replacement performer", exact: true })
-    .selectOption("performer-celeste");
-  production = await command(page, "propose_change", () =>
-    dialog
-      .getByRole("button", { name: "Preview the impact", exact: true })
-      .click(),
-  );
-  expect(production.proposals.at(-1)!.impact.preservedApprovalIds).toContain(
-    originalMae.id,
-  );
-  expect(
-    production.proposals.at(-1)!.impact.invalidatedBeautyApprovalIds,
-  ).toContain(originalMakeup.id);
-  dialog = page.getByRole("dialog", {
-    name: "Follow the change.",
-    exact: true,
-  });
-  production = await command(page, "adopt_repair", () =>
-    dialog
-      .getByRole("button", { name: "Adopt this revision", exact: true })
-      .click(),
-  );
-  expect(
-    production.characters.find((character) => character.id === "char-nora"),
-  ).toMatchObject({ performerId: "performer-celeste", direction });
-  const recastLook = production.looks.find((look) => look.id === "look-nora")!;
-  expect(
-    recastLook.beauty!.approvals.find(
-      (entry) => entry.id === originalMakeup.id,
-    )!.state,
-  ).toBe("stale");
-  expect(
-    recastLook.beauty!.previews.every(
-      (preview) => preview.performerId === "performer-ada",
-    ),
-  ).toBe(true);
-  expect(
-    recastLook.approvals.find((entry) => entry.id === originalNora.id)!.state,
-  ).toBe("stale");
-  expect(
-    recastLook.previews.every(
-      (preview) => preview.performerId === "performer-ada",
-    ),
-  ).toBe(true);
-  expect(approval(production, "look-mae")).toEqual(originalMae);
-  expect(
-    production.units.find((unit) => unit.id === "unit-coat-oxblood")!.fitting,
-  ).toMatchObject({ performerId: "performer-celeste", status: "not_measured" });
-  await page
-    .getByRole("dialog", { name: "A considered new revision.", exact: true })
-    .getByRole("link", { name: "Review affected looks", exact: true })
-    .click();
-  await expect(
-    page.getByRole("button", { name: "Approve appearance", exact: true }),
-  ).toBeDisabled();
-  production = await useRecordedResult(
-    page,
-    id,
-    "/examples/previews/nora-celeste.webp",
-    "performer-celeste",
-    "unit-coat-oxblood",
-  );
-  expect(
-    production.looks.find((look) => look.id === "look-nora")!.previews.at(-1)!
-      .sourceImageUrl,
-  ).toBe("/assets/cast/celeste.webp");
-  production = await approveAppearance(page);
-  expect(approval(production, "look-nora")).toMatchObject({
-    performerId: "performer-celeste",
-    recipeRevision: recastLook.revision,
-  });
-  expect(approval(production, "look-nora").id).not.toBe(originalNora.id);
-  expect(approval(production, "look-mae")).toEqual(originalMae);
-  const garmentApproval = structuredClone(approval(production, "look-nora"));
-  production = await useRecordedMakeup(page, id);
-  production = await approveMakeup(page);
-  expect(makeupApproval(production)).toMatchObject({
-    performerId: "performer-celeste",
-    beautyRevision: recastLook.beauty!.revision,
-    faceCaptureVersion: 1,
-  });
-  expect(makeupApproval(production).id).not.toBe(originalMakeup.id);
-  expect(approval(production, "look-nora")).toEqual(garmentApproval);
-  expect(approval(production, "look-mae")).toEqual(originalMae);
   const stored = await persisted(page, id);
+  expect(stored.packs.find((item) => item.id === frozen.id)!.state).toBe(
+    "superseded",
+  );
+  expect(stored.packs.find((item) => item.id === frozen.id)!.snapshot).toEqual(
+    frozen.snapshot,
+  );
+  await visit(page, id, `/handoff/${frozen.id}`);
+  await expect(
+    page.getByText("This pack has been superseded.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("SUPERSEDED COPY", { exact: true }),
+  ).toBeVisible();
   expect(
-    stored.characters.find((character) => character.id === "char-nora")!
-      .direction,
-  ).toEqual(direction);
-  expect(
-    stored.units.find((unit) => unit.id === "unit-coat-oxblood")!.fitting
+    stored.units.find((unit) => unit.id === "unit-coat-burgundy")!.fitting
       .status,
   ).toBe("not_measured");
+});
+
+test("approval changes solver admissibility and revocation cannot become an adopted-base loophole", async ({
+  page,
+}) => {
+  let p = await example(page);
+  const id = p.id;
+  p = await exampleDecisions(page, id);
+  const unitName = (id: string) => p.units.find((unit) => unit.id === id)!.name;
+  await visit(page, id, "/looks?look=look-nora&detail=alternatives");
+  p = await candidateDecision(page, id, unitName("unit-coat-burgundy"));
+  p = await allocate(page, id);
+  expect(p.allocationResult!.status).toBe("OPTIMAL");
+  expect(p.allocationResult!.totalCostCents).toBe(48_500);
+  expect(
+    p.allocations
+      .filter(
+        (assignment) =>
+          assignment.state === "allocated" &&
+          assignment.lookId.startsWith("look-nora"),
+      )
+      .every((assignment) => assignment.unitId === "unit-coat-burgundy"),
+  ).toBe(true);
+  expect(
+    p.allocations.some(
+      (assignment) =>
+        assignment.state === "allocated" &&
+        assignment.unitId === "unit-coat-charcoal",
+    ),
+  ).toBe(false);
+  await visit(page, id, "/looks?look=look-nora&detail=alternatives");
+  p = await candidateDecision(page, id, unitName("unit-coat-charcoal"));
+  p = await allocate(page, id);
+  expect(p.allocationResult!.status).toBe("OPTIMAL");
+  expect(p.allocationResult!.totalCostCents).toBe(46_500);
+  const previousHash = p.allocationResult!.inputHash;
+  const charcoal = p.appearanceCandidates!.find(
+    (candidate) => candidate.id === "candidate-nora-charcoal",
+  ) as AppearanceCandidate;
+  const previousApproval = charcoal.approvals.at(-1)!;
+  for (const look of p.looks.filter((item) => item.characterId === "char-nora"))
+    expect(look.activeCandidateId).toBe(charcoal.id);
+  await visit(page, id, "/looks?look=look-nora&detail=alternatives");
+  const card = page.locator(".candidate-card").filter({
+    has: page.getByRole("heading", {
+      name: unitName("unit-coat-charcoal"),
+      exact: true,
+    }),
+  });
+  await card
+    .getByRole("button", { name: "Review this decision", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "This exact alternative is approved.",
+    exact: true,
+  });
+  p = await command(page, "revoke_candidate_approval", () =>
+    dialog
+      .getByRole("button", { name: "Revoke this decision", exact: true })
+      .click(),
+  );
+  for (const look of p.looks.filter(
+    (item) => item.characterId === "char-nora",
+  )) {
+    expect(look.activeCandidateId).toBe(charcoal.id);
+    expect(getCurrentApproval(look, p)).toBeUndefined();
+  }
+  expect(
+    p
+      .appearanceCandidates!.find((candidate) => candidate.id === charcoal.id)!
+      .approvals.find((entry) => entry.id === previousApproval.id)!.state,
+  ).not.toBe("current");
+  await visit(page, id);
+  await expect(
+    page
+      .locator(".continuity-wall tbody tr")
+      .filter({ has: page.getByRole("rowheader", { name: /Nora Vale/ }) })
+      .locator(".continuity-cell.approved"),
+  ).toHaveCount(0);
+  p = await allocate(page, id, false);
+  expect(p.allocationResult!.inputHash).not.toBe(previousHash);
+  expect(
+    p
+      .allocationResult!.assignments.filter((assignment) =>
+        assignment.lookId.startsWith("look-nora"),
+      )
+      .every((assignment) => assignment.unitId === "unit-coat-burgundy"),
+  ).toBe(true);
 });

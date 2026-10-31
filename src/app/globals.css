@@ -1,5 +1,6 @@
 @import "./studio.css";
 @import "./beauty.css";
+@import "./review.css";
 
 :root {
   --canvas: #111521;

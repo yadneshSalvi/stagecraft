@@ -4,6 +4,7 @@ import type {
   Production,
   ProductionCommand,
   PreviewJob,
+  DetailKind,
 } from "./types";
 import { ensureAuthenticated } from "./auth-client";
 
@@ -74,8 +75,9 @@ export const requestPreview = (
   project: Production,
   lookId: string,
   mode: "live" | "recorded",
-  kind: "garment" | "beauty" = "garment",
+  kind: "garment" | "beauty" | DetailKind = "garment",
   commandId = crypto.randomUUID(),
+  candidateId?: string,
 ) =>
   api<{ job: PreviewJob }>(
     `/api/projects/${encodeURIComponent(project.id)}/previews`,
@@ -86,12 +88,17 @@ export const requestPreview = (
         mode,
         commandId,
         kind,
+        ...(candidateId ? { candidateId } : {}),
         expectedRevision: project.revision,
       }),
     },
   );
 export const getJob = (id: string) =>
   api<{ job: PreviewJob }>(`/api/jobs/${encodeURIComponent(id)}`);
+export const getJobByCommand = (projectId: string, commandId: string) =>
+  api<{ job: PreviewJob | null }>(
+    `/api/projects/${encodeURIComponent(projectId)}/jobs?commandId=${encodeURIComponent(commandId)}`,
+  );
 export const deleteProject = (id: string) =>
   api<{ deleted: boolean }>(`/api/projects/${encodeURIComponent(id)}`, {
     method: "DELETE",
