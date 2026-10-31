@@ -6,7 +6,8 @@ import {
   recordedPreviews,
   RecordingManifestSchema,
 } from "@/lib/youcam/recorded";
-import { sha256Bytes, normalizePhoto } from "@/lib/server/images";
+import { sha256Bytes } from "@/lib/server/images";
+import { readFixtureTransport } from "@/lib/server/fixture-transports";
 
 describe("recorded provider evidence", () => {
   it("verifies all public source, transport and result hashes and records no approvals or temporary URLs", async () => {
@@ -26,12 +27,14 @@ describe("recorded provider evidence", () => {
       expect(sha256Bytes(source)).toBe(item.sourceSha256);
       expect(sha256Bytes(garment)).toBe(item.garmentSha256);
       expect(sha256Bytes(output)).toBe(item.outputSha256);
-      expect((await normalizePhoto(source)).sha256).toBe(
-        item.sourceUploadSha256,
-      );
-      expect((await normalizePhoto(garment)).sha256).toBe(
-        item.garmentUploadSha256,
-      );
+      expect(
+        (await readFixtureTransport(item.sourceImagePath, source, "garment"))
+          .sha256,
+      ).toBe(item.sourceUploadSha256);
+      expect(
+        (await readFixtureTransport(item.garmentImagePath, garment, "garment"))
+          .sha256,
+      ).toBe(item.garmentUploadSha256);
       expect(item.inspectionNotes).toMatch(/preview|inspect|review/i);
     }
   }, 30000);

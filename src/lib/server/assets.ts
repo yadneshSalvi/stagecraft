@@ -1,4 +1,5 @@
 import "server-only";
+import { readFixtureTransport } from "./fixture-transports";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -511,7 +512,7 @@ export async function readInputImage(
   const cacheKey = `${profile}:${input.imageUrl}`;
   const cached = publicInputCache.get(cacheKey);
   if (cached?.originalSha256 === originalSha256) return cached;
-  const photo = await normalizePhoto(bytes, undefined, profile);
+  const photo = await readFixtureTransport(input.imageUrl!, bytes, profile);
   const result = { ...photo, originalSha256 };
   publicInputCache.set(cacheKey, result);
   return result;

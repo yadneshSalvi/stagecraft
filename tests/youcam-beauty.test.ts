@@ -11,7 +11,8 @@ import {
   recordedBeautyPreviews,
   matchBeautyRecording,
 } from "@/lib/youcam/recorded-beauty";
-import { normalizeFacePhoto, sha256Bytes } from "@/lib/server/images";
+import { sha256Bytes } from "@/lib/server/images";
+import { readFixtureTransport } from "@/lib/server/fixture-transports";
 
 const recipe = {
   lipColor: "#853E5D",
@@ -132,7 +133,11 @@ describe("independent Makeup VTO detail transport", () => {
       );
       expect(sha256Bytes(source)).toBe(item.sourceSha256);
       expect(sha256Bytes(output)).toBe(item.outputSha256);
-      const face = await normalizeFacePhoto(source);
+      const face = await readFixtureTransport(
+        item.sourceImagePath,
+        source,
+        "face",
+      );
       expect(face.sha256).toBe(item.sourceUploadSha256);
       expect(face.width).toBeLessThan(1920);
       expect(face.height).toBeLessThan(1080);

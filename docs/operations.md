@@ -84,6 +84,8 @@ Its explicit `--confirm-live` mode is a seven-task, 14-estimated-unit plan, with
 
 Use the shipped recordings for routine rehearsals. They are actual provider outputs over synthetic source artwork, with visible inspection caveats, and carry no automatic operator approvals, supplier confirmations or physical results.
 
+Public fixture loading uses thirteen frozen JPEG transports in `public/examples/transports/`, registered by exact source path, raw hash, body/face profile and original recorded upload hash in `fixture-transports.json`. Both live and recorded jobs use the verified bytes; private uploads do not use this registry. Preserve these files when deploying. A missing/corrupt transport or changed source fails closed. The offline command `NODE_OPTIONS=--conditions=react-server pnpm exec tsx scripts/freeze-fixture-transports.ts` can reproduce them only on a runtime whose output exactly matches the existing recording hashes. It makes no network calls and refuses publication when those hashes differ; never update recording hashes merely to accommodate a different encoder.
+
 The separate beauty harness validates the two inspected face inputs and fixed zero-smoothing/zero-morphology recipe without network calls by default:
 
 ```sh

@@ -42,6 +42,7 @@ import {
   type GetBlobResult,
 } from "@vercel/blob";
 import sharp from "sharp";
+import * as imageNormalization from "@/lib/server/images";
 
 vi.mock("@vercel/blob", () => ({
   head: vi.fn(),
@@ -100,22 +101,43 @@ describe.runIf(local)("independent private beauty workflow", () => {
     );
     vi.unstubAllEnvs();
   });
-  it("seeds a separate exact recorded detail with no beauty or garment approval", async () => {
-    const project = await createProject(owner, "example");
-    const look = project.looks.find((look) => look.id === "look-nora")!;
-    expect(look.previews).toHaveLength(1);
-    expect(look.approvals).toHaveLength(0);
-    expect(look.beauty?.previews).toHaveLength(1);
-    expect(look.beauty?.approvals).toHaveLength(0);
-    expect(look.beauty!.previews[0]).toMatchObject({
-      beautyRevision: look.beauty!.revision,
-      faceCaptureVersion: 1,
-      sourceImageUrl: "/assets/cast/ada-face.webp",
-      inputHash: beautyInputHash(project, look),
-      estimatedUnits: 1,
-      provenance: "recorded_provider",
-    });
-    expect(look.beauty!.previews[0].imageUrl).toMatch(/^\/examples\/beauty\//);
+  it("seeds five garments and one beauty without the host encoder or any approvals", async () => {
+    const encoder = vi
+      .spyOn(imageNormalization, "normalizePhoto")
+      .mockRejectedValue(new Error("Host encoding is unavailable."));
+    try {
+      const project = await createProject(owner, "example");
+      expect(project.revision).toBe(7);
+      expect(project.looks.map((item) => item.previews.length)).toEqual([
+        1, 1, 1, 1, 1,
+      ]);
+      expect(project.looks.flatMap((item) => item.approvals)).toHaveLength(0);
+      expect(
+        project.looks.flatMap((item) => item.beauty?.previews || []),
+      ).toHaveLength(1);
+      expect(
+        project.looks.flatMap((item) => item.beauty?.approvals || []),
+      ).toHaveLength(0);
+      const look = project.looks.find((look) => look.id === "look-nora")!;
+      expect(look.previews).toHaveLength(1);
+      expect(look.approvals).toHaveLength(0);
+      expect(look.beauty?.previews).toHaveLength(1);
+      expect(look.beauty?.approvals).toHaveLength(0);
+      expect(look.beauty!.previews[0]).toMatchObject({
+        beautyRevision: look.beauty!.revision,
+        faceCaptureVersion: 1,
+        sourceImageUrl: "/assets/cast/ada-face.webp",
+        inputHash: beautyInputHash(project, look),
+        estimatedUnits: 1,
+        provenance: "recorded_provider",
+      });
+      expect(look.beauty!.previews[0].imageUrl).toMatch(
+        /^\/examples\/beauty\//,
+      );
+      expect(encoder).not.toHaveBeenCalled();
+    } finally {
+      encoder.mockRestore();
+    }
   }, 20000);
   it("finalizes a separate face capture without changing the garment capture", async () => {
     const project = await createProject(owner, "example");

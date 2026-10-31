@@ -20,7 +20,7 @@ This checklist reports actual software and provider observations. Synthetic appr
 The final results are recorded below after running lint, typecheck, formatting, the complete serial test suite, production build and browser checks against that build. A deployed private upload plus live garment/makeup smoke and final staged/client secret scan belong to the deployment gate. Do not treat an unchecked step as completed.
 
 - [x] Final lint, typecheck and formatting. Scoped lint and full formatting passed again after the print-only correction; the rebuild includes TypeScript validation.
-- [x] Complete serial unit/domain/backend suite: 10 files, 108 tests passed in 20.43 seconds.
+- [x] Complete serial unit/domain/backend suite after the fixture-transport correction: 11 files, 111 tests passed in 11.46 seconds.
 - [x] Local production build, including 25 durable steps, 2 workflows and all application/API routes; rebuilt successfully after the print-only correction.
 - [x] Complete production-server browser suite: 9 tests passed in 1.1 minutes, including expanded independent beauty lineage and request recovery.
 - [x] Both affected garment-repair/handoff and recast journeys passed again after the print-only correction: 2 tests, 31.6 seconds.
@@ -28,6 +28,16 @@ The final results are recorded below after running lint, typecheck, formatting, 
 - [ ] Production deployment, owner isolation and private upload/render smoke checks.
 - [x] Source and rebuilt public client bundles scanned for configured secrets: 195 candidate source files and 31 built client files checked against 24 configured secret values, with zero matches. The source scan also found zero forbidden paths.
 - [ ] Final staged-file review and secret scan immediately before publication.
+
+## Fixture-transport correction
+
+The first deployed example attached its beauty recording but rejected the five garment recordings despite matching public source and output files. The underlying runtime cause was not established. The correction ships the exact recorded JPEG transports for the thirteen synthetic source/profile pairs; it preserves the original recording manifests and every exact-match requirement. Private uploads retain their existing normalization and ownership checks.
+
+- [x] All 13 frozen files and 16 original recording input references independently verified against their existing SHA-256 values; no provider calls or recording changes.
+- [x] Focused transport/recording suite: 4 files, 15 tests passed in 13.69 seconds. With runtime normalization disabled, a fresh example still reaches R07 with five garment recordings, one makeup recording and zero approvals.
+- [x] Full serial 111-test suite, lint, formatting and production rebuild passed. Project-create, preview and Workflow function traces each include all 13 JPEGs and their manifest.
+- [x] Rebuilt client scan repeated: 31 files against 24 configured secret values, zero matches.
+- [ ] Fresh deployed R07 example, recorded charcoal replacement and recorded Celeste recast verified after this correction.
 
 ## Limits that remain explicit
 

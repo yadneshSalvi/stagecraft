@@ -18,11 +18,16 @@ The [machine-readable provenance](../public/assets/provenance.json) records the 
 | `/assets/garments/ivory-shirt.webp`    | synthetic garment reference | 1024×1536 | `cbd54328d71dfa6a1a7508fa538b455a2ae5f943a7bf7742a0cad4638adc2be4` |
 | `/assets/garments/olive-suit.webp`     | synthetic garment reference | 1024×1536 | `6db70beb190ace662b32424b97a6c8241d33c4ad8000d77a946a3591774b84ea` |
 | `/assets/theatre-atmosphere.webp`      | synthetic atmosphere        | 2048×1152 | `1ecbe39f6cd6653772224a152c1138fbb965d21336748b2908b28e3af3e78c64` |
-
-| `/assets/cast/ada-face.webp` | synthetic face source | 1024×1280 | `193c0221c36458bb275dcb27c240d6dfd07b8ba0e444cabbba6a024cbd03d03f` |
-| `/assets/cast/celeste-face.webp` | synthetic face source | 1024×1280 | `1e3d3775c2fa758ccd2def4acec30d81414056d066946e31537658212bcd3277` |
+| `/assets/cast/ada-face.webp`           | synthetic face source       | 1024×1280 | `193c0221c36458bb275dcb27c240d6dfd07b8ba0e444cabbba6a024cbd03d03f` |
+| `/assets/cast/celeste-face.webp`       | synthetic face source       | 1024×1280 | `1e3d3775c2fa758ccd2def4acec30d81414056d066946e31537658212bcd3277` |
 
 The Ada and Celeste face sources are separate GPT Image 2 edits of their corresponding fictional full-body sources. They are independently versioned captures with exact input hashes and edit prompts in the manifest. They were visually inspected for clear, front-facing adult faces and natural texture; that inspection is not a guarantee of identity preservation or a human study.
+
+## Frozen provider inputs
+
+The thirteen JPEG files in `public/examples/transports/` are normalized derivatives of the six cast, five garment and two face sources above. They preserve the exact input bytes used by the original YouCam recording runs. They are neither new AI artwork nor additional provider results, and contain no private user uploads.
+
+The [transport manifest](../public/examples/fixture-transports.json) binds each file to its allowlisted source path, original SHA-256, normalization profile, dimensions and transport SHA-256. All sixteen input references across the seven garment and two makeup recordings were checked against those original hashes. Reusing these verified bytes removes runtime re-encoding from example matching without changing the recorded outputs or relaxing their checks. The [freezing script](../scripts/freeze-fixture-transports.ts) performs no provider requests.
 
 ## YouCam appearance previews
 
