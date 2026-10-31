@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "previews": [
+    {
+      "id": "recorded-review-nora-celeste-charcoal",
+      "lookId": "look-nora",
+      "performerId": "performer-celeste",
+      "captureVersion": 1,
+      "recipeRevision": 1,
+      "unitIds": [
+        "unit-coat-charcoal"
+      ],
+      "category": "outerwear",
+      "imagePath": "/examples/previews/review-nora-celeste-charcoal.webp",
+      "sourceImagePath": "/assets/cast/celeste.webp",
+      "garmentImagePath": "/assets/garments/charcoal-coat.webp",
+      "inputHash": "1c706d3191eb6277dad98e639660fc215d2fe9a29f48e6628977d2a7e232bc24",
+      "sourceSha256": "e1a69b8dedee65a70fb7e0c5f6282d20270bfe54794ca5cd7948c716f9603ba7",
+      "garmentSha256": "9af7b9e3f2cadc3803bf64f096cd8d857dc526f5d916394d33ae8f628f101e73",
+      "sourceUploadSha256": "bc80ae0386b8a75b0402c5ba465721cf2dca3df8735718e46d75315da5b12dfb",
+      "garmentUploadSha256": "efc46fc466daff208fd04b153211f40d2804dfa34e7ae711faf19ee452ea106d",
+      "outputSha256": "9ff9fd2a1919ab9f13e09f5b11d921219d12acc7e253e9b27e8cc729d06218c9",
+      "operation": "ai_clothes_v4",
+      "provider": "YouCam",
+      "recordedAt": "2026-10-31T19:54:51.858Z",
+      "estimatedUnits": 2,
+      "inspectionNotes": "The coat is shown open and its texture reads more crosshatched than the reference. Inspect closure orientation, lapels and separated hem panels before approval.",
+      "taskEvidence": {
+        "taskIdHash": "81d9cc46dbd38abde17e242b81dec73b43e36350fdc7ca1cdafdeb54e54f6a67",
+        "status": "success"
+      },
+      "outputTransformation": "webp-reencode/q92;no-retouch"
+    },
+    {
+      "id": "recorded-review-nora-ada-burgundy",
+      "lookId": "look-nora",
+      "performerId": "performer-ada",
+      "captureVersion": 1,
+      "recipeRevision": 1,
+      "unitIds": [
+        "unit-coat-burgundy"
+      ],
+      "category": "outerwear",
+      "imagePath": "/examples/previews/review-nora-ada-burgundy.webp",
+      "sourceImagePath": "/assets/cast/ada.webp",
+      "garmentImagePath": "/assets/garments/burgundy-coat.webp",
+      "inputHash": "3859fab09aa27e25713bd9358aae87850a8aaa10466a13d8b81e1a26778f43b2",
+      "sourceSha256": "0a08ac0a98da40bffdc81b82c758ebef26369c2c0bc23f11d56291c272e42d19",
+      "garmentSha256": "cdeb2f24235908a6650a97f40096bcff36ee284afa70520eeb5349f7cd603ac4",
+      "sourceUploadSha256": "5a4d604a52a411cb8aa0b88716f6c1c84481ab43efd0d39883146223eaa62426",
+      "garmentUploadSha256": "1ee1b0d9f4430fa6d5e7bdda783be6a6dc30af67246b4ddd9927d2807732924e",
+      "outputSha256": "79be1be68a8ef7ae2412bfce58a2e0d1e221c40131dc1d760204660244c3e740",
+      "operation": "ai_clothes_v4",
+      "provider": "YouCam",
+      "recordedAt": "2026-10-31T19:55:06.472Z",
+      "estimatedUnits": 2,
+      "inspectionNotes": "The coat is shown open; the output has coarser mottling and smaller, glossier buttons than the reference. Inspect closure orientation and drape before approval.",
+      "taskEvidence": {
+        "taskIdHash": "aaf1664657139b75c6a5b02699ac3fd7ab0de38d556fe21376502eb55e1ffa18",
+        "status": "success"
+      },
+      "outputTransformation": "webp-reencode/q92;no-retouch"
+    },
+    {
+      "id": "recorded-review-nora-celeste-burgundy",
+      "lookId": "look-nora",
+      "performerId": "performer-celeste",
+      "captureVersion": 1,
+      "recipeRevision": 1,
+      "unitIds": [
+        "unit-coat-burgundy"
+      ],
+      "category": "outerwear",
+      "imagePath": "/examples/previews/review-nora-celeste-burgundy.webp",
+      "sourceImagePath": "/assets/cast/celeste.webp",
+      "garmentImagePath": "/assets/garments/burgundy-coat.webp",
+      "inputHash": "bde12df9fa22e61210006d07f9da262099fe4fe76a9356e891d838ebc2986813",
+      "sourceSha256": "e1a69b8dedee65a70fb7e0c5f6282d20270bfe54794ca5cd7948c716f9603ba7",
+      "garmentSha256": "cdeb2f24235908a6650a97f40096bcff36ee284afa70520eeb5349f7cd603ac4",
+      "sourceUploadSha256": "bc80ae0386b8a75b0402c5ba465721cf2dca3df8735718e46d75315da5b12dfb",
+      "garmentUploadSha256": "1ee1b0d9f4430fa6d5e7bdda783be6a6dc30af67246b4ddd9927d2807732924e",
+      "outputSha256": "2e36fd2e9f1df5ee67378f05558fbaf5d23a3d8068ed7302f691e352859c28ca",
+      "operation": "ai_clothes_v4",
+      "provider": "YouCam",
+      "recordedAt": "2026-10-31T19:55:21.588Z",
+      "estimatedUnits": 2,
+      "inspectionNotes": "The burgundy coat is shown open with coarser mottling and narrower-looking lapels. Inspect the closure and hanging front edges against the reference.",
+      "taskEvidence": {
+        "taskIdHash": "c0bb6e0bcefd1fc324ce7afebb7e443be0ae378ab3d2f90876193ed7e2ec4521",
+        "status": "success"
+      },
+      "outputTransformation": "webp-reencode/q92;no-retouch"
+    },
+    {
+      "id": "recorded-review-mae-ivory",
+      "lookId": "look-mae-rehearsal",
+      "performerId": "performer-mina",
+      "captureVersion": 1,
+      "recipeRevision": 1,
+      "unitIds": [
+        "unit-blouse-mae"
+      ],
+      "category": "upper_body",
+      "imagePath": "/examples/previews/review-mae-ivory.webp",
+      "sourceImagePath": "/assets/cast/mina.webp",
+      "garmentImagePath": "/assets/garments/ivory-shirt.webp",
+      "inputHash": "7c0f53f21c882550ea8b91c0437d357433bd2f90dd81563d7fdd71366022fbca",
+      "sourceSha256": "46e3700c1802c538e1c60e7e79859b9a38772443bbb9526906c7402be1078997",
+      "garmentSha256": "cbd54328d71dfa6a1a7508fa538b455a2ae5f943a7bf7742a0cad4638adc2be4",
+      "sourceUploadSha256": "0560163ccea19b15eb84d9e24e92decb337366c2f20c9ef940372898d1f2fe31",
+      "garmentUploadSha256": "67243a40dd7f6893a0bcf73985b2458c0c919f3ff62df6e83dc1aaaea9b34258",
+      "outputSha256": "75b6e4fd9ab9144ab066822a84026563aa5efb382cdd1dc532e658a4865c4a85",
+      "operation": "ai_clothes_v4",
+      "provider": "YouCam",
+      "recordedAt": "2026-10-31T19:55:36.565Z",
+      "estimatedUnits": 2,
+      "inspectionNotes": "The ivory shirt is tucked in with its collar open; fabric reads smoother and the placket buttons are faint. The hidden hem and exact weave remain uncertain.",
+      "taskEvidence": {
+        "taskIdHash": "a8c9c0c8b2ce7ee7cced6e199723acfd0ff495bc19e0aec1ccc74c7cda405ad8",
+        "status": "success"
+      },
+      "outputTransformation": "webp-reencode/q92;no-retouch"
+    },
+    {
+      "id": "recorded-review-julian-rust",
+      "lookId": "look-julian-finale",
+      "performerId": "performer-jules",
+      "captureVersion": 1,
+      "recipeRevision": 1,
+      "unitIds": [
+        "unit-jacket-rust"
+      ],
+      "category": "upper_body",
+      "imagePath": "/examples/previews/review-julian-rust.webp",
+      "sourceImagePath": "/assets/cast/jules.webp",
+      "garmentImagePath": "/assets/garments/rust-jacket.webp",
+      "inputHash": "1fa7ba4bbdf42a7640bb0a129b81441bf76ff961ebde12231b9a99739a319424",
+      "sourceSha256": "499079a0d48bbc9167b72fa30189e5865fff6da58c598e4a8cc211e02ec7a701",
+      "garmentSha256": "5cdd36e9958bb824054bfa4c661549552a6f7e023ed6d4e2f8f520b6ead272f8",
+      "sourceUploadSha256": "848af1cd83a7d4f4ca8752a06435638f2d878ba78acc5b08dd285a9561efa773",
+      "garmentUploadSha256": "a27a0f8e1d651dd7a017d42f81737e5e6188232e40c36b113fa2ec6bec82988a",
+      "outputSha256": "4ed79b43d04eaceb280ef0ad7626aa7e2c884b352eae5991c4125accf23475c4",
+      "operation": "ai_clothes_v4",
+      "provider": "YouCam",
+      "recordedAt": "2026-10-31T19:55:51.523Z",
+      "estimatedUnits": 2,
+      "inspectionNotes": "The rust jacket is present, but the original white undershirt changes to tan and its neckline is lower. The jacket weave reads softer; review both changes before approval.",
+      "taskEvidence": {
+        "taskIdHash": "5252eac2f1db8a383c060ede58afd804aece37e0600dd19cac42500dc8ae4278",
+        "status": "success"
+      },
+      "outputTransformation": "webp-reencode/q92;no-retouch"
+    }
+  ]
+}

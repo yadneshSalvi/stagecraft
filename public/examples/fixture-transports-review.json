@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "normalization": "jpeg-q92-mozjpeg-v1",
+  "transports": [
+    {
+      "sourcePath": "/assets/cast/mina-face.webp",
+      "profile": "face",
+      "sourceSha256": "58999ac24758ada2ef67a19647b5833368d4b9285e7ba238ed6ac06912cdd5e6",
+      "transportPath": "/examples/transports/mina-face-face.jpg",
+      "transportSha256": "a3d38f407102fe9e57c3761385565b48cbf1dd1e66f9d9cefa1788e9eaf0b762",
+      "width": 800,
+      "height": 1000
+    },
+    {
+      "sourcePath": "/assets/garments/burgundy-coat.webp",
+      "profile": "garment",
+      "sourceSha256": "cdeb2f24235908a6650a97f40096bcff36ee284afa70520eeb5349f7cd603ac4",
+      "transportPath": "/examples/transports/burgundy-coat-garment.jpg",
+      "transportSha256": "1ee1b0d9f4430fa6d5e7bdda783be6a6dc30af67246b4ddd9927d2807732924e",
+      "width": 1024,
+      "height": 1536
+    },
+    {
+      "sourcePath": "/assets/garments/rust-jacket.webp",
+      "profile": "garment",
+      "sourceSha256": "5cdd36e9958bb824054bfa4c661549552a6f7e023ed6d4e2f8f520b6ead272f8",
+      "transportPath": "/examples/transports/rust-jacket-garment.jpg",
+      "transportSha256": "a27a0f8e1d651dd7a017d42f81737e5e6188232e40c36b113fa2ec6bec82988a",
+      "width": 1024,
+      "height": 1536
+    },
+    {
+      "sourcePath": "/assets/accessories/brass-pendant.webp",
+      "profile": "garment",
+      "sourceSha256": "a94b3f8266e9711db1c47ecfa1317768cb3f86dc47799abc14e917d537f467d1",
+      "transportPath": "/examples/transports/brass-pendant-garment.jpg",
+      "transportSha256": "e95b39590d6659cb2662646a2f9cf6cc377be4b070d9c67b04b822b4cec78e5a",
+      "width": 1024,
+      "height": 1024
+    }
+  ]
+}

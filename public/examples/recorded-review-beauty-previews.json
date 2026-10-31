@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "previews": [
+    {
+      "id": "recorded-review-nora-ada-finale",
+      "lookId": "look-nora-finale",
+      "performerId": "performer-ada",
+      "faceCaptureVersion": 1,
+      "beautyRevision": 1,
+      "recipe": {
+        "lipColor": "#853E5D",
+        "lipIntensity": 65,
+        "blushColor": "#9D526C",
+        "blushIntensity": 45
+      },
+      "effects": [
+        {
+          "category": "skin_smooth",
+          "skinSmoothStrength": 0,
+          "skinSmoothColorIntensity": 0
+        },
+        {
+          "category": "blush",
+          "pattern": {
+            "name": "1color1"
+          },
+          "palettes": [
+            {
+              "color": "#9D526C",
+              "texture": "matte",
+              "colorIntensity": 45
+            }
+          ]
+        },
+        {
+          "category": "lip_color",
+          "shape": {
+            "name": "original"
+          },
+          "morphology": {
+            "fullness": 0,
+            "wrinkless": 0
+          },
+          "style": {
+            "type": "full"
+          },
+          "palettes": [
+            {
+              "color": "#853E5D",
+              "texture": "matte",
+              "colorIntensity": 65
+            }
+          ]
+        }
+      ],
+      "imagePath": "/examples/beauty/review-nora-ada-finale.webp",
+      "sourceImagePath": "/assets/cast/ada-face.webp",
+      "inputHash": "3cda527c6d0a48fd6091e7fcc7869019d774090744c2b23df29c8587c0fe3f1d",
+      "sourceSha256": "193c0221c36458bb275dcb27c240d6dfd07b8ba0e444cabbba6a024cbd03d03f",
+      "sourceUploadSha256": "07c95a60bbbb1533461fe77b11d9d8245dad0b68c36840cead70ef6f1fb2c541",
+      "outputSha256": "fe7344621139680518fff4003c8c315dc796687455decad6e35d258df65379d9",
+      "operation": "makeup_vto_v1",
+      "provider": "YouCam",
+      "recordedAt": "2026-10-31T19:56:05.842Z",
+      "estimatedUnits": 1,
+      "inspectionNotes": "Recorded YouCam finale lip and blush detail. Both smoothing fields and lip morphology were set to zero; inspect the actual result before approval.",
+      "taskEvidence": {
+        "taskIdHash": "fef9ae8ea4de0d9eeab22fe8a98d6f1e1b049cb78e17357e6132cfc3b82d9022",
+        "status": "success"
+      },
+      "outputTransformation": "webp-reencode/q92;no-retouch"
+    },
+    {
+      "id": "recorded-review-nora-celeste-finale",
+      "lookId": "look-nora-finale",
+      "performerId": "performer-celeste",
+      "faceCaptureVersion": 1,
+      "beautyRevision": 1,
+      "recipe": {
+        "lipColor": "#853E5D",
+        "lipIntensity": 65,
+        "blushColor": "#9D526C",
+        "blushIntensity": 45
+      },
+      "effects": [
+        {
+          "category": "skin_smooth",
+          "skinSmoothStrength": 0,
+          "skinSmoothColorIntensity": 0
+        },
+        {
+          "category": "blush",
+          "pattern": {
+            "name": "1color1"
+          },
+          "palettes": [
+            {
+              "color": "#9D526C",
+              "texture": "matte",
+              "colorIntensity": 45
+            }
+          ]
+        },
+        {
+          "category": "lip_color",
+          "shape": {
+            "name": "original"
+          },
+          "morphology": {
+            "fullness": 0,
+            "wrinkless": 0
+          },
+          "style": {
+            "type": "full"
+          },
+          "palettes": [
+            {
+              "color": "#853E5D",
+              "texture": "matte",
+              "colorIntensity": 65
+            }
+          ]
+        }
+      ],
+      "imagePath": "/examples/beauty/review-nora-celeste-finale.webp",
+      "sourceImagePath": "/assets/cast/celeste-face.webp",
+      "inputHash": "3b1e89c6a8d8370a82fbe6c11b6fdadd8d506520681fe1ad4862a44e75a02129",
+      "sourceSha256": "1e3d3775c2fa758ccd2def4acec30d81414056d066946e31537658212bcd3277",
+      "sourceUploadSha256": "fbef26666fd6e4c8d52cb43bbe75a7ed4d0cf39406767586d3833d71d86e1c6f",
+      "outputSha256": "0ae9f897b31ab98e063c06e6c34499a8e24efea801cee0db8f3c452c08f4699e",
+      "operation": "makeup_vto_v1",
+      "provider": "YouCam",
+      "recordedAt": "2026-10-31T19:56:20.335Z",
+      "estimatedUnits": 1,
+      "inspectionNotes": "Recorded YouCam finale lip and blush detail. Both smoothing fields and lip morphology were set to zero; inspect the actual result before approval.",
+      "taskEvidence": {
+        "taskIdHash": "ac771789fcffe4079a25b6a60109850fb050ae5c72c639bba970ffeac84847f6",
+        "status": "success"
+      },
+      "outputTransformation": "webp-reencode/q92;no-retouch"
+    }
+  ]
+}

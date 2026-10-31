@@ -1,6 +1,6 @@
 # Asset provenance
 
-The fourteen source images in `public/assets/` were generated on October 31, 2026 with OpenAI `gpt-image-2`, high quality, using the account owner’s authorized API access. They depict fictional adults, unbranded garments, and a fictional empty theatre. They are original project artwork, not participant photos or a merchant’s real inventory. Publication is authorized; no exclusive copyright or real-person endorsement is implied.
+The eighteen source images in `public/assets/` were generated on October 31, 2026 with OpenAI `gpt-image-2`, high quality, using the account owner’s authorized API access. They depict fictional adults, unbranded garments and an accessory, and a fictional empty theatre. They are original project artwork, not participant photos or a merchant’s real inventory. Publication is authorized; no exclusive copyright or real-person endorsement is implied.
 
 The [machine-readable provenance](../public/assets/provenance.json) records the complete source prompt, model, dimensions, and SHA-256 of each original generated file. These WebP files were copied unchanged. The olive garment is a jacket only; its historical filename `olive-suit.webp` does not assert a two-piece suit.
 
@@ -22,6 +22,21 @@ The [machine-readable provenance](../public/assets/provenance.json) records the 
 | `/assets/cast/celeste-face.webp`       | synthetic face source       | 1024×1280 | `1e3d3775c2fa758ccd2def4acec30d81414056d066946e31537658212bcd3277` |
 
 The Ada and Celeste face sources are separate GPT Image 2 edits of their corresponding fictional full-body sources. They are independently versioned captures with exact input hashes and edit prompts in the manifest. They were visually inspected for clear, front-facing adult faces and natural texture; that inspection is not a guarantee of identity preservation or a human study.
+
+## November review wardrobe additions
+
+The burgundy wool coat and rust twill jacket are two new synthetic garment references, generated with the same authorized GPT Image 2 high-quality pipeline on October 31, 2026 UTC (November 1 IST). Their complete prompts and hashes are in the source manifest. They were inspected for a complete front-facing garment, visible fabric, and no person or branding. They represent fictional inventory units; they are not YouCam outputs or evidence of actual availability.
+
+| Public path                           | Pixels    | SHA-256                                                            |
+| ------------------------------------- | --------- | ------------------------------------------------------------------ |
+| `/assets/garments/burgundy-coat.webp` | 1024×1536 | `cdeb2f24235908a6650a97f40096bcff36ee284afa70520eeb5349f7cd603ac4` |
+| `/assets/garments/rust-jacket.webp`   | 1024×1536 | `5cdd36e9958bb824054bfa4c661549552a6f7e023ed6d4e2f8f520b6ead272f8` |
+
+Mina’s additional face source at `/assets/cast/mina-face.webp` is a separately versioned GPT Image 2 edit of `/assets/cast/mina.webp`, created for Mae’s hair-continuity previews. It retains the fictional reference’s short bob and slate crewneck; the complete head and hair are visible. The edit is synthetic source artwork, not an actual hair result. Dimensions: 1024×1280. SHA-256: `58999ac24758ada2ef67a19647b5833368d4b9285e7ba238ed6ac06912cdd5e6`. Its input hash and full edit prompt are recorded in the manifest.
+
+## November review accessory reference
+
+The antique brass oval pendant at `/assets/accessories/brass-pendant.webp` is synthetic source artwork for Nora’s separately approved necklace detail. It was generated with GPT Image 2 at high quality and visually inspected for one complete front-facing necklace, visible chain, and no person or branding. It is not a YouCam output, merchant listing, or evidence of physical stock. Dimensions: 1024×1024. SHA-256: `a94b3f8266e9711db1c47ecfa1317768cb3f86dc47799abc14e917d537f467d1`. The full prompt is retained in the source manifest.
 
 ## Frozen provider inputs
 

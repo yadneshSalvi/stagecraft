@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "previews": [
+    {
+      "id": "recorded-review-mae-hair-rehearsal",
+      "lookId": "look-mae-rehearsal",
+      "performerId": "performer-mina",
+      "kind": "hair_color",
+      "faceCaptureVersion": 1,
+      "detailRevision": 1,
+      "recipe": {
+        "kind": "hair_color",
+        "preset": "Chocolate Brown"
+      },
+      "imagePath": "/examples/details/review-mae-hair-rehearsal.webp",
+      "sourceImagePath": "/assets/cast/mina-face.webp",
+      "sourceSha256": "58999ac24758ada2ef67a19647b5833368d4b9285e7ba238ed6ac06912cdd5e6",
+      "sourceUploadSha256": "a3d38f407102fe9e57c3761385565b48cbf1dd1e66f9d9cefa1788e9eaf0b762",
+      "inputHash": "514b53fc96377bd17b217c8e3ca0a1c68f7e930b2b75b43664e8ab0b276a0269",
+      "outputSha256": "d2c19261372b1b79b7812ca0f9717246a06d27fa3a2329fa82c545db84419a54",
+      "operation": "hair_color_v2",
+      "provider": "YouCam",
+      "recordedAt": "2026-10-31T19:56:34.572Z",
+      "estimatedUnits": 1,
+      "inspectionNotes": "Recorded YouCam hair-colour detail from the separate face source; inspect colour and facial/hair boundaries before approval. Requested preset is Chocolate Brown; the observed render reads wine/plum rather than neutral brown. Review this colour discrepancy explicitly; the submitted preset is unchanged.",
+      "taskEvidence": {
+        "taskIdHash": "d85b5ff6e09e8d3282b7d5bafb77b0c188ec2ade880677d175a4dff5bd41be67",
+        "status": "success"
+      },
+      "outputTransformation": "webp-reencode/q92;no-retouch"
+    },
+    {
+      "id": "recorded-review-mae-hair-finale",
+      "lookId": "look-mae",
+      "performerId": "performer-mina",
+      "kind": "hair_color",
+      "faceCaptureVersion": 1,
+      "detailRevision": 1,
+      "recipe": {
+        "kind": "hair_color",
+        "preset": "Copper Red"
+      },
+      "imagePath": "/examples/details/review-mae-hair-finale.webp",
+      "sourceImagePath": "/assets/cast/mina-face.webp",
+      "sourceSha256": "58999ac24758ada2ef67a19647b5833368d4b9285e7ba238ed6ac06912cdd5e6",
+      "sourceUploadSha256": "a3d38f407102fe9e57c3761385565b48cbf1dd1e66f9d9cefa1788e9eaf0b762",
+      "inputHash": "73ed0f07876c0eb13dd046c763e9f08de1be2a302f79d2084dbce2ea316d5e21",
+      "outputSha256": "fe51e0d995efb099d17983982daefbd88656cdae603279cb375aefadccd22b75",
+      "operation": "hair_color_v2",
+      "provider": "YouCam",
+      "recordedAt": "2026-10-31T19:56:48.532Z",
+      "estimatedUnits": 1,
+      "inspectionNotes": "Recorded YouCam hair-colour detail from the separate face source; inspect colour and facial/hair boundaries before approval.",
+      "taskEvidence": {
+        "taskIdHash": "9bc52b477b252549e607d4f38fae1b91b58ed0e4dcc21b40489db99a0c493520",
+        "status": "success"
+      },
+      "outputTransformation": "webp-reencode/q92;no-retouch"
+    },
+    {
+      "id": "recorded-review-nora-ada-necklace",
+      "lookId": "look-nora",
+      "performerId": "performer-ada",
+      "kind": "necklace",
+      "faceCaptureVersion": 1,
+      "detailRevision": 1,
+      "recipe": {
+        "kind": "necklace",
+        "referenceId": "detail-brass-pendant",
+        "removeBackground": true
+      },
+      "imagePath": "/examples/details/review-nora-ada-necklace.webp",
+      "sourceImagePath": "/assets/cast/ada-face.webp",
+      "referenceImagePath": "/assets/accessories/brass-pendant.webp",
+      "sourceSha256": "193c0221c36458bb275dcb27c240d6dfd07b8ba0e444cabbba6a024cbd03d03f",
+      "sourceUploadSha256": "07c95a60bbbb1533461fe77b11d9d8245dad0b68c36840cead70ef6f1fb2c541",
+      "referenceSha256": "a94b3f8266e9711db1c47ecfa1317768cb3f86dc47799abc14e917d537f467d1",
+      "referenceUploadSha256": "e95b39590d6659cb2662646a2f9cf6cc377be4b070d9c67b04b822b4cec78e5a",
+      "inputHash": "bc6b11a3c4b68fafddc6c074dfe7eae2674bba3f367c14565cdae6c607059807",
+      "outputSha256": "bbd342944a0c3cac4e00f2370d86afe16ba74c783a4367421c832fba883502f2",
+      "operation": "necklace_v2",
+      "provider": "YouCam",
+      "recordedAt": "2026-10-31T19:57:02.953Z",
+      "estimatedUnits": 1,
+      "inspectionNotes": "Recorded YouCam necklace detail with explicit background removal; inspect pendant shape, chain placement and neck edges before approval.",
+      "taskEvidence": {
+        "taskIdHash": "ba39b14b2727b39af94ea0bfbdb0c70e92cbaddfbaa0b789d9e812dc7185e3ef",
+        "status": "success"
+      },
+      "outputTransformation": "webp-reencode/q92;no-retouch"
+    },
+    {
+      "id": "recorded-review-nora-celeste-necklace",
+      "lookId": "look-nora",
+      "performerId": "performer-celeste",
+      "kind": "necklace",
+      "faceCaptureVersion": 1,
+      "detailRevision": 1,
+      "recipe": {
+        "kind": "necklace",
+        "referenceId": "detail-brass-pendant",
+        "removeBackground": true
+      },
+      "imagePath": "/examples/details/review-nora-celeste-necklace.webp",
+      "sourceImagePath": "/assets/cast/celeste-face.webp",
+      "referenceImagePath": "/assets/accessories/brass-pendant.webp",
+      "sourceSha256": "1e3d3775c2fa758ccd2def4acec30d81414056d066946e31537658212bcd3277",
+      "sourceUploadSha256": "fbef26666fd6e4c8d52cb43bbe75a7ed4d0cf39406767586d3833d71d86e1c6f",
+      "referenceSha256": "a94b3f8266e9711db1c47ecfa1317768cb3f86dc47799abc14e917d537f467d1",
+      "referenceUploadSha256": "e95b39590d6659cb2662646a2f9cf6cc377be4b070d9c67b04b822b4cec78e5a",
+      "inputHash": "cd54cc428cee375b2165225c46bef3a00224e9d0b264e500c37d07b15eb70cbe",
+      "outputSha256": "c34487e652645878ff0c9209b868eb823333174f7d46ff513797e07a1eab96e2",
+      "operation": "necklace_v2",
+      "provider": "YouCam",
+      "recordedAt": "2026-10-31T19:58:23.309Z",
+      "estimatedUnits": 1,
+      "inspectionNotes": "Recorded YouCam necklace detail with explicit background removal; inspect pendant shape, chain placement and neck edges before approval.",
+      "taskEvidence": {
+        "taskIdHash": "d954fd7b3ef00973cff0c92afc68ac9cf97979e00b08f683e83e974ef5b64852",
+        "status": "success"
+      },
+      "outputTransformation": "webp-reencode/q92;no-retouch"
+    }
+  ]
+}
