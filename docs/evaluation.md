@@ -1,67 +1,84 @@
 # Evaluation and reproducible checks
 
-This reports software verification on an explicitly synthetic production. No practitioner study, real-performer fitting, physical realization or real-supplier reservation is claimed. Recorded provider-image review is documented separately in `evaluation-ai.md` when available.
+This reports software verification on explicitly synthetic productions. No practitioner study, real-performer fitting, physical realization, supplier reservation or human time saving is claimed. Actual provider-image review is documented separately in [evaluation-ai.md](evaluation-ai.md).
 
-## Observed domain verification
+## Observed review-round verification
 
-The following command was run locally on 31 October 2026:
+The integrated local gate completed on 31 October 2026 UTC (1 November IST): **188 tests across 19 files passed in 13.71 seconds**, followed by **16/16 Chromium browser tests against the optimized build**, with no failures or skips, in 3.2 minutes as reported by Playwright. The browser suite includes actual short Gemini extraction through allocation, exact recorded-only YouCam journeys, both approval races, identity-preserving session recovery, private uploads, and 11 desktop/390px workspace surfaces. The frozen crew PDF has 19 A4 pages and 27 loaded images; its separate makeup, hair and necklace sections were visually inspected. [Sanitized integrated record](evidence/review-local-verification.json).
+
+Earlier in the review round, this focused domain command completed successfully:
 
 ```sh
-pnpm exec vitest run tests/domain.test.ts tests/domain-beauty.test.ts tests/allocation.test.ts
+pnpm exec vitest run tests/domain.test.ts tests/domain-beauty.test.ts tests/domain-review.test.ts tests/allocation.test.ts --reporter=dot
 ```
 
-Observed result: **3 test files passed, 53 tests passed**. One test contains **192 generated allocation problems**, compared with a separate brute-force oracle. These are software cases, not participants or real productions. The oracle independently enumerates assignments, rejects overlapping physical use and budget violations, and compares the substitution/cost optimum with the production engine.
+Observed result: **4 files passed, 76 tests passed, 2.43 seconds**. One test additionally checks **192 generated resource/budget problems** against a separate brute-force oracle. The oracle enumerates assignments, rejects physical overlaps and budget violations, and compares the minimum unique-unit quote cost. Its cases use explicit synthetic appearance decisions; separate tests verify rejection of missing/stale/revoked decisions.
 
-Targeted ESLint also completed with exit code 0. Prettier's check of the domain modules, test files and these domain documents reported that all matched files use Prettier code style. These checks are narrower than application release verification.
+| Consequence               | Observed test coverage                                                                                                                  |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Exact candidate identity  | Wrong actor, capture, scope, garment and input hash rejected; explicit adoption retains preview/approval IDs                            |
+| Strict admissibility      | Unapproved originals and listed substitutes never assigned; preview alone grants no permission                                          |
+| Revocation after adoption | Registry and copied decisions blocked; no unapproved base fallback; all three Nora calls blocked                                        |
+| Creative intent           | Direction edits clear author approval, flag removed-item references and permit reapproval of unchanged pixels                           |
+| Independent actor sources | Ada source edits preserve a separately reviewed Celeste candidate; recast retires Ada's old decision                                    |
+| Coherent continuity       | Nora cannot mix approved coats across calls or day variants; one usable recipe is FEASIBLE                                              |
+| Cost and objective        | One charge per physical unit, cost before changeovers, genuine alternative choices needed for OPTIMAL                                   |
+| Unknown price             | Missing quote source cannot win as free stock; incomplete price evidence yields no adoptable assignment                                 |
+| Constraint check          | Forged intervals, missing demands, wrong actors, unapproved units and mixed decision identities rejected                                |
+| Day variants              | Exact source spans, disjoint scene appearances, three characters across all days, separate Mae/Ruth physical blouses                    |
+| Example decisions         | Explicit exact sample attribution, idempotent enable, reversible decisions and preserved manual decisions                               |
+| Custom planning           | Script-order schedule draft preserves edited calls; own-clothes exemption reversible; initial casting works with other incomplete roles |
+| Independent details       | Makeup, hair colour and necklace use separate source/recipe/output/approval lineage; garment changes preserve face evidence             |
+| Consent and frozen packs  | Body/face scopes separate; revoked face pixels omitted from selected and full approval context; older snapshots immutable               |
+| Compatibility             | Original baseline JSON retains script, IDs, dates, look structure and optional legacy approval fields                                   |
+| Existing invariants       | Immutable revisions, stale proposals, stable-ID reimport, quote expiry, sourcing states, continuous wear and live crew capacity         |
 
-| Consequence               | Verification                                                                                                                          |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Truthful fixtures         | Exact script spans, separate shoot order, synthetic inventory, no seeded approvals or invented provider previews                      |
-| Exact appearance approval | Wrong actor/capture/recipe/hash rejected; a new output inherits no approval; rendering changes no fitting facts                       |
-| Immutable revisions       | One revision/event per command; deeply frozen prior graph unchanged; rejection returns no changed graph                               |
-| Precise garment repair    | Three Nora dependencies change; four unrelated approvals survive; unrelated handoff remains current                                   |
-| Recast                    | Direction/reservations retained; old actor output remains historical; replacement fit is unverified; another actor's fitting survives |
-| Stale adoption            | Intervening revisions and changed inventory versions both prevent adoption                                                            |
-| Physical feasibility      | Distinct simultaneous units, recorded preparation, hard budget/category and explicit substitution constraints                         |
-| Independent checking      | Forged intervals, omitted demand, duplicate IDs, wrong actors and unapproved units fail                                               |
-| Live changes              | Continuous wear prepares once and holds custody; boundary changes propagate; directional duration and cumulative crew limits hold     |
-| Search bounds             | No candidate at the bound is unknown; a checked candidate without proof is feasible                                                   |
-| Reimport                  | Human corrections retained, source ranges rebased, changed cues flagged, referenced removals blocked                                  |
-| Sourcing                  | Named evidence required; confirmation/receipt/return separate; expired or missing quotes cannot become confirmation                   |
-| Consent                   | Private images lose inherited sample-public/synthetic status; withdrawal blocks new derivation and image-bearing packs                |
-| Frozen packs              | Working warnings explicit; snapshots retain original unit facts and character direction                                               |
-| Clock and fixture dates   | Quotes expire without editing production; new examples use future-relative dates; saved dates remain fixed                            |
+Targeted ESLint and the full-tree TypeScript command also passed with exit code 0. Scoped Prettier checks reported all matched files formatted. Those focused observations concern the domain at that checkpoint; the integrated gate above includes subsequent library and lineage regressions. Deployment verification remains separate.
 
-Lineage tests use schema-valid provider doubles with `/test-only/` paths. They are not seeded into production and are not evidence of a provider call. Passing assertions establish behavior under their test inputs, not an external event.
+All lineage tests use schema-valid provider doubles with `/test-only/` paths. They are never seeded into the application and do not establish a provider call or visual fidelity. The checked-in [pre-review fixture](../tests/fixtures/pre-review-production.json) is the original authored synthetic production captured from baseline `a5f1284`.
 
-The separate beauty suite verifies exact face-source lineage, independent body/face and garment/beauty invalidation, unchanged smoothing/morphology policy, recast, both consent scopes, face-pixel omission from new working packs, independent readiness, frozen beauty evidence and story-day provenance.
+## Synthetic software benchmark
+
+```sh
+pnpm exec tsx tests/domain-benchmark.ts
+```
+
+Observed on Node **22.22.3**, macOS ARM64, with **one excluded warm-up and ten measured runs**. Each run attaches test doubles, records explicit example decisions, allocates the original plan, reviews/adopts a missing-coat candidate, then reviews/adopts a Celeste recast in the same production. Assertions check eight current garment decisions, seventeen assignments, a final fictional quote of **46,500 GBP minor units**, and **ready:false** because physical/detail evidence remains outstanding.
+
+| Pure domain stage                                                      | Median milliseconds | Minimum–maximum milliseconds |
+| ---------------------------------------------------------------------- | ------------------: | ---------------------------: |
+| Attach test outputs and record sample decisions                        |               7.253 |                  6.831–7.820 |
+| Solve and adopt initial allocation                                     |              15.750 |                15.370–36.894 |
+| Missing-coat candidate review, impact refresh, adoption and allocation |              56.483 |                55.015–77.187 |
+| Recast candidate review, impact refresh, adoption and allocation       |              59.406 |                57.319–65.171 |
+
+[Raw observations and environment](evidence/domain-benchmark.json) include every measured sample and exact command. This is single-process software execution with test doubles. It excludes provider/network/database/UI latency, external tasks and human work; it is not a claim of saved production time or money.
 
 ## Reproduction
 
 Install the pinned dependencies, then run:
 
 ```sh
-pnpm exec vitest run tests/domain.test.ts tests/domain-beauty.test.ts tests/allocation.test.ts
-pnpm exec eslint src/lib/domain tests/domain.test.ts tests/domain-beauty.test.ts tests/allocation.test.ts
+pnpm exec vitest run tests/domain.test.ts tests/domain-beauty.test.ts tests/domain-review.test.ts tests/allocation.test.ts
+pnpm exec eslint src/lib/types.ts src/lib/domain tests/domain.test.ts tests/domain-beauty.test.ts tests/domain-review.test.ts tests/domain-support.ts tests/domain-benchmark.ts tests/allocation.test.ts
 pnpm exec tsc --noEmit --pretty false
+pnpm exec tsx tests/domain-benchmark.ts
 ```
 
-The domain tests need no provider credentials, network, database, private script or ignored planning files. They use an explicit fixed clock except for the controlled fake-clock expiry case. [domain-model.md](domain-model.md) describes the implemented contract and limits.
+These checks require no provider credentials, database, network, private script or ignored planning material. They use an explicit fixed domain clock except for controlled clock-expiry tests. [domain-model.md](domain-model.md) describes the current contract, bounded search and evidence limits.
 
-The browser workflow specification is `tests/e2e/production-workflow.spec.ts`. It operates the actual UI and checks persisted API state in fresh isolated browser contexts. It blocks all fresh-generation requests, uses matching recorded garment/makeup results, and retains screenshots/traces on failure:
+## Observed full-act browser journey
 
-```sh
-pnpm exec playwright test tests/e2e/production-workflow.spec.ts --project=chromium --workers=1 --reporter=line --output=artifacts/private/e2e-domain
-```
+A separate local in-app-browser run imported the full Act I text through the product (40,725 LF-normalized characters), produced **7/7 grounded proposed cues** with zero drops/repairs, and retained four explicit cues plus three labelled inferences. Original spans and supporting passages were checked against the saved source. The agent marked four supporting roles Own clothes, imported Jules and the olive jacket from the example library, created/approved the exact recorded look, drafted a call and adopted a **FEASIBLE £125** physical assignment.
 
-The complete browser suite passed against the optimized local production build: **9 tests passed in 1.1 minutes**, using one Chromium worker. The two production journeys include separate makeup approval, preservation through garment repair, replacement-face reapproval and frozen makeup evidence. The other tests cover desktop/mobile automated accessibility, private upload and owner isolation, consent withdrawal, stale revision recovery, exact-output approval races and recovery of the same interrupted request. Test sign-in respects the real authentication rate limit; it does not disable that protection.
+The observed upper bound from Start your own through an observation after adoption was **273 seconds**, including browser-control troubleshooting. This is one agent-operated software journey, not human usability, productivity or cue-recall evidence. No paid YouCam task occurred. [Full observations and source hash](evidence/own-script-browser-review.json) preserve the seven-cue denominator and unresolved physical evidence.
 
-After the fixture-transport correction, the aggregate unit/domain/backend command, `pnpm test`, passed **11 files and 111 tests in 11.46 seconds**. The focused recording and transport suite also passed **15 tests across 4 files**, including fixture seeding with runtime normalization disabled, exact original upload hashes, changed-source/profile rejection and missing/tampered transport rejection. Lint, TypeScript, formatting and the optimized production rebuild passed. The project-create, preview and Workflow function traces each include the transport manifest and all 13 frozen JPEGs. [Release verification](release-checklist.md) records the print check and separates deployment checks from these local observations.
+## Previous release observations
+
+The pre-review baseline previously passed **53 tests across 3 domain files**, **111 aggregate tests across 11 files**, and **9 Chromium browser tests in 1.1 minutes** against an optimized local production build. Those browser journeys covered separate garment/makeup approval, repair, recast, frozen makeup evidence, accessibility, upload isolation, consent, stale revisions, approval races and interrupted-request recovery. A focused recording/transport suite passed **15 tests across 4 files**. These are retained historical release observations, not results for the newly changed candidate/day-variant/detail UI. Current application-wide verification belongs in [release-checklist.md](release-checklist.md).
 
 ## Interpretation and remaining evidence
 
-The implemented allocator is bounded exact TypeScript search with a separate assignment checker, not a deployed CP-SAT service. Optimality concerns its declared objective under recorded constraints. Unknown transport, preparation, fit and supplier evidence remains provisional even for an optimal assignment.
+The production checker shares interval construction with search, so results honestly report **Constraint check**, with `independentlyChecked:false`. The separate brute-force test oracle is software evidence, not an independent production validator. OPTIMAL concerns only the implemented objective under current admissible facts. Unknown travel, preparation, fit and supplier evidence remains provisional.
 
-These tests do not establish usability, time saved, physical fit, identity fidelity, supplier integration or commercial impact. Browser, database, authentication and provider recovery checks have their own artifacts. Real participant and physical outcomes require separate permitted observations.
-
-Future evaluation can compare active replanning time, true/false conflicts, preserved approvals and stale artifacts on held-out productions. That remains a plan until observations, denominators and limitations are recorded. AI image review is auxiliary evidence and remains labelled AI review rather than human feedback.
+These tests do not establish usability, physical fit, identity fidelity, supplier integration, commercial impact or human task-time reduction. AI image review remains labelled AI review. Real participant and physical outcomes require separate permitted observations.

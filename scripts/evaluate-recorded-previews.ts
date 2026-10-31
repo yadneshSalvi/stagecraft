@@ -1,5 +1,6 @@
 /** Independent, opt-in AI critique of the synthetic recorded sample matrix.
  * pnpm exec tsx scripts/evaluate-recorded-previews.ts --confirm-live
+ * Add --review-matrix for the five additional garment recordings.
  * No YouCam calls, human labels, fit measurements, or automatic approvals.
  */
 import nextEnv from "@next/env";
@@ -19,6 +20,7 @@ if (!process.argv.includes("--confirm-live")) {
 
 const selection = process.argv.indexOf("--case");
 const selectedCase = selection < 0 ? undefined : process.argv[selection + 1];
+const matrix = process.argv.includes("--review-matrix") ? "review" : "original";
 const words = z.string().min(1).max(700);
 const critiqueSchema = z
   .object({
@@ -55,7 +57,11 @@ const manifestSchema = z.object({
     }),
   ),
 });
-const manifestBytes = await readFile("public/examples/recorded-previews.json");
+const manifestPath =
+  matrix === "review"
+    ? "public/examples/recorded-review-previews.json"
+    : "public/examples/recorded-previews.json";
+const manifestBytes = await readFile(manifestPath);
 const manifest = manifestSchema.parse(
   JSON.parse(manifestBytes.toString("utf8")),
 );
@@ -263,13 +269,15 @@ for (const item of cases.filter(
 }
 const dir = "artifacts/private/ai-evaluation";
 await mkdir(dir, { recursive: true });
-const file = `${dir}/previews-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+const file = `${dir}/${matrix}-previews-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
 await writeFile(
   file,
   JSON.stringify(
     {
       observedAt: new Date().toISOString(),
       evidenceClass: "synthetic_model_evaluation",
+      matrix,
+      manifestPath,
       note: "Two AI models critique the same synthetic sample matrix and one unchanged-source negative control. This is not independent human ground truth, representative accuracy, a physical fitting, or product approval. No production state is modified.",
       manifestSha256: createHash("sha256").update(manifestBytes).digest("hex"),
       records,

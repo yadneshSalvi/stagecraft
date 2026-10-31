@@ -1,0 +1,26 @@
+{
+  "matrixSha256": "d2d1aa574fb3772f8bb5cff4c3edf377a284f64b3ed1820e2179de067f28a497",
+  "submitted": 11,
+  "succeeded": 11,
+  "failed": 0,
+  "ambiguous": 0,
+  "balanceBefore": 981,
+  "balanceAfter": 965,
+  "observedUnitChange": 16,
+  "kinds": {
+    "garment": 5,
+    "beauty": 2,
+    "hair_color": 2,
+    "necklace": 2
+  },
+  "necklaceSuccessEnvelope": {
+    "httpStatus": 200,
+    "topKeys": ["status", "data"],
+    "dataKeys": ["error", "results", "task_status"],
+    "taskStatus": "success",
+    "resultsType": "object",
+    "resultsKeys": ["url"],
+    "urlPresent": true
+  },
+  "inspection": "First necklace inspected against source/reference before second authorized necklace. Hair Chocolate Brown requested preset produced wine/plum appearance; discrepancy retained in inspection notes. No physical-fit outcome is established."
+}

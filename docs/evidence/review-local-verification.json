@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-31T20:40:03Z",
+  "scope": "Local optimized-build verification of the STAGECRAFT review round",
+  "baselineCommit": "a5f128467e72e9fdfa37ddfc5f0649278eda3129",
+  "environment": {
+    "node": "22.22.3",
+    "next": "16.4.3",
+    "browser": "Playwright Chromium",
+    "database": "isolated local PostgreSQL"
+  },
+  "unitIntegration": {
+    "command": "pnpm test",
+    "files": 19,
+    "passed": 188,
+    "failed": 0,
+    "skipped": 0,
+    "durationSeconds": 13.71,
+    "providerCalls": "transport doubles; no paid YouCam submission"
+  },
+  "browser": {
+    "command": "pnpm test:e2e",
+    "optimizedBuild": true,
+    "workers": 1,
+    "retries": 0,
+    "passed": 16,
+    "failed": 0,
+    "skipped": 0,
+    "reportedDuration": "3.2 minutes",
+    "coverage": [
+      "Eleven workspace surfaces: automated WCAG checks at desktop and 390px, contained scene-list scrolling and dialog focus restoration",
+      "Public landing and evidence accessibility and narrow-viewport overflow",
+      "Exact-output and creative-intent approval races retain entered decisions without switching targets",
+      "Supplier CSV and printable PDF preserve sourcing scope without changing the production",
+      "Actual Gemini script extraction, original source grounding, own-clothes exemption, trusted library imports, new per-day look identities, recorded reuse, explicit approval, editable calls and adopted allocation",
+      "Private direct upload persistence, cross-owner rejection and permission withdrawal",
+      "R17 sample with eight garment results, two makeup states, four independent details and two candidate results; zero approvals seeded",
+      "Same-production missing-coat comparison, approved burgundy adoption, direction reapproval using unchanged output, preparation-inclusive sourcing, Celeste recast, independent makeup/necklace replay and preserved unrelated decisions",
+      "Approval-derived alternative admissibility, unique physical-unit cost and revocation after adoption",
+      "Rate-limited session GET retains the owner cookie and saved preview intent with zero anonymous or preview POSTs",
+      "Stale revision recovery remains visible inside the dialog and permits an explicit retry",
+      "Interrupted recorded receipt recovers using GET without repeating POST",
+      "Deterministic fresh refusal clears the pending intent while recorded replay stays available",
+      "Uncertain fresh receipt retains its command identity, independent recorded lane and explicit status-only recovery",
+      "Unavailable fresh-generation configuration does not hide exact recorded reuse"
+    ],
+    "youcamSpend": "Zero paid YouCam submissions; fresh-response simulations are intercepted before the application",
+    "otherExternalCalls": "One actual short Gemini extraction in the final full run; private upload verification uses the configured private Blob store"
+  },
+  "crewPdf": {
+    "pages": 19,
+    "paper": "A4",
+    "loadedImages": 27,
+    "calls": 7,
+    "lookOccurrences": 17,
+    "makeupSections": 3,
+    "hairColourSections": 4,
+    "necklaceSections": 3,
+    "inspection": "Lead and independent root visually inspected makeup, hair and necklace pages. Normal-resolution Poppler and MuPDF agree: readable labels and exact frozen decisions, no clipping or overlap."
+  },
+  "scopeLimits": [
+    "Synthetic productions, source artwork and explicit software-test decisions",
+    "No practitioner study, physical fitting, real supplier outcome, human productivity or environmental claim",
+    "Automated accessibility checks do not certify all assistive technology or browsers",
+    "Production deployment, elevated shared-credit-floor checks and canonical acceptance are separate release steps"
+  ]
+}

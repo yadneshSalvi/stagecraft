@@ -1,0 +1,107 @@
+{
+  "observedAt": "2026-10-31T19:57:48.824Z",
+  "scope": "Synthetic single-process domain software benchmark with schema-valid provider test doubles. No network, paid calls, human task timing, fitting or supplier observation.",
+  "command": "pnpm exec tsx tests/domain-benchmark.ts",
+  "environment": {
+    "node": "v22.22.3",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "warmups": 1,
+  "samples": 10,
+  "clock": "2026-10-31T12:00:00.000Z",
+  "timings": {
+    "approval": {
+      "medianMs": 7.253,
+      "minMs": 6.831,
+      "maxMs": 7.82
+    },
+    "allocation": {
+      "medianMs": 15.75,
+      "minMs": 15.37,
+      "maxMs": 36.894
+    },
+    "missingCoat": {
+      "medianMs": 56.483,
+      "minMs": 55.015,
+      "maxMs": 77.187
+    },
+    "recast": {
+      "medianMs": 59.406,
+      "minMs": 57.319,
+      "maxMs": 65.171
+    }
+  },
+  "counts": {
+    "scenes": 7,
+    "looks": 8,
+    "assignments": 17,
+    "managedAppearanceApprovals": 8,
+    "finalQuoteCents": 46500,
+    "productionRevision": 26,
+    "events": 26,
+    "ready": false
+  },
+  "rawTimings": [
+    {
+      "approval": 7.7706249999999955,
+      "allocation": 15.501750000000015,
+      "missingCoat": 56.81491699999998,
+      "recast": 57.89404200000001
+    },
+    {
+      "approval": 7.82041700000002,
+      "allocation": 15.36975000000001,
+      "missingCoat": 55.47608299999996,
+      "recast": 61.84104100000002
+    },
+    {
+      "approval": 7.666624999999954,
+      "allocation": 17.13270799999998,
+      "missingCoat": 57.22079099999996,
+      "recast": 57.31883300000004
+    },
+    {
+      "approval": 6.830791999999974,
+      "allocation": 15.81370800000002,
+      "missingCoat": 55.01516600000002,
+      "recast": 57.90529200000003
+    },
+    {
+      "approval": 7.186250000000086,
+      "allocation": 15.396625000000085,
+      "missingCoat": 57.41112499999997,
+      "recast": 57.32104200000015
+    },
+    {
+      "approval": 7.133542000000034,
+      "allocation": 15.39387499999998,
+      "missingCoat": 55.516624999999976,
+      "recast": 59.85137499999996
+    },
+    {
+      "approval": 7.429166000000123,
+      "allocation": 16.08508299999994,
+      "missingCoat": 55.22199999999998,
+      "recast": 65.17087500000002
+    },
+    {
+      "approval": 7.126625000000104,
+      "allocation": 16.59024999999997,
+      "missingCoat": 63.84699999999998,
+      "recast": 62.820417000000134
+    },
+    {
+      "approval": 7.319833000000017,
+      "allocation": 15.686750000000075,
+      "missingCoat": 56.15020800000002,
+      "recast": 58.96041700000001
+    },
+    {
+      "approval": 7.136000000000195,
+      "allocation": 36.8939170000001,
+      "missingCoat": 77.18675000000007,
+      "recast": 61.606874999999945
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "source": {
+    "title": "The Importance of Being Earnest — First Act",
+    "sha256": "75cc014004823ef9742ec0517a4185496f90520602138401f543e39b45a99fef",
+    "unicodeCharacters": 42055,
+    "lfNormalizedUnicodeCharacters": 40725,
+    "utf16CodeUnits": 42055,
+    "utf8Bytes": 42371,
+    "words": 7323
+  },
+  "modelAttempts": 2,
+  "youcamTasks": 0,
+  "attempts": [
+    {
+      "observedAt": "2026-10-31T19:43:46.984Z",
+      "provider": "Gemini",
+      "model": "gemini-4-argon",
+      "modelAttempts": 1,
+      "youcamTasks": 0,
+      "productionMutations": 0,
+      "source": {
+        "title": "The Importance of Being Earnest — First Act",
+        "sha256": "75cc014004823ef9742ec0517a4185496f90520602138401f543e39b45a99fef",
+        "unicodeCharacters": 42055,
+        "lfNormalizedUnicodeCharacters": 40725,
+        "utf16CodeUnits": 42055,
+        "utf8Bytes": 42371,
+        "words": 7323
+      },
+      "latencyMs": 12268,
+      "characterCount": 5,
+      "modelSceneCount": 1,
+      "groundedSceneCount": 1,
+      "modelCueCount": 9,
+      "groundedCueCount": 6,
+      "droppedCueCount": 3,
+      "normalizedCueCount": 6,
+      "repeatedCueCount": 0,
+      "groundedCueFraction": 0.6666666666666666,
+      "sceneSpansValid": true,
+      "cueSpansValid": true,
+      "allUnreviewed": true,
+      "noticeCount": 4,
+      "passed": false,
+      "groundingPolicy": "whitespace-and-quotes-v1",
+      "droppedQuotes": [
+        {
+          "sceneNumber": "1",
+          "cueNumber": 3,
+          "character": "ALGERNON",
+          "originalQuote": "ALGERNON. ... Here is one of them. [Taking it from case.] ‘Mr. Ernest Worthing, B. 4, The Albany.’ I’ll keep this as a proof that your name is Ernest if ever you attempt to deny it to me, or to Gwendolen, or to any one else. [Puts the card in his pocket.]"
+        },
+        {
+          "sceneNumber": "1",
+          "cueNumber": 5,
+          "character": "JACK",
+          "originalQuote": "GWENDOLEN. ... What wonderfully blue eyes you have, Ernest! They are quite, quite, blue."
+        },
+        {
+          "sceneNumber": "1",
+          "cueNumber": 7,
+          "character": "ALGERNON",
+          "originalQuote": "ALGERNON. ... Now, my dear boy, if we want to get a good table at Willis’s, we really must go and dress. Do you know it is nearly seven?"
+        }
+      ]
+    },
+    {
+      "observedAt": "2026-10-31T19:57:37.480Z",
+      "provider": "Gemini",
+      "model": "gemini-4-argon",
+      "modelAttempts": 1,
+      "youcamTasks": 0,
+      "productionMutations": 0,
+      "source": {
+        "title": "The Importance of Being Earnest — First Act",
+        "sha256": "75cc014004823ef9742ec0517a4185496f90520602138401f543e39b45a99fef",
+        "unicodeCharacters": 42055,
+        "lfNormalizedUnicodeCharacters": 40725,
+        "utf16CodeUnits": 42055,
+        "utf8Bytes": 42371,
+        "words": 7323
+      },
+      "latencyMs": 11473,
+      "characterCount": 5,
+      "modelSceneCount": 1,
+      "groundedSceneCount": 1,
+      "modelCueCount": 8,
+      "groundedCueCount": 8,
+      "droppedCueCount": 0,
+      "normalizedCueCount": 5,
+      "repeatedCueCount": 0,
+      "repairedExcerptCount": 0,
+      "repairedExcerpts": [],
+      "groundedCueFraction": 1,
+      "sceneSpansValid": true,
+      "cueSpansValid": true,
+      "allUnreviewed": true,
+      "noticeCount": 0,
+      "passed": true,
+      "groundingPolicy": "contiguous-excerpt-repair-v2"
+    }
+  ]
+}

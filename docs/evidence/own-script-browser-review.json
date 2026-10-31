@@ -1,0 +1,76 @@
+{
+  "observedAt": "2026-10-31T20:14:32.943Z",
+  "mode": "in-app browser, local development build",
+  "evaluation": "Agent-operated software journey; not a participant usability study or cue-recall benchmark.",
+  "script": {
+    "title": "The Importance of Being Earnest — First Act",
+    "model": "gemini-4-argon",
+    "sha256": "658f3117ac45ad1a9e15cbce7a19884da1611c5673868df765beb6d5de60803e",
+    "characters": 40725,
+    "source": "Project Gutenberg #844, First Act; browser text area normalizes CRLF to LF."
+  },
+  "grounding": {
+    "modelCueCount": 7,
+    "droppedCueCount": 0,
+    "modelSceneCount": 1,
+    "groundedCueCount": 7,
+    "repairedExcerpts": [],
+    "repeatedCueCount": 0,
+    "groundedSceneCount": 1,
+    "normalizedCueCount": 0,
+    "repairedExcerptCount": 0
+  },
+  "allCuesInitiallyUnreviewed": true,
+  "characters": 5,
+  "sceneCount": 1,
+  "workflow": [
+    "Create blank production",
+    "Paste full act and extract with configured Gemini model",
+    "Review and adopt script",
+    "Mark four supporting roles Own clothes",
+    "Import synthetic Jules performer and T011 garment from explicit example library",
+    "Create Jack look and inspect genuine recorded YouCam output",
+    "Approve exact appearance with AI workflow verification attribution",
+    "Set preparation to 20 minutes",
+    "Draft 8 November 2026 call at 10:00 Europe/London",
+    "Check and adopt feasible £125 assignment"
+  ],
+  "elapsedUpperBoundSeconds": 273,
+  "elapsedScope": "Measured from Start your own click through an observation after allocation adoption, including browser-control troubleshooting. Not a human completion-time claim.",
+  "finalRevision": 18,
+  "allocationCount": 1,
+  "status": "FEASIBLE",
+  "providerPaidTasks": 0,
+  "recordedOutputCount": 1,
+  "evidenceLimits": [
+    "Preparation estimated",
+    "Availability provisional",
+    "Fitting unverified",
+    "Measurements missing"
+  ],
+  "note": "Default source/preview display bug found in this journey was fixed and covered separately before release.",
+  "allSpansWithinOriginalScenes": true,
+  "allExplicitCuesMatchOriginalText": true,
+  "explicitCueCount": 4,
+  "inferenceCueCount": 3,
+  "inferenceEvidence": [
+    {
+      "suggestion": "Smart, fashionable afternoon visiting attire.",
+      "exactSupportingPassage": "ALGERNON.\n[To Gwendolen.] Dear me, you are smart!\n\nGWENDOLEN.\nI am always smart! Am I not, Mr. Worthing?",
+      "sourceStart": 16042,
+      "sourceEnd": 16146
+    },
+    {
+      "suggestion": "Currently wearing afternoon daywear (not yet dressed for evening dinner).",
+      "exactSupportingPassage": "Now, my dear boy, if we want to get a good table at\nWillis’s, we really must go and dress.",
+      "sourceStart": 36611,
+      "sourceEnd": 36701
+    },
+    {
+      "suggestion": "Currently wearing afternoon daywear (not yet dressed for evening dinner).",
+      "exactSupportingPassage": "Now, my dear boy, if we want to get a good table at\nWillis’s, we really must go and dress.",
+      "sourceStart": 36611,
+      "sourceEnd": 36701
+    }
+  ]
+}

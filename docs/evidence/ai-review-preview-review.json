@@ -1,0 +1,362 @@
+{
+  "observedAt": "2026-10-31T20:03:25.798Z",
+  "evidenceClass": "synthetic_model_evaluation",
+  "matrix": "review",
+  "manifestPath": "public/examples/recorded-review-previews.json",
+  "note": "Two AI models critique the same synthetic sample matrix and one unchanged-source negative control. This is not independent human ground truth, representative accuracy, a physical fitting, or product approval. No production state is modified.",
+  "manifestSha256": "aabe71b00442e613bf1528eac93c22efe862165e9166ac80dc4dc7c1a673358c",
+  "records": [
+    {
+      "case": "recorded-review-nora-celeste-charcoal",
+      "control": false,
+      "durationMs": 8273,
+      "provider": "gemini",
+      "model": "gemini-4-argon",
+      "critique": {
+        "recommendation": "usable_for_visual_review",
+        "garmentConsistency": "substantially_consistent",
+        "summary": "The preview in image 3 successfully incorporates the charcoal wool-style overcoat from image 2 onto the figure from image 1. The coat is rendered worn open over the original cream top and dark trousers, preserving key design elements such as the notched lapels, three-button front, welt pockets, and knee-length hem, though the button placement is reversed from the reference.",
+        "matchingVisibleFeatures": [
+          "Charcoal dark grey wool-like overcoat category and color",
+          "Notched lapels and structured shoulders",
+          "Three dark buttons along the front closure line",
+          "Horizontal welt pockets at the waist/hip level",
+          "Full-length sleeves and tailored waist silhouette",
+          "Knee-length straight hem",
+          "Original cream crew-neck top, grey trousers, and black shoes remain visible beneath the open coat"
+        ],
+        "visibleDiscrepancies": [
+          "The coat is worn open in image 3 rather than buttoned closed as shown in image 2",
+          "The three buttons are placed on the wearer's left lapel/front in image 3 (with buttonholes on the wearer's right), whereas in image 2 the right side overlaps the left",
+          "The fabric in image 3 displays a slightly more mottled or textured surface pattern compared to the smoother melange finish in image 2"
+        ],
+        "imageArtifacts": [
+          "Slight high-contrast white slivers between the inner waist of the coat and the sleeves where the background shows through"
+        ],
+        "limitations": [
+          "Because the coat is worn open in the preview, the exact closed silhouette and overlap alignment cannot be directly verified against the buttoned reference",
+          "Back details, vent construction, and full lining appearance are not visible from the frontal view"
+        ]
+      }
+    },
+    {
+      "case": "recorded-review-nora-celeste-charcoal",
+      "control": false,
+      "durationMs": 21952,
+      "provider": "openai",
+      "model": "gpt-6-astra",
+      "critique": {
+        "recommendation": "review_visible_discrepancies",
+        "garmentConsistency": "visible_differences",
+        "summary": "Image 3 clearly adds a long charcoal coat; it is not an unchanged source image. The main design features match the reference, but the fabric surface differs visibly and the coat is shown open rather than buttoned.",
+        "matchingVisibleFeatures": [
+          "Long charcoal coat with notched lapels and shaped waist seams.",
+          "Full-length sleeves with plain cuffs.",
+          "Three visible front buttons and two horizontal welt pockets.",
+          "Long hem extending below the knees in the preview.",
+          "Full-body frontal composition, neutral background, cream top, gray trousers and black shoes remain similar to image 1."
+        ],
+        "visibleDiscrepancies": [
+          "The preview has a noticeable repeating diagonal, crosshatched surface pattern; the reference has a finer, more uniform matte texture.",
+          "The preview is unbuttoned, exposing the top and trousers, whereas the reference shows an overlapping closed front.",
+          "The open preview has separated, relatively straight hem panels instead of the reference's continuous, gently rounded lower outline; this may result from the changed drape."
+        ],
+        "imageArtifacts": [],
+        "limitations": [
+          "The unworn reference does not establish an exact on-body hem position or sleeve length.",
+          "The open presentation limits direct comparison of lapel spread and front overlap.",
+          "Only frontal views are available; back construction and actual fabric properties cannot be established."
+        ]
+      }
+    },
+    {
+      "case": "negative-unchanged-source",
+      "control": true,
+      "durationMs": 8361,
+      "provider": "gemini",
+      "model": "gemini-4-argon",
+      "critique": {
+        "recommendation": "missing_intended_garment",
+        "garmentConsistency": "not_transferred",
+        "summary": "Image 3 is visually identical to the original source in Image 1. The intended dark charcoal long coat from Image 2 has not been transferred onto the subject, who remains dressed in the original cream long-sleeve top and dark grey trousers.",
+        "matchingVisibleFeatures": [],
+        "visibleDiscrepancies": [
+          "The intended dark charcoal three-button long coat with notched lapels and welt pockets (Image 2) is completely absent in Image 3.",
+          "The subject in Image 3 still wears the original cream crew-neck long-sleeve top and charcoal trousers from Image 1 without any outerwear added."
+        ],
+        "imageArtifacts": [],
+        "limitations": [
+          "Because the intended coat was not rendered in the preview, its drape, sleeve length, hem position, and texture integration on the subject cannot be evaluated."
+        ]
+      }
+    },
+    {
+      "case": "negative-unchanged-source",
+      "control": true,
+      "durationMs": 12239,
+      "provider": "openai",
+      "model": "gpt-6-astra",
+      "critique": {
+        "recommendation": "missing_intended_garment",
+        "garmentConsistency": "not_transferred",
+        "summary": "Image 3 appears unchanged from image 1: the cream top, charcoal trousers and black shoes remain, with the same pose, framing and background. The intended charcoal long coat is not visible.",
+        "matchingVisibleFeatures": [],
+        "visibleDiscrepancies": [
+          "The cream crew-neck top remains instead of the reference's charcoal tailored outer layer.",
+          "The reference's notched lapels, three-button front closure and welt pockets are absent.",
+          "The visible sleeves are the original cream top's sleeves, not the charcoal coat sleeves.",
+          "No long coat hem covers the hips or legs; the trouser waistband and legs remain exposed.",
+          "The reference's subtly mottled, matte coat texture is not present on the upper body."
+        ],
+        "imageArtifacts": [],
+        "limitations": [
+          "With no coat visible, its on-figure drape and rendered details cannot be assessed.",
+          "The images provide only front views and do not establish exact fabric composition."
+        ]
+      }
+    },
+    {
+      "case": "recorded-review-nora-ada-burgundy",
+      "control": false,
+      "durationMs": 8369,
+      "provider": "gemini",
+      "model": "gemini-4-argon",
+      "critique": {
+        "recommendation": "usable_for_visual_review",
+        "garmentConsistency": "substantially_consistent",
+        "summary": "The preview image successfully incorporates the burgundy tailored coat from the reference over the original white sweater and grey trousers. Key features like notched lapels, three-button front, welt pockets, and textured fabric match closely, though the coat is shown unbuttoned in the preview rather than buttoned as in the reference.",
+        "matchingVisibleFeatures": [
+          "Burgundy melange wool-like texture and color match the reference garment.",
+          "Notched lapels and collar structure are consistent with the reference.",
+          "Three dark buttons and corresponding buttonholes align with the reference closure design.",
+          "Horizontal welt pockets at the hips match the reference placement.",
+          "Mid-thigh to knee-length hem and tailored waist silhouette are preserved.",
+          "Original white crew-neck top, charcoal trousers, black flats, and pose from Image 1 are retained underneath."
+        ],
+        "visibleDiscrepancies": [
+          "The coat is worn open/unbuttoned in the preview (Image 3), whereas it is fully buttoned in the garment reference (Image 2).",
+          "Buttons are placed on the wearer's left side with buttonholes on the wearer's right in Image 3, while Image 2 shows right-over-left closure with buttons aligned along the center."
+        ],
+        "imageArtifacts": [
+          "Slight rigid symmetry in the open front edges and waist contouring despite the coat being unbuttoned."
+        ],
+        "limitations": [
+          "Back view, interior lining details, and closed-button drape on the figure cannot be verified from a single front-facing open-coat preview."
+        ]
+      }
+    },
+    {
+      "case": "recorded-review-nora-ada-burgundy",
+      "control": false,
+      "durationMs": 27136,
+      "provider": "openai",
+      "model": "gpt-6-astra",
+      "critique": {
+        "recommendation": "review_visible_discrepancies",
+        "garmentConsistency": "visible_differences",
+        "summary": "Image 3 visibly adds a burgundy long coat; it is not an unchanged source image. The main garment features match, but the closure orientation, button appearance and texture warrant review.",
+        "matchingVisibleFeatures": [
+          "Burgundy long coat with notched lapels and a shaped waist.",
+          "Full-length sleeves, a long hem and two horizontal welt pockets.",
+          "Three dark front buttons and a visibly textured surface.",
+          "Full-body framing, frontal pose, cream underlayer, dark trousers and black shoes remain similar to image 1."
+        ],
+        "visibleDiscrepancies": [
+          "The preview coat is open, exposing the underlayer and separating the front hem panels; the reference is buttoned closed.",
+          "Buttons appear on the viewer-right front in the preview, versus the viewer-left overlapping front in the reference.",
+          "Preview buttons appear smaller relative to the coat and glossier than the reference's larger, rimmed buttons.",
+          "The preview fabric looks more coarsely mottled than the reference's finer speckling."
+        ],
+        "imageArtifacts": [
+          "The background appears more mottled than in image 1; no obvious major garment-edge or hand distortions are visible."
+        ],
+        "limitations": [
+          "The open presentation changes the lapel spread and drape, limiting direct comparison of the closed silhouette and hem.",
+          "Only front views are available; back construction, exact dimensions and fabric composition cannot be verified.",
+          "Lighting and image scale may contribute to apparent color and texture differences."
+        ]
+      }
+    },
+    {
+      "case": "recorded-review-nora-celeste-burgundy",
+      "control": false,
+      "durationMs": 10568,
+      "provider": "gemini",
+      "model": "gemini-4-argon",
+      "critique": {
+        "recommendation": "usable_for_visual_review",
+        "garmentConsistency": "substantially_consistent",
+        "summary": "The preview in image 3 successfully incorporates the burgundy tailored coat from image 2 onto the figure from image 1. The coat is rendered worn open over the original cream top and dark grey trousers, maintaining consistent color, mottled texture, notched lapels, three-button front, and welt pockets. A minor discrepancy exists in the button-to-buttonhole alignment side compared to the closed reference garment.",
+        "matchingVisibleFeatures": [
+          "Tailored knee-length coat category",
+          "Deep burgundy/plum color with a mottled wool-like texture",
+          "Notched lapels of similar proportion",
+          "Three dark round buttons vertically aligned",
+          "Horizontal welt pockets at the hips",
+          "Full-length structured sleeves",
+          "Original cream crew-neck top, grey trousers, and black shoes preserved underneath"
+        ],
+        "visibleDiscrepancies": [
+          "In image 2, the coat closes left-over-right (viewer's left overlaps viewer's right, placing buttons on the wearer's left and buttonholes on the wearer's left overlap); in image 3, the coat is worn open with the buttons on the viewer's right (wearer's left) and buttonholes on the viewer's left (wearer's right), which reverses the standard overlapping side shown in the reference."
+        ],
+        "imageArtifacts": [
+          "Slight stiffness and symmetrical contour in how the open coat edges hang alongside the torso, typical of virtual drape.",
+          "Minor smoothing on the visible cream shirt where the waistband and belt loops of the trousers were adjusted."
+        ],
+        "limitations": [
+          "Because the coat is worn open in image 3 and shown buttoned closed in image 2, exact closed-waist suppression and overlap drape cannot be directly verified.",
+          "Back view, lining construction details, and physical fabric weight cannot be assessed from a single frontal static image."
+        ]
+      }
+    },
+    {
+      "case": "recorded-review-nora-celeste-burgundy",
+      "control": false,
+      "durationMs": 29505,
+      "provider": "openai",
+      "model": "gpt-6-astra",
+      "critique": {
+        "recommendation": "usable_for_visual_review",
+        "garmentConsistency": "substantially_consistent",
+        "summary": "Image 3 clearly adds the intended burgundy coat rather than repeating the source unchanged. The main design features are retained, with an open front and some apparent texture variation.",
+        "matchingVisibleFeatures": [
+          "Deep burgundy, long tailored coat with a shaped waist and gently flared hem.",
+          "Notched lapels, full-length sleeves, three dark front buttons, and two horizontal welt pockets are visible.",
+          "The full-body frontal composition, cream underlayer, charcoal trousers, black shoes, and neutral backdrop remain similar to image 1."
+        ],
+        "visibleDiscrepancies": [
+          "The reference is buttoned closed; the preview is open, exposing the original top and trousers and separating the front hem panels.",
+          "The preview fabric appears more coarsely mottled than the reference's finer heathered texture.",
+          "The preview lapels appear narrower through the chest, although the open presentation affects their shape."
+        ],
+        "imageArtifacts": [
+          "No obvious major compositing defects or broken garment edges are visible."
+        ],
+        "limitations": [
+          "The standalone reference does not establish an exact intended hem or cuff position on the figure.",
+          "Different image scales and open versus closed drape limit precise comparisons of lapel proportions and fabric texture.",
+          "Only the front is shown; back construction, hidden details, and actual material properties cannot be assessed."
+        ]
+      }
+    },
+    {
+      "case": "recorded-review-mae-ivory",
+      "control": false,
+      "durationMs": 12461,
+      "provider": "gemini",
+      "model": "gemini-4-argon",
+      "critique": {
+        "recommendation": "usable_for_visual_review",
+        "garmentConsistency": "substantially_consistent",
+        "summary": "The preview replaces the original short-sleeve dark grey t-shirt with an off-white long-sleeve collared button-down shirt matching the general category and color of the reference garment. The shirt is styled tucked into the trousers with the top collar unbuttoned, which obscures the lower hem and alters the neckline presentation compared to the fully buttoned standalone reference.",
+        "matchingVisibleFeatures": [
+          "Garment category matches: long-sleeve button-down shirt with pointed collar and wrist cuffs.",
+          "Color matches: cream / off-white tone consistent with the reference garment.",
+          "Central front placket with tonal buttons aligns with the reference closure style.",
+          "Original dark grey trousers, footwear, pose, and background composition from Image 1 are preserved."
+        ],
+        "visibleDiscrepancies": [
+          "Collar and top closure: worn open in a V-neck style in Image 3, whereas Image 2 shows the collar buttoned to the top.",
+          "Fabric appearance: appears slightly softer and smoother with more fluid draping in Image 3 compared to the stiffer, subtly textured weave visible in Image 2.",
+          "Button visibility: buttons along the placket in Image 3 are much fainter and less defined than those in Image 2."
+        ],
+        "imageArtifacts": [
+          "Slight overexposure or loss of fine detail along the center placket and collar edges where buttons and stitching are barely discernible."
+        ],
+        "limitations": [
+          "The lower hem of the shirt is tucked into the trousers in Image 3, so the curved hem shape and full torso length from Image 2 cannot be verified.",
+          "Back view and cuff button details are not visible from the frontal camera angle."
+        ]
+      }
+    },
+    {
+      "case": "recorded-review-mae-ivory",
+      "control": false,
+      "durationMs": 20688,
+      "provider": "openai",
+      "model": "gpt-6-astra",
+      "critique": {
+        "recommendation": "review_visible_discrepancies",
+        "garmentConsistency": "visible_differences",
+        "summary": "Image 3 visibly replaces the source gray T-shirt with a cream button-front shirt. The main garment features match the reference, with neckline styling and apparent texture differences. The full-body composition, pose, trousers and shoes remain broadly unchanged.",
+        "matchingVisibleFeatures": [
+          "Cream/off-white shirt with a pointed collar and no lapels.",
+          "Long sleeves ending in broad cuffs.",
+          "Central button placket with small pale buttons."
+        ],
+        "visibleDiscrepancies": [
+          "The preview neckline is open, with the collar spread apart; the reference is buttoned to the neck.",
+          "The preview fabric appears smoother and slightly shinier, while the reference shows a fine woven texture.",
+          "The preview shirt is tucked into the trousers, unlike the reference's exposed curved hem."
+        ],
+        "imageArtifacts": [],
+        "limitations": [
+          "The tucked hem prevents comparison of its curve, finished length and lower placket.",
+          "Image scale, lighting and draping may contribute to the apparent texture difference; exact fabric correspondence is uncertain.",
+          "Back construction and cuff fastening details cannot be verified from these front views.",
+          "No obvious compositing or anatomical artifacts are visible at the supplied resolution."
+        ]
+      }
+    },
+    {
+      "case": "recorded-review-julian-rust",
+      "control": false,
+      "durationMs": 13015,
+      "provider": "gemini",
+      "model": "gemini-4-argon",
+      "critique": {
+        "recommendation": "review_visible_discrepancies",
+        "garmentConsistency": "substantially_consistent",
+        "summary": "The intended rust-brown blazer is transferred onto the figure in image 3 with matching lapels, pocket layout, two-button closure, and texture. However, the original off-white crew-neck t-shirt from image 1 has been altered into a tan undershirt that resembles the interior lining tone of the empty garment reference in image 2.",
+        "matchingVisibleFeatures": [
+          "Rust-brown textured single-breasted blazer category and color",
+          "Notch lapels with a visible buttonhole detail on the wearer's left lapel",
+          "Two-button front closure with the top button fastened and bottom button unfastened",
+          "Two lower rounded patch pockets and one upper left welt chest pocket",
+          "Vertical front darts extending down to the patch pockets",
+          "Full-length sleeves and curved front hem quarters",
+          "Original dark grey trousers, black sneakers, pose, and studio background are preserved"
+        ],
+        "visibleDiscrepancies": [
+          "The off-white t-shirt from image 1 is replaced or recolored at the chest opening into a tan/brown crew-neck top, apparently carrying over the interior lining color from image 2 as a worn shirt",
+          "Fine diagonal twill weave texture seen in image 2 appears slightly more mottled and softened in image 3"
+        ],
+        "imageArtifacts": [
+          "Interpretation of the empty jacket's brown inner lining from image 2 as a solid tan undershirt with a faint neckline seam in image 3"
+        ],
+        "limitations": [
+          "Back construction, vents, and sleeve cuff button details are not visible in the frontal views",
+          "Exact fabric weight and physical drape cannot be verified from a static synthetic preview"
+        ]
+      }
+    },
+    {
+      "case": "recorded-review-julian-rust",
+      "control": false,
+      "durationMs": 32864,
+      "provider": "openai",
+      "model": "gpt-6-astra",
+      "critique": {
+        "recommendation": "review_visible_discrepancies",
+        "garmentConsistency": "substantially_consistent",
+        "summary": "Image 3 visibly includes the intended rust-brown blazer; it is not an unchanged source image. Major garment details match, but the fabric looks less distinctly woven and the original white undershirt has changed to tan.",
+        "matchingVisibleFeatures": [
+          "Rust-brown blazer with notched lapels and full-length sleeves.",
+          "Single-breasted front with two dark buttons.",
+          "Two lower patch pockets and a chest welt pocket.",
+          "Rounded lower front corners and an opening below the buttons.",
+          "Full-body framing, stance, dark trousers, black shoes and gray background remain similar to image 1."
+        ],
+        "visibleDiscrepancies": [
+          "The reference shows a pronounced fine diagonal weave; the preview appears softer and more mottled.",
+          "The visible undershirt changes from white to tan, with a lower neckline."
+        ],
+        "imageArtifacts": [],
+        "limitations": [
+          "The blazer occupies fewer pixels in the preview, limiting comparison of fine texture and stitching; lighting and scale may contribute to its different surface appearance.",
+          "Only the front is shown, so back details, lining and exact material cannot be assessed."
+        ]
+      }
+    }
+  ]
+}

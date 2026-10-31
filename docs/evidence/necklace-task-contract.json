@@ -1,0 +1,14 @@
+{
+  "endpoint": "/s2s/v2.0/task/2d-vto/necklace",
+  "observedEnvelope": {
+    "httpStatus": 200,
+    "topKeys": ["status", "data"],
+    "dataKeys": ["error", "results", "task_status"],
+    "taskStatus": "success",
+    "resultsType": "object",
+    "resultsKeys": ["url"],
+    "urlPresent": true
+  },
+  "urlValuesOmitted": true,
+  "transportUrlGuardsUnchanged": true
+}

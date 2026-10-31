@@ -37,3 +37,26 @@ The evaluated manifest SHA-256 was `8f2f77436f12cace8813bee7ea5cd9e06ab0cd12f388
 ## Limits
 
 This is one small, curated synthetic scenario. The two models are not independent human annotators and their agreement does not establish truth. Clothing scale in an isolated garment photo cannot establish its physical length on a performer. No fit, comfort, movement, measurement accuracy, supplier confirmation, real performer outcome, adoption, or time savings were measured. The application preserves explicit approval and separate operational evidence for those decisions.
+
+## Additional five-garment review — 1 November 2026 IST
+
+The same two models and constrained review protocol evaluated the five additional Clothes V4 recordings and a second unchanged-source control. All **12 of 12 requests completed** with schema-valid responses: five Gemini critiques and five OpenAI critiques of actual renders, plus one control per model. Durations were **8.273–32.864 seconds**, median **12.738 seconds**. These are model-review request times, not provider generation or crew task times. No YouCam units were used by this evaluation.
+
+Both models identified the missing coat in the unchanged-source control. Of the ten actual-output critiques, five recommended visual review and five recommended closer inspection of visible discrepancies. Three of the five garment cases produced different recommendations between models. No recommendation was applied as an appearance approval.
+
+| Additional preview       | Gemini recommendation    | OpenAI recommendation    | Specific inspection point                                                  |
+| ------------------------ | ------------------------ | ------------------------ | -------------------------------------------------------------------------- |
+| Celeste / charcoal coat  | Usable for visual review | Review discrepancies     | Open front, more crosshatched texture, closure orientation                 |
+| Ada / burgundy coat      | Usable for visual review | Review discrepancies     | Open front, coarser mottling, smaller glossy buttons, closure orientation  |
+| Celeste / burgundy coat  | Usable for visual review | Usable for visual review | Open front, narrower-looking lapels, coarser mottling                      |
+| Mae / ivory blouse       | Usable for visual review | Review discrepancies     | Open collar, tucked hem, smoother fabric and faint buttons                 |
+| Julian / rust jacket     | Review discrepancies     | Review discrepancies     | White undershirt changes to tan with a lower neckline; softer jacket weave |
+| Unchanged source control | Missing intended garment | Missing intended garment | Charcoal coat absent; original cream top remains                           |
+
+The root agent separately inspected all eleven new garment, makeup, hair and necklace outputs. The new garment manifest now surfaces the specific observations above. The hair-colour result requested as Chocolate Brown reads plum; its manifest records that discrepancy without changing the requested recipe or output. The six face-detail outputs were visually inspected by the agent but were **not** included in this two-model garment evaluation.
+
+- [All 12 new observations](evidence/ai-review-preview-review.json), including disagreements and limitations.
+- [Additional garment manifest](../public/examples/recorded-review-previews.json), with inspection notes updated after evaluation and all image hashes unchanged.
+- Reproduce with `pnpm exec tsx scripts/evaluate-recorded-previews.ts --review-matrix --confirm-live`; `--case` also works within this matrix. All original evaluation records remain intact.
+
+Together, the two dated evaluations contain 28 model observations across twelve actual garment outputs and two unchanged-source controls. This is a small qualitative synthetic evaluation, not an accuracy score, human validation, or a reason to waive visual review.
