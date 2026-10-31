@@ -1,0 +1,13 @@
+{
+  "title": "The Importance of Being Earnest — First Act",
+  "author": "Oscar Wilde",
+  "source": "https://www.gutenberg.org/ebooks/844",
+  "scope": "Unmodified First Act from the prepared Project Gutenberg text excerpt; public-domain evaluation source, not a participant script.",
+  "sha256": "75cc014004823ef9742ec0517a4185496f90520602138401f543e39b45a99fef",
+  "unicodeCharacters": 42055,
+  "lfNormalizedUnicodeCharacters": 40725,
+  "lineEndings": "Original CRLF retained; the LF-normalized count matches universal-newline readers.",
+  "utf8Bytes": 42371,
+  "words": 7323,
+  "offsetUnit": "JavaScript UTF-16 code units into the untouched text"
+}

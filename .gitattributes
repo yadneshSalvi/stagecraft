@@ -1,0 +1,2 @@
+# Preserve the exact public-domain source bytes used by grounding evaluations.
+tests/fixtures/earnest-act-one.txt -text -whitespace
