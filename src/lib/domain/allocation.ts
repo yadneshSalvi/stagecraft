@@ -1,0 +1,1206 @@
+import type {
+  Allocation,
+  AllocationFinding,
+  AllocationResult,
+  Look,
+  Occurrence,
+  PhysicalUnit,
+  Production,
+} from "../types";
+import { allocationInputHash } from "./lineage";
+
+const MINUTE = 60000;
+const time = (value: string) => Date.parse(value);
+const iso = (value: number) => new Date(value).toISOString();
+const unique = <T>(items: T[]) => [...new Set(items)];
+const overlaps = (a: number, b: number, c: number, d: number) => a < d && c < b;
+
+export interface AllocationOptions {
+  now?: string;
+  maxNodes?: number;
+  sourceRevision?: number;
+}
+export interface AllocationValidation {
+  valid: boolean;
+  findings: AllocationFinding[];
+  totalCostCents: number;
+}
+interface Demand {
+  key: string;
+  look: Look;
+  occurrence: Occurrence;
+  required: PhysicalUnit;
+  allowedIds: string[];
+  start: number;
+  end: number;
+}
+
+function finding(
+  code: string,
+  severity: AllocationFinding["severity"],
+  message: string,
+  units: string[] = [],
+  occurrences: string[] = [],
+  looks: string[] = [],
+): AllocationFinding {
+  return {
+    id: `${code}:${[...units, ...occurrences, ...looks].join(":")}`,
+    code,
+    severity,
+    message,
+    unitIds: unique(units),
+    occurrenceIds: unique(occurrences),
+    lookIds: unique(looks),
+  };
+}
+
+export function deduplicateFindings(
+  findings: AllocationFinding[],
+): AllocationFinding[] {
+  return [
+    ...new Map(
+      findings.map((item) => [
+        `${item.code}:${item.unitIds.join()}:${item.occurrenceIds.join()}:${item.lookIds.join()}`,
+        item,
+      ]),
+    ).values(),
+  ];
+}
+
+function preparationStart(
+  production: Production,
+  look: Look,
+  occurrence: Occurrence,
+): number {
+  const earlier = production.occurrences
+    .filter(
+      (candidate) =>
+        candidate.id !== occurrence.id &&
+        time(candidate.end) <= time(occurrence.start) &&
+        production.looks.some(
+          (other) =>
+            other.performerId === look.performerId &&
+            other.sceneIds.includes(candidate.sceneId),
+        ),
+    )
+    .sort((a, b) => time(b.end) - time(a.end));
+  const previous = earlier[0];
+  if (previous) {
+    const previousLooks = production.looks.filter(
+      (other) =>
+        other.performerId === look.performerId &&
+        other.sceneIds.includes(previous.sceneId),
+    );
+    let sameDay = false;
+    try {
+      const format = new Intl.DateTimeFormat("en-CA", {
+        timeZone: production.timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      sameDay =
+        format.format(new Date(previous.start)) ===
+        format.format(new Date(occurrence.start));
+    } catch {
+      /* Invalid timezones are rejected by commands; the checker stays conservative. */
+    }
+    const reset = production.transitions.some(
+      (transition) =>
+        transition.performerId === look.performerId &&
+        transition.fromOccurrenceId === previous.id &&
+        transition.toOccurrenceId === occurrence.id,
+    );
+    if (
+      previousLooks.length === 1 &&
+      previousLooks[0].id === look.id &&
+      previous.location === occurrence.location &&
+      sameDay &&
+      !reset
+    ) {
+      // Continuous wear retains this physical unit through the gap. It is not prepared again.
+      return time(previous.end);
+    }
+  }
+  return (
+    time(occurrence.start) -
+    (look.preparationMinutes !== null && look.preparationEvidence !== "unknown"
+      ? look.preparationMinutes * MINUTE
+      : 0)
+  );
+}
+
+function buildDemands(production: Production): {
+  demands: Demand[];
+  findings: AllocationFinding[];
+  invalid: boolean;
+  incomplete: boolean;
+} {
+  const demands: Demand[] = [];
+  const findings: AllocationFinding[] = [];
+  let invalid = false,
+    incomplete = false;
+  for (const [label, records] of [
+    ["occurrence", production.occurrences],
+    ["look", production.looks],
+    ["unit", production.units],
+    ["performer", production.performers],
+    ["scene", production.scenes],
+  ] as const) {
+    if (new Set(records.map((record) => record.id)).size !== records.length) {
+      invalid = true;
+      findings.push(
+        finding(
+          "DUPLICATE_FACT_ID",
+          "conflict",
+          `The ${label} facts contain duplicate identities; physical instances and scheduled demands must be distinct.`,
+        ),
+      );
+    }
+  }
+  if (
+    !Number.isSafeInteger(production.budgetCents) ||
+    production.budgetCents < 0
+  ) {
+    invalid = true;
+    findings.push(
+      finding(
+        "INVALID_BUDGET",
+        "conflict",
+        "The hard budget must be a nonnegative integer in the production currency's minor units.",
+      ),
+    );
+  }
+  for (const occurrence of production.occurrences) {
+    const scene = production.scenes.find(
+      (item) => item.id === occurrence.sceneId,
+    );
+    if (
+      !scene ||
+      !Number.isFinite(time(occurrence.start)) ||
+      !Number.isFinite(time(occurrence.end)) ||
+      time(occurrence.start) >= time(occurrence.end)
+    ) {
+      invalid = true;
+      findings.push(
+        finding(
+          "INVALID_OCCURRENCE",
+          "conflict",
+          `${occurrence.label} needs a mapped scene and a valid start before its end.`,
+          [],
+          [occurrence.id],
+        ),
+      );
+      continue;
+    }
+    if (!occurrence.location.trim())
+      findings.push(
+        finding(
+          "LOCATION_UNKNOWN",
+          "unverified",
+          `${occurrence.label} has no recorded location.`,
+          [],
+          [occurrence.id],
+        ),
+      );
+    const looks = production.looks.filter((look) =>
+      look.sceneIds.includes(scene.id),
+    );
+    for (const characterId of scene.characterIds) {
+      if (!looks.some((look) => look.characterId === characterId)) {
+        incomplete = true;
+        findings.push(
+          finding(
+            "LOOK_MISSING",
+            "unverified",
+            `${scene.title} still needs a look for ${production.characters.find((item) => item.id === characterId)?.name ?? characterId}.`,
+            [],
+            [occurrence.id],
+          ),
+        );
+      }
+    }
+    for (const look of looks) {
+      const performer = production.performers.find(
+        (item) => item.id === look.performerId,
+      );
+      if (!performer) {
+        incomplete = true;
+        findings.push(
+          finding(
+            "CAST_UNASSIGNED",
+            "unverified",
+            `${look.title} needs a cast performer before allocation can be complete.`,
+            [],
+            [occurrence.id],
+            [look.id],
+          ),
+        );
+        continue;
+      }
+      if (!performer.consent.granted)
+        findings.push(
+          finding(
+            "CONSENT_MISSING",
+            "unverified",
+            `${performer.name}'s image permission is withdrawn or missing.`,
+            [],
+            [occurrence.id],
+            [look.id],
+          ),
+        );
+      if (look.unitIds.length === 0) {
+        incomplete = true;
+        findings.push(
+          finding(
+            "WARDROBE_UNSPECIFIED",
+            "unverified",
+            `${look.title} needs at least one specified physical unit.`,
+            [],
+            [occurrence.id],
+            [look.id],
+          ),
+        );
+      }
+      if (unique(look.unitIds).length !== look.unitIds.length) {
+        invalid = true;
+        findings.push(
+          finding(
+            "DUPLICATE_UNIT_REQUIREMENT",
+            "conflict",
+            `${look.title} specifies the same physical unit more than once.`,
+            look.unitIds,
+            [occurrence.id],
+            [look.id],
+          ),
+        );
+      }
+      if (
+        look.preparationMinutes === null ||
+        look.preparationEvidence === "unknown"
+      )
+        findings.push(
+          finding(
+            "PREPARATION_UNKNOWN",
+            "unverified",
+            `${look.title} has no known preparation duration. Feasibility does not assume zero minutes.`,
+            look.unitIds,
+            [occurrence.id],
+            [look.id],
+          ),
+        );
+      else if (
+        !Number.isFinite(look.preparationMinutes) ||
+        look.preparationMinutes < 0
+      ) {
+        invalid = true;
+        findings.push(
+          finding(
+            "INVALID_PREPARATION",
+            "conflict",
+            `${look.title} has an invalid preparation duration.`,
+            look.unitIds,
+            [occurrence.id],
+            [look.id],
+          ),
+        );
+      } else if (look.preparationEvidence === "estimate")
+        findings.push(
+          finding(
+            "PREPARATION_ESTIMATED",
+            "unverified",
+            `${look.title}'s ${look.preparationMinutes}-minute preparation is an estimate, not an observed result.`,
+            look.unitIds,
+            [occurrence.id],
+            [look.id],
+          ),
+        );
+      for (let index = 0; index < look.unitIds.length; index++) {
+        const required = production.units.find(
+          (unit) => unit.id === look.unitIds[index],
+        );
+        if (!required) {
+          invalid = true;
+          findings.push(
+            finding(
+              "UNIT_MISSING",
+              "conflict",
+              `${look.title} references a physical unit that no longer exists.`,
+              [look.unitIds[index]],
+              [occurrence.id],
+              [look.id],
+            ),
+          );
+          continue;
+        }
+        if (
+          !Number.isSafeInteger(required.priceCents) ||
+          required.priceCents < 0 ||
+          !Number.isFinite(time(required.availability.from)) ||
+          !Number.isFinite(time(required.availability.to)) ||
+          time(required.availability.from) >= time(required.availability.to)
+        ) {
+          invalid = true;
+          findings.push(
+            finding(
+              "INVALID_UNIT_FACT",
+              "conflict",
+              `${required.code} needs a valid availability interval and a nonnegative integer price. Missing evidence cannot be represented as invented free stock.`,
+              [required.id],
+              [occurrence.id],
+              [look.id],
+            ),
+          );
+        }
+        demands.push({
+          key: `${occurrence.id}:${look.id}:${index}`,
+          look,
+          occurrence,
+          required,
+          allowedIds: unique([required.id, ...required.approvedSubstituteIds]),
+          start: preparationStart(production, look, occurrence),
+          end: time(occurrence.end),
+        });
+      }
+    }
+  }
+  return { demands, findings, invalid, incomplete };
+}
+
+/** Used by schedule commands to invalidate only demand intervals that actually changed. */
+export function allocationDemandIntervals(production: Production): Array<{
+  occurrenceId: string;
+  lookId: string;
+  performerId: string;
+  unitId: string;
+  start: number;
+  end: number;
+}> {
+  return buildDemands(production).demands.map((demand) => ({
+    occurrenceId: demand.occurrence.id,
+    lookId: demand.look.id,
+    performerId: demand.look.performerId,
+    unitId: demand.required.id,
+    start: demand.start,
+    end: demand.end,
+  }));
+}
+
+/** Solver pruning. The independent checker repeats the actual constraints. */
+function candidateFits(demand: Demand, unit: PhysicalUnit): boolean {
+  return (
+    unit.status === "available" &&
+    unit.category === demand.required.category &&
+    Number.isSafeInteger(unit.priceCents) &&
+    unit.priceCents >= 0 &&
+    Number.isFinite(time(unit.availability.from)) &&
+    Number.isFinite(time(unit.availability.to)) &&
+    time(unit.availability.from) <= demand.start &&
+    time(unit.availability.to) >= demand.end &&
+    !(
+      unit.fitting.status === "alteration" &&
+      unit.fitting.performerId === demand.look.performerId
+    )
+  );
+}
+
+interface CrewTask {
+  id: string;
+  resource: string;
+  capacity: number;
+  release: number;
+  deadline: number;
+  duration: number;
+  occurrences: string[];
+}
+
+/** Exact, bounded nonpreemptive scheduling for small crew/station windows. */
+function scheduleCrew(
+  tasks: CrewTask[],
+): "feasible" | "infeasible" | "unknown" {
+  if (tasks.length > 12) return "unknown";
+  let nodes = 0,
+    exhausted = false;
+  const placed: Array<CrewTask & { start: number; end: number }> = [];
+  const visit = (remaining: CrewTask[]): boolean => {
+    if (++nodes > 30000) {
+      exhausted = true;
+      return false;
+    }
+    if (!remaining.length) return true;
+    for (const task of [...remaining].sort(
+      (a, b) => a.deadline - b.deadline || a.id.localeCompare(b.id),
+    )) {
+      const capacity = Math.min(
+        ...tasks
+          .filter((item) => item.resource === task.resource)
+          .map((item) => item.capacity),
+      );
+      const starts = unique([
+        task.release,
+        ...placed
+          .filter((item) => item.resource === task.resource)
+          .map((item) => item.end),
+      ])
+        .filter(
+          (start) =>
+            start >= task.release && start + task.duration <= task.deadline,
+        )
+        .sort((a, b) => a - b);
+      for (const start of starts) {
+        const end = start + task.duration;
+        const simultaneous = placed.filter(
+          (item) =>
+            item.resource === task.resource &&
+            overlaps(start, end, item.start, item.end),
+        );
+        const points = unique([
+          start,
+          ...simultaneous.map((item) => Math.max(start, item.start)),
+        ]);
+        if (
+          points.some(
+            (point) =>
+              1 +
+                simultaneous.filter(
+                  (item) => item.start <= point && point < item.end,
+                ).length >
+              capacity,
+          )
+        )
+          continue;
+        placed.push({ ...task, start, end });
+        if (visit(remaining.filter((item) => item.id !== task.id))) return true;
+        placed.pop();
+      }
+      if (exhausted) return false;
+    }
+    return false;
+  };
+  return visit(tasks) ? "feasible" : exhausted ? "unknown" : "infeasible";
+}
+
+function transitionFindings(production: Production): AllocationFinding[] {
+  const findings: AllocationFinding[] = [];
+  const crewTasks: CrewTask[] = [];
+  for (const performer of production.performers) {
+    const looks = production.looks.filter(
+      (look) => look.performerId === performer.id,
+    );
+    const occurrences = production.occurrences
+      .filter((occurrence) =>
+        looks.some((look) => look.sceneIds.includes(occurrence.sceneId)),
+      )
+      .sort(
+        (a, b) => time(a.start) - time(b.start) || a.id.localeCompare(b.id),
+      );
+    for (let index = 0; index < occurrences.length; index++) {
+      const occurrence = occurrences[index];
+      const currentLooks = looks.filter((look) =>
+        look.sceneIds.includes(occurrence.sceneId),
+      );
+      if (currentLooks.length > 1)
+        findings.push(
+          finding(
+            "AMBIGUOUS_LOOK",
+            "conflict",
+            `${performer.name} has more than one look assigned to ${occurrence.label}; split the appearance into explicit occurrences.`,
+            [],
+            [occurrence.id],
+            currentLooks.map((look) => look.id),
+          ),
+        );
+      for (const other of occurrences.slice(index + 1)) {
+        if (
+          overlaps(
+            time(occurrence.start),
+            time(occurrence.end),
+            time(other.start),
+            time(other.end),
+          )
+        )
+          findings.push(
+            finding(
+              "PERFORMER_OVERLAP",
+              "conflict",
+              `${performer.name} cannot attend ${occurrence.label} and ${other.label} at the same time.`,
+              [],
+              [occurrence.id, other.id],
+            ),
+          );
+      }
+      const next = occurrences[index + 1];
+      if (!next || time(occurrence.end) > time(next.start)) continue;
+      const nextLooks = looks.filter((look) =>
+        look.sceneIds.includes(next.sceneId),
+      );
+      const changesLook =
+        JSON.stringify(currentLooks.map((look) => look.id).sort()) !==
+        JSON.stringify(nextLooks.map((look) => look.id).sort());
+      const transition = production.transitions.find(
+        (item) =>
+          item.performerId === performer.id &&
+          item.fromOccurrenceId === occurrence.id &&
+          item.toOccurrenceId === next.id,
+      );
+      if (occurrence.location !== next.location)
+        findings.push(
+          finding(
+            "LOCATION_TRANSFER_UNKNOWN",
+            "unverified",
+            `${performer.name}'s transfer from ${occurrence.location} to ${next.location} has no separate recorded travel requirement.`,
+            [],
+            [occurrence.id, next.id],
+          ),
+        );
+      if (
+        !transition &&
+        production.mode === "live_performance" &&
+        changesLook
+      ) {
+        findings.push(
+          finding(
+            "TRANSITION_UNKNOWN",
+            "unverified",
+            `${performer.name}'s directional change from ${occurrence.label} to ${next.label} needs a recorded duration and crew requirement.`,
+            [],
+            [occurrence.id, next.id],
+          ),
+        );
+        continue;
+      }
+      if (!transition) continue;
+      if (transition.minutes === null || transition.evidence === "unknown") {
+        findings.push(
+          finding(
+            "TRANSITION_UNKNOWN",
+            "unverified",
+            `${performer.name}'s change duration is unknown; the reverse transition does not establish this direction.`,
+            [],
+            [occurrence.id, next.id],
+          ),
+        );
+        continue;
+      }
+      if (
+        !Number.isFinite(transition.minutes) ||
+        transition.minutes < 0 ||
+        !Number.isSafeInteger(transition.crewCapacity) ||
+        transition.crewCapacity < 1
+      ) {
+        findings.push(
+          finding(
+            "INVALID_TRANSITION",
+            "conflict",
+            `${performer.name}'s transition needs a nonnegative duration and positive crew capacity.`,
+            [],
+            [occurrence.id, next.id],
+          ),
+        );
+        continue;
+      }
+      const gap = (time(next.start) - time(occurrence.end)) / MINUTE;
+      if (transition.minutes > gap)
+        findings.push(
+          finding(
+            "TRANSITION_TOO_SHORT",
+            "conflict",
+            `${performer.name} has ${gap} minutes for a directional change requiring ${transition.minutes} minutes.`,
+            [],
+            [occurrence.id, next.id],
+          ),
+        );
+      if (transition.evidence === "estimate")
+        findings.push(
+          finding(
+            "TRANSITION_ESTIMATED",
+            "unverified",
+            `${performer.name}'s directional change duration is estimated, not observed.`,
+            [],
+            [occurrence.id, next.id],
+          ),
+        );
+      if (transition.crewResource && transition.minutes > 0)
+        crewTasks.push({
+          id: transition.id,
+          resource: transition.crewResource,
+          capacity: transition.crewCapacity,
+          release: time(occurrence.end),
+          deadline: time(next.start),
+          duration: transition.minutes * MINUTE,
+          occurrences: [occurrence.id, next.id],
+        });
+    }
+  }
+  for (const resource of unique(crewTasks.map((task) => task.resource))) {
+    const tasks = crewTasks.filter((task) => task.resource === resource);
+    const status = scheduleCrew(tasks);
+    if (status !== "feasible")
+      findings.push(
+        finding(
+          status === "infeasible" ? "CREW_CAPACITY" : "CREW_CAPACITY_UNKNOWN",
+          status === "infeasible" ? "conflict" : "unverified",
+          status === "infeasible"
+            ? `${resource} cannot complete the recorded changes within its capacity and change windows.`
+            : `${resource}'s change windows exceed the bounded crew checker; feasibility remains unverified.`,
+          [],
+          unique(tasks.flatMap((task) => task.occurrences)),
+        ),
+      );
+  }
+  return findings;
+}
+
+/** Independent of the optimizer: checks coverage, exact intervals, facts and all overlaps. */
+export function validateAllocation(
+  production: Production,
+  assignments: Allocation[],
+  options: Pick<AllocationOptions, "now"> = {},
+): AllocationValidation {
+  const now = time(options.now ?? new Date().toISOString());
+  const built = buildDemands(production);
+  const findings = [...built.findings, ...transitionFindings(production)];
+  if (
+    unique(assignments.map((assignment) => assignment.id)).length !==
+    assignments.length
+  )
+    findings.push(
+      finding(
+        "DUPLICATE_ALLOCATION_ID",
+        "conflict",
+        "Every allocation must have a distinct identity.",
+      ),
+    );
+  const matched = new Map<string, Allocation>();
+  let matchingNodes = 0;
+  const match = (index: number, available: Allocation[]): boolean => {
+    if (++matchingNodes > 30000) return false;
+    if (index === built.demands.length) return available.length === 0;
+    const demand = built.demands[index];
+    for (const assignment of available) {
+      if (
+        assignment.occurrenceId !== demand.occurrence.id ||
+        assignment.lookId !== demand.look.id ||
+        assignment.performerId !== demand.look.performerId ||
+        !demand.allowedIds.includes(assignment.unitId)
+      )
+        continue;
+      matched.set(demand.key, assignment);
+      if (
+        match(
+          index + 1,
+          available.filter((item) => item !== assignment),
+        )
+      )
+        return true;
+      matched.delete(demand.key);
+    }
+    return false;
+  };
+  const coverageComplete =
+    assignments.length === built.demands.length &&
+    built.demands.length <= 100 &&
+    match(0, assignments);
+  if (!coverageComplete) {
+    const checkLimited = matchingNodes > 30000 || built.demands.length > 100;
+    findings.push(
+      finding(
+        checkLimited ? "COVERAGE_CHECK_LIMIT" : "DEMAND_COVERAGE",
+        checkLimited ? "unverified" : "conflict",
+        checkLimited
+          ? "Demand coverage exceeds the independent checker's bounded matching scope; this assignment is unverified."
+          : "The allocation must cover every required physical unit exactly once using only its explicitly approved alternatives.",
+      ),
+    );
+  }
+  for (const demand of built.demands) {
+    const assignment = matched.get(demand.key);
+    if (!assignment) continue;
+    const unit = production.units.find((item) => item.id === assignment.unitId);
+    if (!unit) {
+      findings.push(
+        finding(
+          "UNIT_MISSING",
+          "conflict",
+          "An assigned physical unit no longer exists.",
+          [assignment.unitId],
+          [demand.occurrence.id],
+          [demand.look.id],
+        ),
+      );
+      continue;
+    }
+    const scope: [string[], string[], string[]] = [
+      [unit.id],
+      [demand.occurrence.id],
+      [demand.look.id],
+    ];
+    if (assignment.state === "blocked" || assignment.state === "historical")
+      findings.push(
+        finding(
+          "ALLOCATION_INACTIVE",
+          "conflict",
+          `${unit.code}'s allocation is ${assignment.state} and cannot establish current feasibility.`,
+          ...scope,
+        ),
+      );
+    if (
+      !Number.isFinite(time(assignment.start)) ||
+      !Number.isFinite(time(assignment.end)) ||
+      time(assignment.start) !== demand.start ||
+      time(assignment.end) !== demand.end
+    )
+      findings.push(
+        finding(
+          "ALLOCATION_INTERVAL",
+          "conflict",
+          `${unit.code}'s allocation must include its recorded preparation and exact occurrence interval.`,
+          ...scope,
+        ),
+      );
+    if (unit.status !== "available")
+      findings.push(
+        finding(
+          "UNIT_UNAVAILABLE",
+          "conflict",
+          `${unit.code} is ${unit.status}.`,
+          ...scope,
+        ),
+      );
+    if (unit.category !== demand.required.category)
+      findings.push(
+        finding(
+          "CATEGORY_MISMATCH",
+          "conflict",
+          `${unit.code} does not satisfy the required garment category.`,
+          ...scope,
+        ),
+      );
+    if (
+      !Number.isFinite(time(unit.availability.from)) ||
+      !Number.isFinite(time(unit.availability.to)) ||
+      time(unit.availability.from) > demand.start ||
+      time(unit.availability.to) < demand.end
+    )
+      findings.push(
+        finding(
+          "AVAILABILITY_WINDOW",
+          "conflict",
+          `${unit.code}'s recorded availability does not cover preparation and use for ${demand.occurrence.label}.`,
+          ...scope,
+        ),
+      );
+    if (
+      !unit.availability.confirmed ||
+      unit.availability.provenance === "synthetic" ||
+      !unit.availability.source.trim()
+    )
+      findings.push(
+        finding(
+          "AVAILABILITY_UNCONFIRMED",
+          "unverified",
+          `${unit.code}'s availability requires source confirmation${unit.availability.provenance === "synthetic" ? "; this is synthetic evidence" : ""}.`,
+          ...scope,
+        ),
+      );
+    if (!Number.isSafeInteger(unit.priceCents) || unit.priceCents < 0)
+      findings.push(
+        finding(
+          "INVALID_PRICE",
+          "conflict",
+          `${unit.code} needs an exact nonnegative quote in minor currency units.`,
+          ...scope,
+        ),
+      );
+    if (
+      !Number.isFinite(time(unit.priceValidUntil)) ||
+      time(unit.priceValidUntil) < now ||
+      !unit.priceSource.trim()
+    )
+      findings.push(
+        finding(
+          "QUOTE_EXPIRED",
+          "unverified",
+          `${unit.code}'s quote needs checking; the source or validity is missing or expired.`,
+          ...scope,
+        ),
+      );
+    if (unit.location !== demand.occurrence.location)
+      findings.push(
+        finding(
+          "UNIT_LOCATION_UNVERIFIED",
+          "unverified",
+          `${unit.code} is at ${unit.location || "an unknown location"}; transport to ${demand.occurrence.location || "the occurrence"} is not recorded.`,
+          ...scope,
+        ),
+      );
+    const fit = unit.fitting;
+    if (
+      fit.status === "alteration" &&
+      fit.performerId === demand.look.performerId
+    )
+      findings.push(
+        finding(
+          "ALTERATION_REQUIRED",
+          "conflict",
+          `${unit.code} requires alteration for this performer before use.`,
+          ...scope,
+        ),
+      );
+    else if (
+      fit.status !== "confirmed" ||
+      fit.performerId !== demand.look.performerId ||
+      !fit.evidence.trim() ||
+      (fit.provenance !== "observed" && fit.provenance !== "manual")
+    )
+      findings.push(
+        finding(
+          "FITTING_UNVERIFIED",
+          "unverified",
+          `${unit.code}'s fit for this performer is ${fit.status.replaceAll("_", " ")}; appearance previews do not confirm physical fit.`,
+          ...scope,
+        ),
+      );
+    const physicallyObserved =
+      fit.status === "confirmed" &&
+      fit.performerId === demand.look.performerId &&
+      !!fit.evidence.trim() &&
+      (fit.provenance === "manual" || fit.provenance === "observed");
+    if (!physicallyObserved) {
+      const performer = production.performers.find(
+        (item) => item.id === demand.look.performerId,
+      );
+      const dimensions = (["chestCm", "waistCm"] as const).filter(
+        (dimension) =>
+          performer?.measurements[dimension] !== null &&
+          performer?.measurements[dimension] !== undefined &&
+          unit.measurements[dimension] !== null,
+      );
+      const smaller = dimensions.some(
+        (dimension) =>
+          unit.measurements[dimension]! < performer!.measurements[dimension]!,
+      );
+      const code = dimensions.length
+        ? smaller
+          ? "MEASUREMENT_SCREEN_REVIEW"
+          : "MEASUREMENT_SCREEN_PROVISIONAL"
+        : "MEASUREMENTS_UNKNOWN";
+      const message = dimensions.length
+        ? smaller
+          ? `${unit.code} has a recorded garment dimension smaller than the performer's corresponding dimension. Review allowances and fitting; no unrecorded alteration or compatibility is assumed.`
+          : `${unit.code}'s recorded dimensions are only a provisional screen. Practitioner allowances and a physical fitting remain separate evidence.`
+        : `${unit.code} lacks comparable performer and garment measurements. Compatibility is unknown.`;
+      findings.push(finding(code, "unverified", message, ...scope));
+    }
+    if (assignment.unitId !== demand.required.id)
+      findings.push(
+        finding(
+          "SUBSTITUTE_REVIEW",
+          "unverified",
+          `${unit.code} is an explicitly allowed alternative, but the recipe and exact preview need review before adopting this substitution.`,
+          ...scope,
+        ),
+      );
+  }
+  for (let left = 0; left < assignments.length; left++) {
+    const a = assignments[left];
+    for (const b of assignments.slice(left + 1)) {
+      if (
+        a.unitId === b.unitId &&
+        overlaps(time(a.start), time(a.end), time(b.start), time(b.end))
+      )
+        findings.push(
+          finding(
+            "UNIT_OVERLAP",
+            "conflict",
+            `${production.units.find((item) => item.id === a.unitId)?.code ?? a.unitId} is one physical unit and cannot cover overlapping use or preparation.`,
+            [a.unitId],
+            [a.occurrenceId, b.occurrenceId],
+            [a.lookId, b.lookId],
+          ),
+        );
+    }
+  }
+  const totalCostCents = unique(
+    assignments.map((assignment) => assignment.unitId),
+  ).reduce(
+    (sum, id) =>
+      sum + (production.units.find((unit) => unit.id === id)?.priceCents ?? 0),
+    0,
+  );
+  if (totalCostCents > production.budgetCents)
+    findings.push(
+      finding(
+        "HARD_BUDGET",
+        "conflict",
+        `The required ${totalCostCents} minor units exceed the hard ${production.budgetCents} budget. No artistic or budget constraint was relaxed.`,
+        unique(assignments.map((assignment) => assignment.unitId)),
+      ),
+    );
+  const result = deduplicateFindings(findings);
+  return {
+    valid:
+      coverageComplete &&
+      !built.invalid &&
+      !built.incomplete &&
+      !result.some((item) => item.severity === "conflict"),
+    findings: result,
+    totalCostCents,
+  };
+}
+
+export function solveAllocation(
+  production: Production,
+  options: AllocationOptions = {},
+): AllocationResult {
+  const now = options.now ?? new Date().toISOString();
+  const sourceRevision = options.sourceRevision ?? production.revision;
+  const built = buildDemands(production);
+  const staticFindings = [...built.findings, ...transitionFindings(production)];
+  const base = {
+    sourceRevision,
+    inputHash: allocationInputHash(production),
+    solver: "stagecraft-bounded-exact/1",
+    policy:
+      "Hard constraints first; minimize explicitly approved substitutions, then production-window quote cost, charged once per selected unit. Consecutive same-look wear on one local day/location retains custody through the gap and prepares once unless a reset transition is recorded. Unknown timing, transport, fit and supplier evidence remain unverified. No implicit artistic substitution.",
+    createdAt: now,
+  };
+  if (built.invalid || !production.occurrences.length || !built.demands.length)
+    return {
+      ...base,
+      status: "INVALID_INPUT",
+      assignments: [],
+      findings: deduplicateFindings([
+        ...staticFindings,
+        finding(
+          "ALLOCATION_INPUT_MISSING",
+          "conflict",
+          "Add mapped occurrences, cast looks and physical inventory before solving.",
+        ),
+      ]),
+      totalCostCents: 0,
+      independentlyChecked: false,
+    };
+  if (built.demands.length > 100)
+    return {
+      ...base,
+      status: "UNKNOWN",
+      assignments: [],
+      findings: [
+        ...staticFindings,
+        finding(
+          "SEARCH_SCOPE",
+          "unverified",
+          "This production exceeds the bounded exact engine's 100-demand review limit.",
+        ),
+      ],
+      totalCostCents: 0,
+      independentlyChecked: false,
+    };
+  if (staticFindings.some((item) => item.severity === "conflict"))
+    return {
+      ...base,
+      status: staticFindings.some((item) => item.code.startsWith("INVALID_"))
+        ? "INVALID_INPUT"
+        : "INFEASIBLE",
+      assignments: [],
+      findings: deduplicateFindings(staticFindings),
+      totalCostCents: 0,
+      independentlyChecked: false,
+    };
+  const makeAssignment = (demand: Demand, unit: PhysicalUnit): Allocation => ({
+    id: `allocation-${demand.key}`,
+    occurrenceId: demand.occurrence.id,
+    lookId: demand.look.id,
+    performerId: demand.look.performerId,
+    unitId: unit.id,
+    start: iso(demand.start),
+    end: iso(demand.end),
+    state: "proposed",
+    reason: null,
+    sourceRevision,
+  });
+  const candidates = new Map(
+    built.demands.map((demand) => [
+      demand.key,
+      demand.allowedIds
+        .map((id) => production.units.find((unit) => unit.id === id))
+        .filter(
+          (unit): unit is PhysicalUnit => !!unit && candidateFits(demand, unit),
+        )
+        .sort(
+          (a, b) =>
+            Number(b.id === demand.required.id) -
+              Number(a.id === demand.required.id) ||
+            a.priceCents - b.priceCents ||
+            a.id.localeCompare(b.id),
+        ),
+    ]),
+  );
+  const missing = built.demands.filter(
+    (demand) => !candidates.get(demand.key)!.length,
+  );
+  if (missing.length) {
+    const check = validateAllocation(
+      production,
+      built.demands.map((demand) => makeAssignment(demand, demand.required)),
+      { now },
+    );
+    return {
+      ...base,
+      status: "INFEASIBLE",
+      assignments: [],
+      findings: deduplicateFindings([
+        ...staticFindings,
+        ...check.findings.filter((item) => item.severity === "conflict"),
+        ...missing.map((demand) =>
+          finding(
+            "NO_ELIGIBLE_UNIT",
+            "conflict",
+            `${demand.look.title} has no available, category-compatible unit within its recorded window and approved alternatives.`,
+            demand.allowedIds,
+            [demand.occurrence.id],
+            [demand.look.id],
+          ),
+        ),
+      ]),
+      totalCostCents: 0,
+      independentlyChecked: false,
+    };
+  }
+  const order = [...built.demands].sort(
+    (a, b) =>
+      candidates.get(a.key)!.length - candidates.get(b.key)!.length ||
+      a.start - b.start ||
+      a.key.localeCompare(b.key),
+  );
+  const chosen: Array<{ demand: Demand; unit: PhysicalUnit }> = [];
+  let best: Allocation[] | null = null,
+    bestCost = Infinity,
+    bestChanges = Infinity,
+    nodes = 0,
+    limited = false;
+  const maxNodes = Math.max(1, Math.min(options.maxNodes ?? 50000, 1000000));
+  const visit = (
+    index: number,
+    changes: number,
+    cost: number,
+    selected: Set<string>,
+  ) => {
+    if (++nodes > maxNodes) {
+      limited = true;
+      return;
+    }
+    if (
+      changes > bestChanges ||
+      (changes === bestChanges && cost > bestCost) ||
+      cost > production.budgetCents
+    )
+      return;
+    if (index === order.length) {
+      if (
+        changes < bestChanges ||
+        (changes === bestChanges && cost < bestCost)
+      ) {
+        bestChanges = changes;
+        bestCost = cost;
+        best = chosen.map(({ demand, unit }) => makeAssignment(demand, unit));
+      }
+      return;
+    }
+    const demand = order[index];
+    for (const unit of candidates.get(demand.key)!) {
+      if (
+        chosen.some(
+          (previous) =>
+            previous.unit.id === unit.id &&
+            overlaps(
+              previous.demand.start,
+              previous.demand.end,
+              demand.start,
+              demand.end,
+            ),
+        )
+      )
+        continue;
+      chosen.push({ demand, unit });
+      const next = new Set(selected);
+      next.add(unit.id);
+      visit(
+        index + 1,
+        changes + Number(unit.id !== demand.required.id),
+        cost + (selected.has(unit.id) ? 0 : unit.priceCents),
+        next,
+      );
+      chosen.pop();
+      if (limited) return;
+    }
+  };
+  visit(0, 0, 0, new Set());
+  if (best === null) {
+    const check = validateAllocation(
+      production,
+      built.demands.map((demand) => makeAssignment(demand, demand.required)),
+      { now },
+    );
+    return {
+      ...base,
+      status: limited ? "UNKNOWN" : "INFEASIBLE",
+      assignments: [],
+      findings: deduplicateFindings([
+        ...staticFindings,
+        ...check.findings.filter((item) => item.severity === "conflict"),
+        finding(
+          limited ? "SEARCH_LIMIT" : "NO_FEASIBLE_COMBINATION",
+          limited ? "unverified" : "conflict",
+          limited
+            ? `The deterministic search reached its ${maxNodes}-node bound without a checked solution. Infeasibility is not proved.`
+            : "Exhaustive search found no permitted combination satisfying physical-unit overlap, availability and the hard budget.",
+        ),
+      ]),
+      totalCostCents: 0,
+      independentlyChecked: false,
+    };
+  }
+  const checked = validateAllocation(production, best, { now });
+  const checkerLimited = checked.findings.some(
+    (item) => item.code === "COVERAGE_CHECK_LIMIT",
+  );
+  if (!checked.valid && !built.incomplete)
+    return {
+      ...base,
+      status: checkerLimited ? "UNKNOWN" : "INVALID_INPUT",
+      assignments: [],
+      findings: [
+        ...checked.findings,
+        finding(
+          "INDEPENDENT_CHECK_FAILED",
+          checkerLimited ? "unverified" : "conflict",
+          checkerLimited
+            ? "The checker reached its coverage bound; the proposed assignment cannot be adopted as checked."
+            : "The proposed assignment failed the independent checker and cannot be adopted.",
+        ),
+      ],
+      totalCostCents: checked.totalCostCents,
+      independentlyChecked: false,
+    };
+  return {
+    ...base,
+    status: built.incomplete ? "UNKNOWN" : limited ? "FEASIBLE" : "OPTIMAL",
+    assignments: best,
+    findings: deduplicateFindings([
+      ...checked.findings,
+      ...(limited
+        ? [
+            finding(
+              "SEARCH_LIMIT",
+              "info",
+              `A feasible independently checked plan was found; the ${maxNodes}-node bound prevents an optimality claim.`,
+            ),
+          ]
+        : []),
+    ]),
+    totalCostCents: checked.totalCostCents,
+    independentlyChecked: checked.valid,
+  };
+}

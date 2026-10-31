@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "observedOn": "2026-10-31",
+  "environment": "local app via Codex in-app browser, actual YouCam and Gemini calls where stated",
+  "evidenceClass": "AI-operated synthetic software verification",
+  "checks": [
+    {
+      "case": "fresh garment workflow",
+      "result": "passed",
+      "observation": "One fresh Clothes V4 task completed with persisted provider task, workflow run and private image. Visual inspection covered the oxblood coat output; no automatic appearance approval."
+    },
+    {
+      "case": "concurrent revision conflict",
+      "result": "passed after fix",
+      "observation": "A second tab changed the production while an approval dialog remained open. Stale save was rejected visibly inside the dialog, input text retained, and deliberate retry against the loaded revision succeeded."
+    },
+    {
+      "case": "allocation and missing coat",
+      "result": "passed",
+      "observation": "16 assignments passed an independent checker at £422 against £500. Missing oxblood coat affected one look, three scenes and three calls, invalidated its exact approval, and preserved Mae’s unrelated approval. Charcoal repair produced a new unapproved recipe and a new exact recorded preview; recalculation was feasible and optimal at £387."
+    },
+    {
+      "case": "sourcing and frozen handoff",
+      "result": "passed",
+      "observation": "A charcoal sourcing draft remained explicitly synthetic with no supplier message or confirmation. Frozen crew pack retained source revision and unresolved evidence. Later allocation adoption visibly superseded the old pack."
+    },
+    {
+      "case": "live script extraction",
+      "result": "passed after provider schema fix",
+      "evidence": "live-script-review.json",
+      "observation": "Gemini extracted seven scenes, five characters and 17 grounded cues from a synthetic draft containing instruction-like dialogue. Every source span validated. A removed scheduled-scene revision was blocked; a complete revision adopted unreviewed with cast assignments retained."
+    },
+    {
+      "case": "mobile scene list",
+      "result": "passed after overflow fix",
+      "observation": "Actual 390px emulation produced 390px document and body widths. Scene list remained readable with contained table scrolling and bottom navigation."
+    },
+    {
+      "case": "independent makeup decision",
+      "result": "passed",
+      "observation": "Recorded makeup required its own explicit review. Lip intensity 40→50 invalidated only beauty evidence; current costume approval remained valid."
+    },
+    {
+      "case": "live makeup workflow and refresh",
+      "result": "passed",
+      "observation": "One fresh Makeup VTO task completed after browser refresh during rendering. Exactly one live job existed, one credit was charged, provider/workflow/private output persisted, and an 800×1000 image loaded from authenticated asset API. No automatic approval."
+    },
+    {
+      "case": "recast and exact makeup recording",
+      "result": "passed",
+      "observation": "Celeste recast invalidated Ada’s current garment and makeup approvals. A lip 50 recipe rejected the lip 40 recording. Saving lip 40 allowed exact Celeste recording attachment with correct independent face source, and no inherited approval or paid generation."
+    }
+  ],
+  "limits": [
+    "No human participant study or practitioner feedback was available.",
+    "Synthetic visual review is not evidence of physical fit, real makeup application, exact identity or product fidelity, supplier availability, or commercial impact.",
+    "These observations do not claim universal accessibility or comprehensive security assurance. Automated checks and production verification are recorded separately."
+  ]
+}

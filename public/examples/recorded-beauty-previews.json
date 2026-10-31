@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "previews": [
+    {
+      "id": "recorded-nora-ada-berry",
+      "lookId": "look-nora",
+      "performerId": "performer-ada",
+      "faceCaptureVersion": 1,
+      "beautyRevision": 1,
+      "recipe": {
+        "lipColor": "#853E5D",
+        "lipIntensity": 40,
+        "blushColor": "#9D526C",
+        "blushIntensity": 30
+      },
+      "effects": [
+        {
+          "category": "skin_smooth",
+          "skinSmoothStrength": 0,
+          "skinSmoothColorIntensity": 0
+        },
+        {
+          "category": "blush",
+          "pattern": {
+            "name": "1color1"
+          },
+          "palettes": [
+            {
+              "color": "#9D526C",
+              "texture": "matte",
+              "colorIntensity": 30
+            }
+          ]
+        },
+        {
+          "category": "lip_color",
+          "shape": {
+            "name": "original"
+          },
+          "morphology": {
+            "fullness": 0,
+            "wrinkless": 0
+          },
+          "style": {
+            "type": "full"
+          },
+          "palettes": [
+            {
+              "color": "#853E5D",
+              "texture": "matte",
+              "colorIntensity": 40
+            }
+          ]
+        }
+      ],
+      "imagePath": "/examples/beauty/nora-ada-berry.webp",
+      "sourceImagePath": "/assets/cast/ada-face.webp",
+      "inputHash": "1a40e9c2443bb29e085c4c01d862c606b6f6593db31d487f4df24163c8e73a42",
+      "sourceSha256": "193c0221c36458bb275dcb27c240d6dfd07b8ba0e444cabbba6a024cbd03d03f",
+      "sourceUploadSha256": "07c95a60bbbb1533461fe77b11d9d8245dad0b68c36840cead70ef6f1fb2c541",
+      "outputSha256": "2cdf9851ff3b0b9b0d782dd222b01cb3a4ad1037c4e973f9edf273d9f4e6acff",
+      "operation": "makeup_vto_v1",
+      "provider": "YouCam",
+      "recordedAt": "2026-10-31T12:40:53.743Z",
+      "estimatedUnits": 1,
+      "inspectionNotes": "Actual recorded YouCam Makeup VTO detail over separately generated fictional adult face artwork. Both skin smoothing fields and lip morphology are zero. Inspect face, lips, blush and texture before explicit beauty approval. This separate detail is not a composite, product match, physical application or fitting outcome. Zero smoothing is a submitted payload setting, not a guarantee about texture or facial-feature preservation; inspect for provider drift.",
+      "taskEvidence": {
+        "taskIdHash": "af140ad0e59e8af7011f3f4a65bb302ccf7a98563b70be132140fd27eb09d07f",
+        "status": "success"
+      },
+      "outputTransformation": "webp-reencode/q92;no-retouch"
+    },
+    {
+      "id": "recorded-nora-celeste-berry",
+      "lookId": "look-nora",
+      "performerId": "performer-celeste",
+      "faceCaptureVersion": 1,
+      "beautyRevision": 1,
+      "recipe": {
+        "lipColor": "#853E5D",
+        "lipIntensity": 40,
+        "blushColor": "#9D526C",
+        "blushIntensity": 30
+      },
+      "effects": [
+        {
+          "category": "skin_smooth",
+          "skinSmoothStrength": 0,
+          "skinSmoothColorIntensity": 0
+        },
+        {
+          "category": "blush",
+          "pattern": {
+            "name": "1color1"
+          },
+          "palettes": [
+            {
+              "color": "#9D526C",
+              "texture": "matte",
+              "colorIntensity": 30
+            }
+          ]
+        },
+        {
+          "category": "lip_color",
+          "shape": {
+            "name": "original"
+          },
+          "morphology": {
+            "fullness": 0,
+            "wrinkless": 0
+          },
+          "style": {
+            "type": "full"
+          },
+          "palettes": [
+            {
+              "color": "#853E5D",
+              "texture": "matte",
+              "colorIntensity": 40
+            }
+          ]
+        }
+      ],
+      "imagePath": "/examples/beauty/nora-celeste-berry.webp",
+      "sourceImagePath": "/assets/cast/celeste-face.webp",
+      "inputHash": "1bc66c4baacc81112b93c06f582375ca381ace28d1c6d05ef069fd1940b74b78",
+      "sourceSha256": "1e3d3775c2fa758ccd2def4acec30d81414056d066946e31537658212bcd3277",
+      "sourceUploadSha256": "fbef26666fd6e4c8d52cb43bbe75a7ed4d0cf39406767586d3833d71d86e1c6f",
+      "outputSha256": "50a7453b6ff3d904e06d09ec1d0dd723594017407ae31820f5a3aeb90c2855b3",
+      "operation": "makeup_vto_v1",
+      "provider": "YouCam",
+      "recordedAt": "2026-10-31T12:40:55.793Z",
+      "estimatedUnits": 1,
+      "inspectionNotes": "Actual recorded YouCam Makeup VTO detail over separately generated fictional adult face artwork. Both skin smoothing fields and lip morphology are zero. Inspect face, lips, blush and texture before explicit beauty approval. This separate detail is not a composite, product match, physical application or fitting outcome. Zero smoothing is a submitted payload setting, not a guarantee about texture or facial-feature preservation; inspect for provider drift.",
+      "taskEvidence": {
+        "taskIdHash": "fd24837ca6dae92064f9bd748b9330190ac154320888fe056c9bd47535b8282e",
+        "status": "success"
+      },
+      "outputTransformation": "webp-reencode/q92;no-retouch"
+    }
+  ]
+}

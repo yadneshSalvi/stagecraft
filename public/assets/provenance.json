@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "createdAt": "2026-10-31",
+  "generator": "OpenAI Image API via bundled imagegen CLI",
+  "provenance": "Original AI-generated fictional adults, unbranded garments, and fictional theatre. No participant photograph, merchant catalog, real stock availability, or physical outcome.",
+  "publication": "Generated with account owner authorization for this public project. No exclusive copyright claim or endorsement implied.",
+  "assets": [
+    {
+      "path": "/assets/cast/ada.webp",
+      "kind": "synthetic_cast_source",
+      "sha256": "0a08ac0a98da40bffdc81b82c758ebef26369c2c0bc23f11d56291c272e42d19",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "sourcePrompt": "Use case: photorealistic-natural. Asset type: full-body cast source photo for virtual costume preview, fictional theatre production THE LAST LIGHT. Photorealistic studio photography of exactly one fictional adult, never a celebrity or existing person. Full entire body, feet and head comfortably inside frame with 8 percent margin; subject faces directly front, upright relaxed neutral stance, feet slightly apart, arms held slightly away from torso, hands visible and empty. Plain warm gray seamless background, evenly lit soft daylight studio lighting, accurate anatomy, natural skin texture and hair. Simple fitted opaque neutral clothing and flat shoes as specified, no jacket or jewelry, no props. Clear garment silhouette and face. Centered symmetrical eye-level camera, 70mm lens, high detail. No lettering, logos, borders, watermark, other people, dramatic color cast, glamour retouching or lens blur. Fictional adult woman age34, warm medium-brown skin, dark brown shoulder-length wavy hair tucked behind ears, brown eyes, self-possessed calm expression. Wearing a simple fitted ivory long-sleeve crewneck knit and charcoal straight-leg trousers, low black shoes.",
+      "submittedPrompt": "Primary request: Use case: photorealistic-natural. Asset type: full-body cast source photo for virtual costume preview, fictional theatre production THE LAST LIGHT. Photorealistic studio photography of exactly one fictional adult, never a celebrity or existing person. Full entire body, feet and head comfortably inside frame with 8 percent margin; subject faces directly front, upright relaxed neutral stance, feet slightly apart, arms held slightly away from torso, hands visible and empty. Plain warm gray seamless background, evenly lit soft daylight studio lighting, accurate anatomy, natural skin texture and hair. Simple fitted opaque neutral clothing and flat shoes as specified, no jacket or jewelry, no props. Clear garment silhouette and face. Centered symmetrical eye-level camera, 70mm lens, high detail. No lettering, logos, borders, watermark, other people, dramatic color cast, glamour retouching or lens blur. Fictional adult woman age34, warm medium-brown skin, dark brown shoulder-length wavy hair tucked behind ears, brown eyes, self-possessed calm expression. Wearing a simple fitted ivory long-sleeve crewneck knit and charcoal straight-leg trousers, low black shoes."
+    },
+    {
+      "path": "/assets/cast/theo.webp",
+      "kind": "synthetic_cast_source",
+      "sha256": "7d30da032c23f138754a4b529ddda3829fa40bd76ba5f5c31484ca2dd6c478f9",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "sourcePrompt": "Use case: photorealistic-natural. Asset type: full-body cast source photo for virtual costume preview, fictional theatre production THE LAST LIGHT. Photorealistic studio photography of exactly one fictional adult, never a celebrity or existing person. Full entire body, feet and head comfortably inside frame with 8 percent margin; subject faces directly front, upright relaxed neutral stance, feet slightly apart, arms held slightly away from torso, hands visible and empty. Plain warm gray seamless background, evenly lit soft daylight studio lighting, accurate anatomy, natural skin texture and hair. Simple fitted opaque neutral clothing and flat shoes as specified, no jacket or jewelry, no props. Clear garment silhouette and face. Centered symmetrical eye-level camera, 70mm lens, high detail. No lettering, logos, borders, watermark, other people, dramatic color cast, glamour retouching or lens blur. Fictional adult man age38, light olive skin, dark short curly hair and neatly trimmed beard, brown eyes, calm expression. Wearing a fitted stone-gray crewneck T-shirt and dark charcoal straight-leg trousers, simple black shoes.",
+      "submittedPrompt": "Primary request: Use case: photorealistic-natural. Asset type: full-body cast source photo for virtual costume preview, fictional theatre production THE LAST LIGHT. Photorealistic studio photography of exactly one fictional adult, never a celebrity or existing person. Full entire body, feet and head comfortably inside frame with 8 percent margin; subject faces directly front, upright relaxed neutral stance, feet slightly apart, arms held slightly away from torso, hands visible and empty. Plain warm gray seamless background, evenly lit soft daylight studio lighting, accurate anatomy, natural skin texture and hair. Simple fitted opaque neutral clothing and flat shoes as specified, no jacket or jewelry, no props. Clear garment silhouette and face. Centered symmetrical eye-level camera, 70mm lens, high detail. No lettering, logos, borders, watermark, other people, dramatic color cast, glamour retouching or lens blur. Fictional adult man age38, light olive skin, dark short curly hair and neatly trimmed beard, brown eyes, calm expression. Wearing a fitted stone-gray crewneck T-shirt and dark charcoal straight-leg trousers, simple black shoes."
+    },
+    {
+      "path": "/assets/cast/mina.webp",
+      "kind": "synthetic_cast_source",
+      "sha256": "46e3700c1802c538e1c60e7e79859b9a38772443bbb9526906c7402be1078997",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "sourcePrompt": "Use case: photorealistic-natural. Asset type: full-body cast source photo for virtual costume preview, fictional theatre production THE LAST LIGHT. Photorealistic studio photography of exactly one fictional adult, never a celebrity or existing person. Full entire body, feet and head comfortably inside frame with 8 percent margin; subject faces directly front, upright relaxed neutral stance, feet slightly apart, arms held slightly away from torso, hands visible and empty. Plain warm gray seamless background, evenly lit soft daylight studio lighting, accurate anatomy, natural skin texture and hair. Simple fitted opaque neutral clothing and flat shoes as specified, no jacket or jewelry, no props. Clear garment silhouette and face. Centered symmetrical eye-level camera, 70mm lens, high detail. No lettering, logos, borders, watermark, other people, dramatic color cast, glamour retouching or lens blur. Fictional adult East Asian woman age29, light-medium skin, straight black jaw-length bob, brown eyes, composed expression. Wearing a fitted slate-gray crewneck T-shirt and slim charcoal trousers, simple flat black shoes.",
+      "submittedPrompt": "Primary request: Use case: photorealistic-natural. Asset type: full-body cast source photo for virtual costume preview, fictional theatre production THE LAST LIGHT. Photorealistic studio photography of exactly one fictional adult, never a celebrity or existing person. Full entire body, feet and head comfortably inside frame with 8 percent margin; subject faces directly front, upright relaxed neutral stance, feet slightly apart, arms held slightly away from torso, hands visible and empty. Plain warm gray seamless background, evenly lit soft daylight studio lighting, accurate anatomy, natural skin texture and hair. Simple fitted opaque neutral clothing and flat shoes as specified, no jacket or jewelry, no props. Clear garment silhouette and face. Centered symmetrical eye-level camera, 70mm lens, high detail. No lettering, logos, borders, watermark, other people, dramatic color cast, glamour retouching or lens blur. Fictional adult East Asian woman age29, light-medium skin, straight black jaw-length bob, brown eyes, composed expression. Wearing a fitted slate-gray crewneck T-shirt and slim charcoal trousers, simple flat black shoes."
+    },
+    {
+      "path": "/assets/cast/jules.webp",
+      "kind": "synthetic_cast_source",
+      "sha256": "499079a0d48bbc9167b72fa30189e5865fff6da58c598e4a8cc211e02ec7a701",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "sourcePrompt": "Use case: photorealistic-natural. Asset type: full-body cast source photo for virtual costume preview, fictional theatre production THE LAST LIGHT. Photorealistic studio photography of exactly one fictional adult, never a celebrity or existing person. Full entire body, feet and head comfortably inside frame with 8 percent margin; subject faces directly front, upright relaxed neutral stance, feet slightly apart, arms held slightly away from torso, hands visible and empty. Plain warm gray seamless background, evenly lit soft daylight studio lighting, accurate anatomy, natural skin texture and hair. Simple fitted opaque neutral clothing and flat shoes as specified, no jacket or jewelry, no props. Clear garment silhouette and face. Centered symmetrical eye-level camera, 70mm lens, high detail. No lettering, logos, borders, watermark, other people, dramatic color cast, glamour retouching or lens blur. Fictional adult Black man age31, deep brown skin, short natural textured hair, clean shaven, attentive calm expression. Wearing a fitted off-white crewneck T-shirt and slim dark charcoal trousers, plain black shoes.",
+      "submittedPrompt": "Primary request: Use case: photorealistic-natural. Asset type: full-body cast source photo for virtual costume preview, fictional theatre production THE LAST LIGHT. Photorealistic studio photography of exactly one fictional adult, never a celebrity or existing person. Full entire body, feet and head comfortably inside frame with 8 percent margin; subject faces directly front, upright relaxed neutral stance, feet slightly apart, arms held slightly away from torso, hands visible and empty. Plain warm gray seamless background, evenly lit soft daylight studio lighting, accurate anatomy, natural skin texture and hair. Simple fitted opaque neutral clothing and flat shoes as specified, no jacket or jewelry, no props. Clear garment silhouette and face. Centered symmetrical eye-level camera, 70mm lens, high detail. No lettering, logos, borders, watermark, other people, dramatic color cast, glamour retouching or lens blur. Fictional adult Black man age31, deep brown skin, short natural textured hair, clean shaven, attentive calm expression. Wearing a fitted off-white crewneck T-shirt and slim dark charcoal trousers, plain black shoes."
+    },
+    {
+      "path": "/assets/cast/ruth.webp",
+      "kind": "synthetic_cast_source",
+      "sha256": "a8f3981876b6ee49d441707cb19effefdab35ee826c4846a33825dc0601263c0",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "sourcePrompt": "Use case: photorealistic-natural. Asset type: full-body cast source photo for virtual costume preview, fictional theatre production THE LAST LIGHT. Photorealistic studio photography of exactly one fictional adult, never a celebrity or existing person. Full entire body, feet and head comfortably inside frame with 8 percent margin; subject faces directly front, upright relaxed neutral stance, feet slightly apart, arms held slightly away from torso, hands visible and empty. Plain warm gray seamless background, evenly lit soft daylight studio lighting, accurate anatomy, natural skin texture and hair. Simple fitted opaque neutral clothing and flat shoes as specified, no jacket or jewelry, no props. Clear garment silhouette and face. Centered symmetrical eye-level camera, 70mm lens, high detail. No lettering, logos, borders, watermark, other people, dramatic color cast, glamour retouching or lens blur. Fictional adult woman age58, fair skin with natural mature lines, silver-gray shoulder-length hair tucked behind ears, blue-gray eyes, warm serious expression. Wearing a simple ivory fitted long-sleeve knit and charcoal straight-leg trousers, simple black flats.",
+      "submittedPrompt": "Primary request: Use case: photorealistic-natural. Asset type: full-body cast source photo for virtual costume preview, fictional theatre production THE LAST LIGHT. Photorealistic studio photography of exactly one fictional adult, never a celebrity or existing person. Full entire body, feet and head comfortably inside frame with 8 percent margin; subject faces directly front, upright relaxed neutral stance, feet slightly apart, arms held slightly away from torso, hands visible and empty. Plain warm gray seamless background, evenly lit soft daylight studio lighting, accurate anatomy, natural skin texture and hair. Simple fitted opaque neutral clothing and flat shoes as specified, no jacket or jewelry, no props. Clear garment silhouette and face. Centered symmetrical eye-level camera, 70mm lens, high detail. No lettering, logos, borders, watermark, other people, dramatic color cast, glamour retouching or lens blur. Fictional adult woman age58, fair skin with natural mature lines, silver-gray shoulder-length hair tucked behind ears, blue-gray eyes, warm serious expression. Wearing a simple ivory fitted long-sleeve knit and charcoal straight-leg trousers, simple black flats."
+    },
+    {
+      "path": "/assets/cast/celeste.webp",
+      "kind": "synthetic_cast_source",
+      "sha256": "e1a69b8dedee65a70fb7e0c5f6282d20270bfe54794ca5cd7948c716f9603ba7",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "sourcePrompt": "Use case: photorealistic-natural. Asset type: full-body cast source photo for virtual costume preview, fictional theatre production THE LAST LIGHT. Photorealistic studio photography of exactly one fictional adult, never a celebrity or existing person. Full entire body, feet and head comfortably inside frame with 8 percent margin; subject faces directly front, upright relaxed neutral stance, feet slightly apart, arms held slightly away from torso, hands visible and empty. Plain warm gray seamless background, evenly lit soft daylight studio lighting, accurate anatomy, natural skin texture and hair. Simple fitted opaque neutral clothing and flat shoes as specified, no jacket or jewelry, no props. Clear garment silhouette and face. Centered symmetrical eye-level camera, 70mm lens, high detail. No lettering, logos, borders, watermark, other people, dramatic color cast, glamour retouching or lens blur. Fictional adult woman age36, warm olive skin, auburn shoulder-length straight hair tucked behind ears, brown eyes, calm expression. Wearing a fitted ivory long-sleeve crewneck knit and charcoal straight-leg trousers, low black shoes. Distinct fictional identity from other cast portraits.",
+      "submittedPrompt": "Primary request: Use case: photorealistic-natural. Asset type: full-body cast source photo for virtual costume preview, fictional theatre production THE LAST LIGHT. Photorealistic studio photography of exactly one fictional adult, never a celebrity or existing person. Full entire body, feet and head comfortably inside frame with 8 percent margin; subject faces directly front, upright relaxed neutral stance, feet slightly apart, arms held slightly away from torso, hands visible and empty. Plain warm gray seamless background, evenly lit soft daylight studio lighting, accurate anatomy, natural skin texture and hair. Simple fitted opaque neutral clothing and flat shoes as specified, no jacket or jewelry, no props. Clear garment silhouette and face. Centered symmetrical eye-level camera, 70mm lens, high detail. No lettering, logos, borders, watermark, other people, dramatic color cast, glamour retouching or lens blur. Fictional adult woman age36, warm olive skin, auburn shoulder-length straight hair tucked behind ears, brown eyes, calm expression. Wearing a fitted ivory long-sleeve crewneck knit and charcoal straight-leg trousers, low black shoes. Distinct fictional identity from other cast portraits."
+    },
+    {
+      "path": "/assets/garments/oxblood-coat.webp",
+      "kind": "synthetic_garment_reference",
+      "sha256": "0dd86d2ee1fcaf76a5a8ce5e45d53e15fa58219421236065da629f4fa2b500e1",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "sourcePrompt": "Use case: product-mockup. Asset type: source garment image for virtual try-on in a fictional theatre wardrobe. A clean photorealistic premium ecommerce product photograph of exactly one complete unbranded garment, floating invisible mannequin ghost form, directly front-facing, centered with 10 percent margin on a plain pale warm gray seamless background. Even neutral studio lighting, crisp exact fabric texture and garment construction, no dramatic grading. Sleeves fully visible, symmetrical natural drape. Garment only, no person, no visible mannequin, no body parts, no hanger, no props, no lettering, no logo, no text, no watermark, no duplicate garments, no borders. A luxurious deep oxblood burgundy velvet long coat, mid-calf length, single-breasted fitted waist, broad pointed lapels, three small antique brass buttons, long sleeves, two discreet welt pockets, beautiful rich velvet texture. The coat is buttoned closed, complete uninterrupted front view.",
+      "submittedPrompt": "Primary request: Use case: product-mockup. Asset type: source garment image for virtual try-on in a fictional theatre wardrobe. A clean photorealistic premium ecommerce product photograph of exactly one complete unbranded garment, floating invisible mannequin ghost form, directly front-facing, centered with 10 percent margin on a plain pale warm gray seamless background. Even neutral studio lighting, crisp exact fabric texture and garment construction, no dramatic grading. Sleeves fully visible, symmetrical natural drape. Garment only, no person, no visible mannequin, no body parts, no hanger, no props, no lettering, no logo, no text, no watermark, no duplicate garments, no borders. A luxurious deep oxblood burgundy velvet long coat, mid-calf length, single-breasted fitted waist, broad pointed lapels, three small antique brass buttons, long sleeves, two discreet welt pockets, beautiful rich velvet texture. The coat is buttoned closed, complete uninterrupted front view."
+    },
+    {
+      "path": "/assets/garments/charcoal-coat.webp",
+      "kind": "synthetic_garment_reference",
+      "sha256": "9af7b9e3f2cadc3803bf64f096cd8d857dc526f5d916394d33ae8f628f101e73",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "sourcePrompt": "Use case: product-mockup. Asset type: source garment image for virtual try-on in a fictional theatre wardrobe. A clean photorealistic premium ecommerce product photograph of exactly one complete unbranded garment, floating invisible mannequin ghost form, directly front-facing, centered with 10 percent margin on a plain pale warm gray seamless background. Even neutral studio lighting, crisp exact fabric texture and garment construction, no dramatic grading. Sleeves fully visible, symmetrical natural drape. Garment only, no person, no visible mannequin, no body parts, no hanger, no props, no lettering, no logo, no text, no watermark, no duplicate garments, no borders. A charcoal-black wool long tailored coat, mid-calf length, single-breasted fitted waist, broad pointed lapels, three dark horn buttons, long sleeves, two discreet welt pockets. Buttoned closed, complete uninterrupted front view.",
+      "submittedPrompt": "Primary request: Use case: product-mockup. Asset type: source garment image for virtual try-on in a fictional theatre wardrobe. A clean photorealistic premium ecommerce product photograph of exactly one complete unbranded garment, floating invisible mannequin ghost form, directly front-facing, centered with 10 percent margin on a plain pale warm gray seamless background. Even neutral studio lighting, crisp exact fabric texture and garment construction, no dramatic grading. Sleeves fully visible, symmetrical natural drape. Garment only, no person, no visible mannequin, no body parts, no hanger, no props, no lettering, no logo, no text, no watermark, no duplicate garments, no borders. A charcoal-black wool long tailored coat, mid-calf length, single-breasted fitted waist, broad pointed lapels, three dark horn buttons, long sleeves, two discreet welt pockets. Buttoned closed, complete uninterrupted front view."
+    },
+    {
+      "path": "/assets/garments/midnight-dress.webp",
+      "kind": "synthetic_garment_reference",
+      "sha256": "7223aaf183aa4bf65da5f178c8a58ba2b0562eeaf2650a7eb9a7192e41529ad4",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "sourcePrompt": "Use case: product-mockup. Asset type: source garment image for virtual try-on in a fictional theatre wardrobe. A clean photorealistic premium ecommerce product photograph of exactly one complete unbranded garment, floating invisible mannequin ghost form, directly front-facing, centered with 10 percent margin on a plain pale warm gray seamless background. Even neutral studio lighting, crisp exact fabric texture and garment construction, no dramatic grading. Sleeves fully visible, symmetrical natural drape. Garment only, no person, no visible mannequin, no body parts, no hanger, no props, no lettering, no logo, no text, no watermark, no duplicate garments, no borders. A midnight navy satin long-sleeve midi dress, modest boat neckline, defined waist, gently flowing A-line skirt to mid calf, simple refined timeless theatrical silhouette, no embellishment.",
+      "submittedPrompt": "Primary request: Use case: product-mockup. Asset type: source garment image for virtual try-on in a fictional theatre wardrobe. A clean photorealistic premium ecommerce product photograph of exactly one complete unbranded garment, floating invisible mannequin ghost form, directly front-facing, centered with 10 percent margin on a plain pale warm gray seamless background. Even neutral studio lighting, crisp exact fabric texture and garment construction, no dramatic grading. Sleeves fully visible, symmetrical natural drape. Garment only, no person, no visible mannequin, no body parts, no hanger, no props, no lettering, no logo, no text, no watermark, no duplicate garments, no borders. A midnight navy satin long-sleeve midi dress, modest boat neckline, defined waist, gently flowing A-line skirt to mid calf, simple refined timeless theatrical silhouette, no embellishment."
+    },
+    {
+      "path": "/assets/garments/ivory-shirt.webp",
+      "kind": "synthetic_garment_reference",
+      "sha256": "cbd54328d71dfa6a1a7508fa538b455a2ae5f943a7bf7742a0cad4638adc2be4",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "sourcePrompt": "Use case: product-mockup. Asset type: source garment image for virtual try-on in a fictional theatre wardrobe. A clean photorealistic premium ecommerce product photograph of exactly one complete unbranded garment, floating invisible mannequin ghost form, directly front-facing, centered with 10 percent margin on a plain pale warm gray seamless background. Even neutral studio lighting, crisp exact fabric texture and garment construction, no dramatic grading. Sleeves fully visible, symmetrical natural drape. Garment only, no person, no visible mannequin, no body parts, no hanger, no props, no lettering, no logo, no text, no watermark, no duplicate garments, no borders. An ivory cotton long-sleeve formal button-front shirt, classic point collar, subtle woven texture, white buttons, restrained timeless tailored cut, full hem and sleeves visible.",
+      "submittedPrompt": "Primary request: Use case: product-mockup. Asset type: source garment image for virtual try-on in a fictional theatre wardrobe. A clean photorealistic premium ecommerce product photograph of exactly one complete unbranded garment, floating invisible mannequin ghost form, directly front-facing, centered with 10 percent margin on a plain pale warm gray seamless background. Even neutral studio lighting, crisp exact fabric texture and garment construction, no dramatic grading. Sleeves fully visible, symmetrical natural drape. Garment only, no person, no visible mannequin, no body parts, no hanger, no props, no lettering, no logo, no text, no watermark, no duplicate garments, no borders. An ivory cotton long-sleeve formal button-front shirt, classic point collar, subtle woven texture, white buttons, restrained timeless tailored cut, full hem and sleeves visible."
+    },
+    {
+      "path": "/assets/garments/olive-suit.webp",
+      "kind": "synthetic_garment_reference",
+      "sha256": "6db70beb190ace662b32424b97a6c8241d33c4ad8000d77a946a3591774b84ea",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "sourcePrompt": "Use case: product-mockup. Asset type: source garment image for virtual try-on in a fictional theatre wardrobe. A clean photorealistic premium ecommerce product photograph of exactly one complete unbranded garment, floating invisible mannequin ghost form, directly front-facing, centered with 10 percent margin on a plain pale warm gray seamless background. Even neutral studio lighting, crisp exact fabric texture and garment construction, no dramatic grading. Sleeves fully visible, symmetrical natural drape. Garment only, no person, no visible mannequin, no body parts, no hanger, no props, no lettering, no logo, no text, no watermark, no duplicate garments, no borders. A single olive-green wool tailored suit jacket, two-button front fastened, notched lapels, long sleeves, two flap pockets. One jacket only, no trousers or accessories; timeless tailored theatrical silhouette.",
+      "submittedPrompt": "Primary request: Use case: product-mockup. Asset type: source garment image for virtual try-on in a fictional theatre wardrobe. A clean photorealistic premium ecommerce product photograph of exactly one complete unbranded garment, floating invisible mannequin ghost form, directly front-facing, centered with 10 percent margin on a plain pale warm gray seamless background. Even neutral studio lighting, crisp exact fabric texture and garment construction, no dramatic grading. Sleeves fully visible, symmetrical natural drape. Garment only, no person, no visible mannequin, no body parts, no hanger, no props, no lettering, no logo, no text, no watermark, no duplicate garments, no borders. A single olive-green wool tailored suit jacket, two-button front fastened, notched lapels, long sleeves, two flap pockets. One jacket only, no trousers or accessories; timeless tailored theatrical silhouette."
+    },
+    {
+      "path": "/assets/theatre-atmosphere.webp",
+      "kind": "synthetic_atmosphere",
+      "sha256": "1ecbe39f6cd6653772224a152c1138fbb965d21336748b2908b28e3af3e78c64",
+      "dimensions": [
+        2048,
+        1152
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "sourcePrompt": "Use case: photorealistic-natural. Asset type: wide cinematic background for a premium theatrical costume planning workspace. A beautiful empty historic small theatre seen from the side of the wooden stage looking toward rows of dark oxblood velvet seats and ornate brass balcony rails. Very deep ink navy shadows, warm practical theatre lights, restrained quiet golden glow. The worn wood of the stage is visible in the foreground, one folded velvet curtain at the right. No people, no posters, no signs, no words, no logos. Authentic architectural photograph, realistic texture, richly composed but understated, no theatrical fog or lens flare. Broad dark negative space in left third for separately typeset webpage content. Panoramic 16:9 composition.",
+      "submittedPrompt": "Primary request: Use case: photorealistic-natural. Asset type: wide cinematic background for a premium theatrical costume planning workspace. A beautiful empty historic small theatre seen from the side of the wooden stage looking toward rows of dark oxblood velvet seats and ornate brass balcony rails. Very deep ink navy shadows, warm practical theatre lights, restrained quiet golden glow. The worn wood of the stage is visible in the foreground, one folded velvet curtain at the right. No people, no posters, no signs, no words, no logos. Authentic architectural photograph, realistic texture, richly composed but understated, no theatrical fog or lens flare. Broad dark negative space in left third for separately typeset webpage content. Panoramic 16:9 composition."
+    },
+    {
+      "path": "/assets/cast/ada-face.webp",
+      "kind": "synthetic_face_source",
+      "sha256": "193c0221c36458bb275dcb27c240d6dfd07b8ba0e444cabbba6a024cbd03d03f",
+      "dimensions": [
+        1024,
+        1280
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "operation": "edit",
+      "referencePath": "/assets/cast/ada.webp",
+      "referenceSha256": "0a08ac0a98da40bffdc81b82c758ebef26369c2c0bc23f11d56291c272e42d19",
+      "sourcePrompt": "Use case: identity-preserve. Asset type: separately labeled synthetic face-source capture for a fictional actor costume and makeup planning example. Edit the supplied fictional full-body portrait into a high-resolution front-facing head-and-shoulders studio portrait of the same fictional adult. Image1 is the identity and wardrobe reference. Preserve the person\u2019s distinctive facial structure, proportions, eyes, nose, lips, jaw, hairline, hairstyle, skin tone and calm neutral expression. Preserve the ivory crewneck knit neckline. Keep natural visible skin texture, pores and fine lines. No makeup, no beautification, no smoothing, no altered age, no glamour retouching. The whole face and forehead are unobstructed, hair tucked behind ears, shoulders relaxed, eyes looking directly at camera, lips gently closed. Show full head with margin and upper shoulders; face occupies about65percent of image width. Plain warm gray seamless background, neutral soft even studio illumination suitable for inspecting color, no warm or cool color cast. Photorealistic, detailed, clean focus. Do not add lettering, text, logo, watermark, props, earrings, accessories, another person or background scene. This remains fictional AI-created source artwork, not a real performer photograph or a makeup result.",
+      "submittedPrompt": "Primary request: Use case: identity-preserve. Asset type: separately labeled synthetic face-source capture for a fictional actor costume and makeup planning example. Edit the supplied fictional full-body portrait into a high-resolution front-facing head-and-shoulders studio portrait of the same fictional adult. Image1 is the identity and wardrobe reference. Preserve the person\u2019s distinctive facial structure, proportions, eyes, nose, lips, jaw, hairline, hairstyle, skin tone and calm neutral expression. Preserve the ivory crewneck knit neckline. Keep natural visible skin texture, pores and fine lines. No makeup, no beautification, no smoothing, no altered age, no glamour retouching. The whole face and forehead are unobstructed, hair tucked behind ears, shoulders relaxed, eyes looking directly at camera, lips gently closed. Show full head with margin and upper shoulders; face occupies about65percent of image width. Plain warm gray seamless background, neutral soft even studio illumination suitable for inspecting color, no warm or cool color cast. Photorealistic, detailed, clean focus. Do not add lettering, text, logo, watermark, props, earrings, accessories, another person or background scene. This remains fictional AI-created source artwork, not a real performer photograph or a makeup result.",
+      "captureNote": "Separately versioned synthetic headshot derived from the fictional full-body source. Not a physical photograph, makeup result, or guarantee of identity preservation."
+    },
+    {
+      "path": "/assets/cast/celeste-face.webp",
+      "kind": "synthetic_face_source",
+      "sha256": "1e3d3775c2fa758ccd2def4acec30d81414056d066946e31537658212bcd3277",
+      "dimensions": [
+        1024,
+        1280
+      ],
+      "model": "gpt-image-2",
+      "quality": "high",
+      "operation": "edit",
+      "referencePath": "/assets/cast/celeste.webp",
+      "referenceSha256": "e1a69b8dedee65a70fb7e0c5f6282d20270bfe54794ca5cd7948c716f9603ba7",
+      "sourcePrompt": "Use case: identity-preserve. Asset type: separately labeled synthetic face-source capture for a fictional actor costume and makeup planning example. Edit the supplied fictional full-body portrait into a high-resolution front-facing head-and-shoulders studio portrait of the same fictional adult. Image1 is the identity and wardrobe reference. Preserve the person\u2019s distinctive facial structure, proportions, eyes, nose, lips, jaw, hairline, hairstyle, skin tone and calm neutral expression. Preserve the ivory crewneck knit neckline. Keep natural visible skin texture, pores and fine lines. No makeup, no beautification, no smoothing, no altered age, no glamour retouching. The whole face and forehead are unobstructed, hair tucked behind ears, shoulders relaxed, eyes looking directly at camera, lips gently closed. Show full head with margin and upper shoulders; face occupies about65percent of image width. Plain warm gray seamless background, neutral soft even studio illumination suitable for inspecting color, no warm or cool color cast. Photorealistic, detailed, clean focus. Do not add lettering, text, logo, watermark, props, earrings, accessories, another person or background scene. This remains fictional AI-created source artwork, not a real performer photograph or a makeup result.",
+      "submittedPrompt": "Primary request: Use case: identity-preserve. Asset type: separately labeled synthetic face-source capture for a fictional actor costume and makeup planning example. Edit the supplied fictional full-body portrait into a high-resolution front-facing head-and-shoulders studio portrait of the same fictional adult. Image1 is the identity and wardrobe reference. Preserve the person\u2019s distinctive facial structure, proportions, eyes, nose, lips, jaw, hairline, hairstyle, skin tone and calm neutral expression. Preserve the ivory crewneck knit neckline. Keep natural visible skin texture, pores and fine lines. No makeup, no beautification, no smoothing, no altered age, no glamour retouching. The whole face and forehead are unobstructed, hair tucked behind ears, shoulders relaxed, eyes looking directly at camera, lips gently closed. Show full head with margin and upper shoulders; face occupies about65percent of image width. Plain warm gray seamless background, neutral soft even studio illumination suitable for inspecting color, no warm or cool color cast. Photorealistic, detailed, clean focus. Do not add lettering, text, logo, watermark, props, earrings, accessories, another person or background scene. This remains fictional AI-created source artwork, not a real performer photograph or a makeup result.",
+      "captureNote": "Separately versioned synthetic headshot derived from the fictional full-body source. Not a physical photograph, makeup result, or guarantee of identity preservation."
+    }
+  ]
+}

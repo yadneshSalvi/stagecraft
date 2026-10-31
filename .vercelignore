@@ -1,0 +1,22 @@
+# Deploy source without local secrets, private plans, or temporary media.
+.env
+.env.*
+!.env.example
+plans/
+artifacts/private/
+private/
+uploads/
+node_modules/
+.next/
+.vercel/
+.workflow-data/
+src/app/.well-known/workflow/
+coverage/
+playwright-report/
+test-results/
+.swc/
+*.tsbuildinfo
+*.log
+*.pem
+*.key
+.DS_Store

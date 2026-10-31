@@ -29,3 +29,9 @@ test-results/
 # Local machine files
 .DS_Store
 *.log
+.vercel
+.env*
+!.env.example
+.workflow-data/
+/src/app/.well-known/workflow/
+.swc/
