@@ -58,6 +58,8 @@ export interface Occurrence {
 }
 export interface Performer {
   id: string;
+  /** Trusted library association, assigned only by the example/import factories. */
+  librarySourceId?: string;
   name: string;
   pronouns: string;
   imageUrl: string | null;
@@ -78,6 +80,7 @@ export interface Performer {
   faceCapture?: FaceCapture;
 }
 export interface FaceCapture {
+  librarySourceId?: string;
   imageUrl: string | null;
   assetId: string | null;
   version: number;
@@ -89,6 +92,7 @@ export interface Character {
   name: string;
   description: string;
   performerId: string;
+  ownClothes?: boolean;
   direction: {
     revision: number;
     text: string;
@@ -113,6 +117,18 @@ export interface Preview {
   inputHash: string;
   estimatedUnits: number;
   inspectionNotes: string;
+  candidateId?: string;
+  recipeHash?: string;
+  scopeLookIds?: string[];
+  recordingEvidence?: RecordingEvidence;
+}
+export interface RecordingEvidence {
+  recordingId: string;
+  providerInputHash: string;
+  originalLookId: string;
+  originalPerformerId: string;
+  originalUnitIds?: string[];
+  binding: "exact_inputs" | "verified_library_inputs";
 }
 export interface AppearanceApproval {
   id: string;
@@ -127,6 +143,30 @@ export interface AppearanceApproval {
   approvedAt: string;
   state: EvidenceState;
   reason: string | null;
+  candidateId?: string;
+  recipeHash?: string;
+  scopeLookIds?: string[];
+  intentHash?: string;
+  previewHash?: string;
+  decisionSource?: "manual" | "example";
+}
+/** Provider garment inputs, independent of creative intent and face-detail recipes. */
+export interface AppearanceRecipe {
+  unitIds: string[];
+  category: GarmentCategory;
+}
+/** An immutable proposed recipe with independently recorded evidence and decisions. */
+export interface AppearanceCandidate {
+  id: string;
+  lookIds: string[];
+  sceneIds: string[];
+  performerId: string;
+  captureVersion: number;
+  recipe: AppearanceRecipe;
+  recipeHash: string;
+  previews: Preview[];
+  approvals: AppearanceApproval[];
+  createdAt: string;
 }
 export interface BeautyRecipe {
   lipColor: string;
@@ -149,6 +189,7 @@ export interface BeautyPreview {
   inputHash: string;
   estimatedUnits: number;
   inspectionNotes: string;
+  recordingEvidence?: RecordingEvidence;
 }
 export interface BeautyApproval {
   id: string;
@@ -163,6 +204,7 @@ export interface BeautyApproval {
   approvedAt: string;
   state: EvidenceState;
   reason: string | null;
+  decisionSource?: "manual" | "example";
 }
 export interface BeautyLook {
   revision: number;
@@ -171,12 +213,81 @@ export interface BeautyLook {
   approvals: BeautyApproval[];
   reviewReason: string | null;
 }
+export type DetailKind = "hair_color" | "necklace";
+export type HairColorPreset =
+  | "Jet Black"
+  | "Chocolate Brown"
+  | "Honey Blonde"
+  | "Platinum Blonde"
+  | "Ash Gray"
+  | "Rose Gold"
+  | "Burgundy"
+  | "Copper Red"
+  | "Lavender"
+  | "Teal Blue";
+export type DetailRecipe =
+  | { kind: "hair_color"; preset: HairColorPreset }
+  | { kind: "necklace"; referenceId: string; removeBackground: boolean };
+export interface DetailReference {
+  id: string;
+  name: string;
+  imageUrl: string;
+  assetId: string | null;
+  synthetic: boolean;
+  librarySourceId?: string;
+}
+export interface DetailPreview {
+  id: string;
+  lookId: string;
+  kind: DetailKind;
+  detailRevision: number;
+  performerId: string;
+  faceCaptureVersion: number;
+  imageUrl: string;
+  assetId: string | null;
+  sourceImageUrl: string;
+  operation: string;
+  provenance: "recorded_provider" | "live_provider";
+  createdAt: string;
+  inputHash: string;
+  estimatedUnits: number;
+  inspectionNotes: string;
+  recordingEvidence?: RecordingEvidence;
+}
+export interface DetailApproval {
+  id: string;
+  lookId: string;
+  kind: DetailKind;
+  detailRevision: number;
+  previewId: string;
+  performerId: string;
+  faceCaptureVersion: number;
+  sceneIds: string[];
+  approvedBy: string;
+  rationale: string;
+  approvedAt: string;
+  state: EvidenceState;
+  reason: string | null;
+  intentHash: string;
+  previewHash: string;
+  decisionSource?: "manual" | "example";
+}
+export interface IndependentDetail {
+  kind: DetailKind;
+  revision: number;
+  recipe: DetailRecipe;
+  previews: DetailPreview[];
+  approvals: DetailApproval[];
+  reviewReason: string | null;
+}
 export interface Look {
   id: string;
   title: string;
   characterId: string;
   performerId: string;
   revision: number;
+  continuityGroupId?: string;
+  activeCandidateId?: string;
   sceneIds: string[];
   storyDays: number[];
   unitIds: string[];
@@ -197,9 +308,11 @@ export interface Look {
   note: string;
   reviewReason: string | null;
   beauty?: BeautyLook;
+  details?: IndependentDetail[];
 }
 export interface PhysicalUnit {
   id: string;
+  librarySourceId?: string;
   code: string;
   name: string;
   category: GarmentCategory;
@@ -250,6 +363,9 @@ export interface Allocation {
   state: "proposed" | "allocated" | "blocked" | "historical";
   reason: string | null;
   sourceRevision: number;
+  candidateId?: string;
+  approvalId?: string;
+  previewId?: string;
 }
 export interface Transition {
   id: string;
@@ -285,6 +401,8 @@ export interface AllocationResult {
   findings: AllocationFinding[];
   totalCostCents: number;
   independentlyChecked: boolean;
+  /** The search and checker share interval construction; this is not an independent oracle. */
+  constraintChecked?: boolean;
   solver: string;
   policy: string;
   createdAt: string;
@@ -326,8 +444,15 @@ export interface ChangeImpact {
   preservedApprovalIds: string[];
   invalidatedBeautyApprovalIds?: string[];
   preservedBeautyApprovalIds?: string[];
+  invalidatedDetailApprovalIds?: string[];
+  preservedDetailApprovalIds?: string[];
   explanation: string[];
   preserved: string[];
+  creativeFlags?: Array<{
+    characterId: string;
+    unitId: string;
+    references: string[];
+  }>;
 }
 export interface RepairOption {
   id: string;
@@ -339,6 +464,8 @@ export interface RepairOption {
   findings: AllocationFinding[];
   feasible: boolean;
   explanation: string;
+  candidateId?: string;
+  candidateIds?: string[];
 }
 export interface RepairProposal {
   id: string;
@@ -377,6 +504,15 @@ export interface CrewPack {
     timeZone?: string;
     budgetCents?: number;
     script?: ScriptRevision | null;
+    appearanceCandidates?: AppearanceCandidate[];
+    appearanceContext?: {
+      looks: Look[];
+      scenes: Scene[];
+      characters: Character[];
+      performers: Performer[];
+      units: PhysicalUnit[];
+    };
+    detailReferences?: DetailReference[];
   };
 }
 export interface DomainEvent {
@@ -406,6 +542,8 @@ export interface Production {
   performers: Performer[];
   characters: Character[];
   looks: Look[];
+  appearanceCandidates?: AppearanceCandidate[];
+  detailReferences?: DetailReference[];
   units: PhysicalUnit[];
   allocations: Allocation[];
   transitions: Transition[];
@@ -417,6 +555,59 @@ export interface Production {
 }
 
 export type ProductionCommand =
+  | { type: "update_detail"; lookId: string; recipe: DetailRecipe }
+  | {
+      type: "add_detail_preview";
+      lookId: string;
+      kind: DetailKind;
+      preview: DetailPreview;
+    }
+  | {
+      type: "approve_detail";
+      lookId: string;
+      kind: DetailKind;
+      previewId: string;
+      approvedBy: string;
+      rationale: string;
+    }
+  | {
+      type: "create_candidate";
+      lookId: string;
+      unitIds: string[];
+      performerId?: string;
+    }
+  | { type: "add_candidate_preview"; candidateId: string; preview: Preview }
+  | {
+      type: "approve_candidate";
+      candidateId: string;
+      previewId: string;
+      approvedBy: string;
+      rationale: string;
+    }
+  | {
+      type: "revoke_candidate_approval";
+      candidateId: string;
+      approvalId: string;
+    }
+  | { type: "adopt_candidate"; candidateId: string }
+  | { type: "set_example_decisions"; enabled: boolean }
+  | { type: "import_example_performer"; sourcePerformerId: string }
+  | { type: "import_example_unit"; sourceUnitId: string }
+  | { type: "set_own_clothes"; characterId: string; ownClothes: boolean }
+  | {
+      type: "draft_schedule";
+      start: string;
+      sceneMinutes: number;
+      gapMinutes: number;
+      location: string;
+    }
+  | {
+      type: "edit_direction";
+      characterId: string;
+      text: string;
+      essential: string[];
+      palette?: string[];
+    }
   | {
       type: "update_production";
       title?: string;
@@ -553,7 +744,8 @@ export interface PreviewJob {
   projectId: string;
   lookId: string;
   state: JobState;
-  kind?: "garment" | "beauty";
+  kind?: "garment" | "beauty" | DetailKind;
+  candidateId?: string;
   createdAt: string;
   updatedAt: string;
   message: string;
@@ -571,6 +763,17 @@ export interface AppConfig {
   ownerDailyJobLimit: number;
   recordedPreviews: number;
   recordedBeautyPreviews?: number;
+  recordedDetailPreviews?: Partial<Record<DetailKind, number>>;
+  freshPreviewAvailability?: {
+    available: boolean;
+    reason:
+      | "ready"
+      | "paused"
+      | "budget_floor"
+      | "budget_unavailable"
+      | "unconfigured";
+    message: string;
+  };
 }
 export interface Readiness {
   appearanceApproved: number;
@@ -578,6 +781,8 @@ export interface Readiness {
   blockedAllocations: number;
   beautyApproved: number;
   beautyTotal: number;
+  detailsApproved?: number;
+  detailsTotal?: number;
   pendingSourcing: number;
   pendingFittings: number;
   currentPacks: number;

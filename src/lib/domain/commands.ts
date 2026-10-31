@@ -1,5 +1,6 @@
 import type {
   AppearanceApproval,
+  AppearanceCandidate,
   CrewPack,
   Look,
   PhysicalUnit,
@@ -12,12 +13,31 @@ import {
   solveAllocation,
   validateAllocation,
 } from "./allocation";
-import { affectedLookIds, buildRepairProposal, simulateRepair } from "./change";
+import {
+  affectedLookIds,
+  buildRepairProposal,
+  matchingRepairCandidates,
+  simulateRepair,
+} from "./change";
 import { DomainError, findRecord, requireFact } from "./errors";
 import { canonicalJson } from "./hash";
+import { applyCandidateCommand, adoptAppearanceCandidate } from "./candidates";
+import { createExampleProduction } from "./fixture";
+import {
+  applyDetailCommand,
+  getCurrentDetailApproval,
+  getCurrentDetailPreview,
+  invalidateDetails,
+  validatedDetailRecipe,
+} from "./details";
 import {
   allocationInputHash,
+  appearanceIntentHash,
+  getCurrentPreview,
   getCurrentApproval,
+  getCurrentCandidateApproval,
+  getCurrentCandidatePreview,
+  previewEvidenceHash,
   previewInputHash,
   repairInputHash,
   sameIds,
@@ -25,7 +45,9 @@ import {
 import { mergeScriptRevision, validateSceneSources } from "./script";
 import {
   applyBeautyCommand,
+  beautyInputHash,
   getCurrentBeautyApproval,
+  getCurrentBeautyPreview,
   invalidateBeauty,
   revokeFaceConsent,
   validatedBeautyRecipe,
@@ -130,6 +152,7 @@ function invalidateAppearance(
   reason: string,
   advanceRecipe: boolean,
   state: AppearanceApproval["state"] = "stale",
+  candidateRelevant?: (candidate: AppearanceCandidate) => boolean,
 ): void {
   for (const look of production.looks.filter((look) =>
     lookIds.includes(look.id),
@@ -142,11 +165,27 @@ function invalidateAppearance(
         approval.reason = reason;
       }
   }
+  for (const candidate of production.appearanceCandidates ?? [])
+    if (
+      candidateRelevant
+        ? candidateRelevant(candidate)
+        : candidate.lookIds.some((id) => lookIds.includes(id))
+    )
+      for (const approval of candidate.approvals)
+        if (approval.state === "current") {
+          approval.state = state;
+          approval.reason = reason;
+        }
   invalidateOperations(production, { lookIds }, reason);
 }
 
 function validateUnit(unit: PhysicalUnit, production: Production): void {
   requireMoney(unit.priceCents);
+  requireFact(
+    !!unit.priceSource.trim(),
+    "QUOTE_SOURCE_REQUIRED",
+    "Record the source of the production-window quote, including an explicit source for a genuine zero-cost item. Unknown price is not free stock.",
+  );
   requireWindow(unit.availability.from, unit.availability.to);
   requireFact(
     Number.isFinite(date(unit.priceValidUntil)),
@@ -226,6 +265,307 @@ export function applyCommand(
   let summary = "",
     newProposalId: string | null = null;
   switch (command.type) {
+    case "update_detail":
+    case "add_detail_preview":
+    case "approve_detail": {
+      summary = applyDetailCommand(draft, command, { now, makeId });
+      break;
+    }
+    case "create_candidate":
+    case "add_candidate_preview":
+    case "approve_candidate":
+    case "revoke_candidate_approval":
+    case "adopt_candidate": {
+      summary = applyCandidateCommand(draft, command, {
+        now,
+        makeId,
+        invalidate: (lookIds, unitIds = []) => {
+          invalidateOperations(
+            draft,
+            { lookIds, unitIds },
+            "Appearance evidence changed; recheck dependent allocations and handoffs.",
+            unitIds.length > 0,
+          );
+        },
+      });
+      break;
+    }
+    case "import_example_performer": {
+      const source = findRecord(
+        createExampleProduction("library", now).performers,
+        command.sourcePerformerId,
+        "Example performer",
+      );
+      const performer = structuredClone(source);
+      performer.id = makeId("performer");
+      performer.librarySourceId = source.id;
+      if (performer.faceCapture)
+        performer.faceCapture.librarySourceId = source.id;
+      draft.performers.push(performer);
+      summary = `Imported ${performer.name} from the labelled synthetic adult cast library; no real participant permission is claimed.`;
+      break;
+    }
+    case "import_example_unit": {
+      const source = findRecord(
+        createExampleProduction("library", now).units,
+        command.sourceUnitId,
+        "Example physical unit",
+      );
+      const unit = structuredClone(source);
+      unit.id = makeId("unit");
+      unit.librarySourceId = source.id;
+      unit.approvedSubstituteIds = [];
+      draft.units.push(unit);
+      summary = `Imported ${unit.code} as a distinct synthetic physical-unit record; no fitting, stock confirmation or purchase is inferred.`;
+      break;
+    }
+    case "set_own_clothes": {
+      const character = findRecord(
+        draft.characters,
+        command.characterId,
+        "Character",
+      );
+      character.ownClothes = command.ownClothes;
+      const lookIds = draft.looks
+        .filter((look) => look.characterId === character.id)
+        .map((look) => look.id);
+      invalidateOperations(
+        draft,
+        {
+          lookIds,
+          occurrenceIds: draft.occurrences
+            .filter((occurrence) =>
+              draft.scenes.some(
+                (scene) =>
+                  scene.id === occurrence.sceneId &&
+                  scene.characterIds.includes(character.id),
+              ),
+            )
+            .map((item) => item.id),
+        },
+        "The character's own-clothes planning scope changed.",
+      );
+      summary = `${character.name} ${command.ownClothes ? "is explicitly exempt from managed wardrobe allocation and uses their own clothes" : "requires managed wardrobe planning again"}.`;
+      break;
+    }
+    case "draft_schedule": {
+      requireFact(
+        Number.isFinite(date(command.start)) &&
+          /(?:Z|[+-]\d{2}:\d{2})$/i.test(command.start),
+        "TIMEZONE_REQUIRED",
+        "Choose a valid schedule start with its UTC offset.",
+      );
+      requireFact(
+        Number.isFinite(command.sceneMinutes) &&
+          command.sceneMinutes > 0 &&
+          Number.isFinite(command.gapMinutes) &&
+          command.gapMinutes >= 0 &&
+          !!command.location.trim(),
+        "INVALID_SCHEDULE_DRAFT",
+        "A schedule draft needs positive scene minutes, nonnegative gap minutes and a location.",
+      );
+      let start = date(command.start),
+        added = 0;
+      for (const scene of draft.scenes) {
+        const existing = draft.occurrences.filter(
+          (item) => item.sceneId === scene.id,
+        );
+        if (existing.length) {
+          start = Math.max(
+            start,
+            ...existing.map(
+              (item) => date(item.end) + command.gapMinutes * 60000,
+            ),
+          );
+          continue;
+        }
+        const end = start + command.sceneMinutes * 60000;
+        draft.occurrences.push({
+          id: makeId(`occ-${scene.id}`),
+          sceneId: scene.id,
+          label: `Draft call · scene ${scene.number}`,
+          kind: draft.mode === "film" ? "shoot" : "performance",
+          start: new Date(start).toISOString(),
+          end: new Date(end).toISOString(),
+          location: command.location.trim(),
+          order: draft.occurrences.length + 1,
+        });
+        start = end + command.gapMinutes * 60000;
+        added++;
+      }
+      summary = `Drafted ${added} missing scene calls in script order. Existing edited calls were retained; durations remain planning inputs.`;
+      break;
+    }
+    case "set_example_decisions": {
+      requireFact(
+        draft.fixture,
+        "EXAMPLE_ONLY",
+        "Sample decisions are available only in the explicitly synthetic example production.",
+        403,
+      );
+      const reviewer = "Example reviewer (sample decision)";
+      let decisions = 0;
+      const revokedIds = new Set<string>();
+      const revoke = (approval: {
+        id: string;
+        state: string;
+        reason: string | null;
+        decisionSource?: string;
+      }) => {
+        if (
+          approval.decisionSource === "example" &&
+          approval.state === "current"
+        ) {
+          approval.state = "blocked";
+          approval.reason = "Example decisions were explicitly switched off.";
+          if (!revokedIds.has(approval.id)) {
+            decisions++;
+            revokedIds.add(approval.id);
+          }
+        }
+      };
+      if (!command.enabled) {
+        for (const look of draft.looks) {
+          look.approvals.forEach(revoke);
+          look.beauty?.approvals.forEach(revoke);
+          for (const detail of look.details ?? [])
+            detail.approvals.forEach(revoke);
+        }
+        for (const candidate of draft.appearanceCandidates ?? [])
+          candidate.approvals.forEach(revoke);
+        invalidateOperations(
+          draft,
+          { lookIds: draft.looks.map((look) => look.id) },
+          "Sample appearance decisions were removed; recheck managed wardrobe allocation.",
+        );
+      } else {
+        for (const look of draft.looks) {
+          const preview = getCurrentPreview(look, draft);
+          if (
+            preview &&
+            !look.activeCandidateId &&
+            !getCurrentApproval(look, draft)
+          ) {
+            look.approvals.push({
+              id: makeId(`example-approval-${look.id}`),
+              lookId: look.id,
+              recipeRevision: look.revision,
+              previewId: preview.id,
+              performerId: look.performerId,
+              captureVersion: preview.captureVersion,
+              sceneIds: [...look.sceneIds],
+              approvedBy: reviewer,
+              rationale:
+                "Sample creative decision on this exact recorded output for the synthetic story; no physical fitting or human research outcome is claimed.",
+              approvedAt: now,
+              state: "current",
+              reason: null,
+              intentHash: appearanceIntentHash(draft, [look.id]),
+              previewHash: previewEvidenceHash(preview),
+              decisionSource: "example",
+            });
+            look.reviewReason = null;
+            decisions++;
+          }
+          const beautyPreview = look.beauty && getCurrentBeautyPreview(look);
+          const face = draft.performers.find(
+            (item) => item.id === look.performerId,
+          )?.faceCapture;
+          if (
+            beautyPreview &&
+            face?.consent.granted &&
+            beautyPreview.faceCaptureVersion === face.version &&
+            beautyPreview.inputHash === beautyInputHash(draft, look) &&
+            !getCurrentBeautyApproval(look)
+          ) {
+            look.beauty!.approvals.push({
+              id: makeId(`example-beauty-${look.id}`),
+              lookId: look.id,
+              beautyRevision: look.beauty!.revision,
+              previewId: beautyPreview.id,
+              performerId: look.performerId,
+              faceCaptureVersion: face.version,
+              sceneIds: [...look.sceneIds],
+              approvedBy: reviewer,
+              rationale:
+                "Sample independent makeup decision on the exact recorded synthetic face detail.",
+              approvedAt: now,
+              state: "current",
+              reason: null,
+              decisionSource: "example",
+            });
+            decisions++;
+          }
+          for (const detail of look.details ?? []) {
+            const detailPreview = getCurrentDetailPreview(
+              look,
+              detail.kind,
+              draft,
+            );
+            if (
+              detailPreview &&
+              !getCurrentDetailApproval(look, detail.kind, draft)
+            ) {
+              applyDetailCommand(
+                draft,
+                {
+                  type: "approve_detail",
+                  lookId: look.id,
+                  kind: detail.kind,
+                  previewId: detailPreview.id,
+                  approvedBy: reviewer,
+                  rationale:
+                    "Sample independent creative decision on this exact recorded synthetic detail; no physical outcome is claimed.",
+                },
+                { now, makeId: (kind) => makeId(`example-${kind}-${look.id}`) },
+              );
+              detail.approvals.at(-1)!.decisionSource = "example";
+              decisions++;
+            }
+          }
+        }
+        for (const candidateId of unique(
+          draft.looks
+            .map((look) => look.activeCandidateId)
+            .filter((id): id is string => !!id),
+        )) {
+          const candidate = findRecord(
+            draft.appearanceCandidates ?? [],
+            candidateId,
+            "Active candidate",
+          );
+          const preview = getCurrentCandidatePreview(draft, candidate);
+          if (!getCurrentCandidateApproval(draft, candidate) && preview) {
+            applyCandidateCommand(
+              draft,
+              {
+                type: "approve_candidate",
+                candidateId,
+                previewId: preview.id,
+                approvedBy: reviewer,
+                rationale:
+                  "Sample exact candidate decision for the fictional production; no physical fit is inferred.",
+              },
+              {
+                now,
+                makeId: (kind) => makeId(`example-${kind}-${candidateId}`),
+                invalidate: () => {},
+              },
+            );
+            const approval = candidate.approvals.at(-1)!;
+            approval.decisionSource = "example";
+            for (const look of draft.looks)
+              for (const copy of look.approvals.filter(
+                (item) => item.id === approval.id,
+              ))
+                copy.decisionSource = "example";
+            decisions++;
+          }
+        }
+      }
+      summary = `${command.enabled ? "Recorded" : "Removed"} ${decisions} explicit sample decisions. Manual approvals, source truth and physical evidence remain separate.`;
+      break;
+    }
     case "update_production": {
       if (command.title !== undefined) {
         requireFact(
@@ -318,6 +658,15 @@ export function applyCommand(
         ),
       });
       if (changed(semantic(scene), semantic(reviewed))) {
+        invalidateDetails(
+          draft,
+          draft.looks
+            .filter((look) => look.sceneIds.includes(scene.id))
+            .map((look) => look.id),
+          "Reviewed story day or requirements changed; review independent detail scope.",
+          false,
+          "needs_review",
+        );
         invalidateAppearance(
           draft,
           draft.looks
@@ -389,6 +738,13 @@ export function applyCommand(
         draft,
         affected,
         "New source requirements affect this beauty approval scope; human corrections were preserved.",
+        false,
+        "needs_review",
+      );
+      invalidateDetails(
+        draft,
+        affected,
+        "Script requirements changed; review independent detail intent and scene scope.",
         false,
         "needs_review",
       );
@@ -540,6 +896,7 @@ export function applyCommand(
         .filter((look) => look.performerId === performer.id)
         .map((look) => look.id);
       if (sourceChanged || consentWithdrawn) {
+        if (sourceChanged) delete performer.librarySourceId;
         performer.captureVersion += 1;
         invalidateAppearance(
           draft,
@@ -548,6 +905,8 @@ export function applyCommand(
             ? "Performer image permission was withdrawn. Stop new derivations and review private asset access."
             : "Performer source capture changed; old output is historical evidence only.",
           true,
+          consentWithdrawn ? "blocked" : "stale",
+          (candidate) => candidate.performerId === performer.id,
         );
         if (consentWithdrawn) revokeFaceConsent(draft, performer.id, now);
       } else {
@@ -580,6 +939,7 @@ export function applyCommand(
         "Performer image consent withdrawn. New previews, approvals and image-bearing handoffs are blocked.",
         true,
         "blocked",
+        (candidate) => candidate.performerId === performer.id,
       );
       summary = `Recorded ${performer.name}'s image-consent withdrawal; related actor evidence requires review.`;
       break;
@@ -592,6 +952,7 @@ export function applyCommand(
       summary = applyBeautyCommand(draft, command, { now, makeId });
       break;
     }
+    case "edit_direction":
     case "update_direction": {
       const character = findRecord(
         draft.characters,
@@ -599,7 +960,8 @@ export function applyCommand(
         "Character",
       );
       requireFact(
-        !!command.text.trim() && !!command.approvedBy.trim(),
+        !!command.text.trim() &&
+          (command.type === "edit_direction" || !!command.approvedBy.trim()),
         "DIRECTION_REVIEW_REQUIRED",
         "Record the direction and its named reviewer.",
       );
@@ -607,9 +969,23 @@ export function applyCommand(
         ...character.direction,
         text: command.text,
         essential: unique(command.essential),
-        approvedBy: command.approvedBy.trim(),
+        palette:
+          command.type === "edit_direction" && command.palette
+            ? [...command.palette]
+            : character.direction.palette,
+        approvedBy:
+          command.type === "edit_direction" ? null : command.approvedBy.trim(),
         revision: character.direction.revision + 1,
       };
+      invalidateDetails(
+        draft,
+        draft.looks
+          .filter((look) => look.characterId === character.id)
+          .map((look) => look.id),
+        "Character direction changed; inspect existing independent detail pixels against the new intent.",
+        false,
+        "needs_review",
+      );
       invalidateBeauty(
         draft,
         draft.looks
@@ -666,6 +1042,23 @@ export function applyCommand(
             "Beauty detail is configured but not yet generated or approved.",
         };
       }
+      if (look.details)
+        look.details = look.details.map((detail) => {
+          requireFact(
+            detail.previews.length === 0 && detail.approvals.length === 0,
+            "EVIDENCE_IMPORT_FORBIDDEN",
+            "A new independent detail cannot import provider evidence or approvals.",
+          );
+          return {
+            kind: detail.kind,
+            revision: 1,
+            recipe: validatedDetailRecipe(draft, detail.recipe),
+            previews: [],
+            approvals: [],
+            reviewReason:
+              "Independent detail is configured and needs its own exact output and approval.",
+          };
+        });
       requireFact(
         look.makeup.skinSmoothStrength === 0 &&
           look.makeup.skinSmoothColorIntensity === 0,
@@ -729,6 +1122,11 @@ export function applyCommand(
         look.unitIds = [...command.unitIds];
       }
       if (command.category !== undefined) look.category = command.category;
+      if (
+        !sameIds(before.unitIds, look.unitIds) ||
+        before.category !== look.category
+      )
+        delete look.activeCandidateId;
       if (command.silhouette !== undefined)
         look.silhouette = command.silhouette;
       if (command.makeupNotes !== undefined)
@@ -842,6 +1240,29 @@ export function applyCommand(
     }
     case "approve_look": {
       const look = findRecord(draft.looks, command.lookId, "Look");
+      if (look.activeCandidateId) {
+        summary = applyCandidateCommand(
+          draft,
+          {
+            type: "approve_candidate",
+            candidateId: look.activeCandidateId,
+            previewId: command.previewId,
+            approvedBy: command.approvedBy,
+            rationale: command.rationale,
+          },
+          {
+            now,
+            makeId,
+            invalidate: (lookIds) =>
+              invalidateOperations(
+                draft,
+                { lookIds },
+                "The exact adopted candidate decision changed.",
+              ),
+          },
+        );
+        break;
+      }
       const performer = findRecord(
         draft.performers,
         look.performerId,
@@ -897,6 +1318,9 @@ export function applyCommand(
         approvedAt: now,
         state: "current",
         reason: null,
+        intentHash: appearanceIntentHash(draft, [look.id]),
+        previewHash: previewEvidenceHash(preview),
+        decisionSource: "manual",
       });
       look.reviewReason = null;
       for (const pack of draft.packs)
@@ -937,6 +1361,7 @@ export function applyCommand(
       const assetChanged =
         previous.imageUrl !== unit.imageUrl ||
         previous.assetId !== unit.assetId;
+      if (assetChanged) delete unit.librarySourceId;
       if (assetChanged)
         invalidateAppearance(
           draft,
@@ -945,6 +1370,8 @@ export function applyCommand(
             .map((look) => look.id),
           "The source garment asset changed; the existing preview no longer represents the exact inputs.",
           true,
+          "stale",
+          (candidate) => candidate.recipe.unitIds.includes(unit.id),
         );
       const commercialChanged =
         previous.status !== unit.status ||
@@ -966,7 +1393,7 @@ export function applyCommand(
         now,
         sourceRevision: draft.revision,
       });
-      summary = `Computed ${draft.allocationResult.status.toLowerCase()} allocation using the bounded deterministic engine${draft.allocationResult.independentlyChecked ? " and independent checker" : ""}.`;
+      summary = `Computed ${draft.allocationResult.status.toLowerCase()} allocation using the bounded deterministic engine${draft.allocationResult.constraintChecked ? " and constraint check" : ""}.`;
       break;
     }
     case "adopt_allocation": {
@@ -982,9 +1409,9 @@ export function applyCommand(
       );
       requireFact(
         (result.status === "OPTIMAL" || result.status === "FEASIBLE") &&
-          result.independentlyChecked,
+          result.constraintChecked,
         "ALLOCATION_NOT_FEASIBLE",
-        "Only a feasible independently checked allocation can be adopted.",
+        "Only a feasible allocation that passed its constraint check can be adopted.",
         409,
       );
       const check = validateAllocation(draft, result.assignments, { now });
@@ -992,15 +1419,38 @@ export function applyCommand(
         check.valid,
         "ALLOCATION_CHECK_FAILED",
         check.findings.find((item) => item.severity === "conflict")?.message ??
-          "The independent checker could not establish complete demand coverage.",
+          "The constraint checker could not establish complete demand coverage.",
         409,
       );
-      requireFact(
-        !check.findings.some((item) => item.code === "SUBSTITUTE_REVIEW"),
-        "RECIPE_REVIEW_REQUIRED",
-        "The solver used an approved alternative. Explicitly revise or repair the pictured recipe, obtain its new appearance approval, then solve that exact plan.",
-        409,
-      );
+      for (const candidateId of unique(
+        result.assignments
+          .map((assignment) => assignment.candidateId)
+          .filter((id): id is string => !!id),
+      )) {
+        const candidate = findRecord(
+          draft.appearanceCandidates ?? [],
+          candidateId,
+          "Allocated candidate",
+        );
+        if (
+          candidate.lookIds.some(
+            (id) =>
+              draft.looks.find((look) => look.id === id)?.activeCandidateId !==
+              candidate.id,
+          )
+        )
+          adoptAppearanceCandidate(draft, candidate, {
+            now,
+            makeId,
+            invalidate: (lookIds, unitIds = []) =>
+              invalidateOperations(
+                draft,
+                { lookIds, unitIds },
+                "A solver-selected reviewed candidate was explicitly adopted.",
+                unitIds.length > 0,
+              ),
+          });
+      }
       draft.allocations = result.assignments.map((assignment) => ({
         ...structuredClone(assignment),
         state: "allocated",
@@ -1163,6 +1613,71 @@ export function applyCommand(
       break;
     }
     case "propose_change": {
+      const affected = draft.looks.filter((look) =>
+        affectedLookIds(draft, command).includes(look.id),
+      );
+      const replacements =
+        command.kind === "garment_unavailable"
+          ? draft.units
+              .filter(
+                (unit) =>
+                  unit.id !== command.subjectId &&
+                  unit.category ===
+                    findRecord(draft.units, command.subjectId, "Physical unit")
+                      .category &&
+                  (!command.replacementId || unit.id === command.replacementId),
+              )
+              .map((unit) => unit.id)
+          : draft.performers
+              .filter(
+                (performer) =>
+                  performer.consent.granted &&
+                  !!performer.imageUrl &&
+                  (!command.replacementId ||
+                    performer.id === command.replacementId),
+              )
+              .map((performer) => performer.id);
+      for (const replacement of replacements) {
+        const existing = matchingRepairCandidates(draft, command, replacement);
+        const seen = new Set<string>();
+        for (const look of affected) {
+          const key = look.continuityGroupId ?? look.id;
+          if (
+            seen.has(key) ||
+            existing.some((candidate) => candidate.lookIds.includes(look.id))
+          )
+            continue;
+          seen.add(key);
+          const performerId =
+            command.kind === "recast" ? replacement : look.performerId;
+          if (
+            !draft.performers.find((performer) => performer.id === performerId)
+              ?.consent.granted
+          )
+            continue;
+          if (command.kind === "recast" && performerId === look.performerId)
+            continue;
+          applyCandidateCommand(
+            draft,
+            {
+              type: "create_candidate",
+              lookId: look.id,
+              unitIds:
+                command.kind === "garment_unavailable"
+                  ? look.unitIds.map((id) =>
+                      id === command.subjectId ? replacement : id,
+                    )
+                  : look.unitIds,
+              performerId,
+            },
+            {
+              now,
+              makeId: (kind) => makeId(`${kind}-${key}-${replacement}`),
+              invalidate: () => {},
+            },
+          );
+        }
+      }
       const proposal = buildRepairProposal(draft, command, {
         id: makeId("repair"),
         now,
@@ -1218,7 +1733,7 @@ export function applyCommand(
       requireFact(
         (proposal.kind === "recast" && lookIds.length === 0) ||
           ((checked.status === "OPTIMAL" || checked.status === "FEASIBLE") &&
-            checked.independentlyChecked),
+            checked.constraintChecked),
         "REPAIR_INFEASIBLE",
         checked.findings.find((item) => item.severity === "conflict")
           ?.message ??
@@ -1228,13 +1743,24 @@ export function applyCommand(
       draft.characters = scratch.characters;
       draft.looks = scratch.looks;
       draft.units = scratch.units;
+      draft.appearanceCandidates = scratch.appearanceCandidates;
       const reason =
         proposal.kind === "recast"
           ? "Recast adopted. Character direction is retained; this actor needs new source-specific previews, appearance approval and fitting evidence."
           : "Garment replacement adopted. The exact recipe changed; the prior appearance approval is historical and requires a fresh preview and approval.";
-      invalidateAppearance(draft, lookIds, reason, false);
+      const unapproved = lookIds.filter(
+        (id) =>
+          !getCurrentApproval(
+            findRecord(draft.looks, id, "Repaired look"),
+            draft,
+          ),
+      );
+      if (unapproved.length)
+        invalidateAppearance(draft, unapproved, reason, false);
       if (proposal.kind === "recast")
         invalidateBeauty(draft, lookIds, reason, false);
+      if (proposal.kind === "recast")
+        invalidateDetails(draft, lookIds, reason, false);
       invalidateOperations(
         draft,
         {
@@ -1247,7 +1773,7 @@ export function applyCommand(
       );
       proposal.status = "adopted";
       proposal.adoptedAt = now;
-      summary = `Adopted ${option.label} as production revision ${draft.revision}. ${proposal.impact.preservedApprovalIds.length} unrelated approvals were preserved; ${lookIds.length} affected looks require fresh exact-output approval.`;
+      summary = `Adopted ${option.label} as production revision ${draft.revision}. Exact reviewed candidate identities and ${proposal.impact.preservedApprovalIds.length} unrelated approvals were preserved; physical fitting and supplier evidence remain separate.`;
       break;
     }
     case "create_pack": {
@@ -1263,8 +1789,12 @@ export function applyCommand(
       const sceneIds = unique(
         occurrences.map((occurrence) => occurrence.sceneId),
       );
-      const looks = draft.looks.filter((look) =>
-        look.sceneIds.some((id) => sceneIds.includes(id)),
+      const looks = draft.looks.filter(
+        (look) =>
+          look.sceneIds.some((id) => sceneIds.includes(id)) &&
+          !draft.characters.find(
+            (character) => character.id === look.characterId,
+          )?.ownClothes,
       );
       const performers = draft.performers.filter((performer) =>
         looks.some((look) => look.performerId === performer.id),
@@ -1302,8 +1832,20 @@ export function applyCommand(
               )),
         )
         .map((item) => item.message);
+      for (const character of draft.characters.filter(
+        (character) =>
+          character.ownClothes &&
+          draft.scenes.some(
+            (scene) =>
+              sceneIds.includes(scene.id) &&
+              scene.characterIds.includes(character.id),
+          ),
+      ))
+        warnings.push(
+          `${character.name}: explicitly using own clothes; no managed garment allocation or appearance approval is claimed.`,
+        );
       for (const look of looks)
-        if (!getCurrentApproval(look))
+        if (!getCurrentApproval(look, draft))
           warnings.push(
             `${look.title}: no exact current appearance approval. Source portrait or unapproved preview must not be read as an approved look.`,
           );
@@ -1312,6 +1854,12 @@ export function applyCommand(
           warnings.push(
             `${look.title}: separate beauty detail is configured but has no exact current beauty approval. Garment approval does not approve the face detail.`,
           );
+      for (const look of looks)
+        for (const detail of look.details ?? [])
+          if (!getCurrentDetailApproval(look, detail.kind, draft))
+            warnings.push(
+              `${look.title}: independent ${detail.kind === "hair_color" ? "hair colour" : "necklace"} detail has no exact current approval. Digital output does not establish a physical wig, hairstyle or jewellery fit.`,
+            );
       for (const look of looks)
         if (look.beauty) {
           const face = performers.find(
@@ -1343,6 +1891,30 @@ export function applyCommand(
           "Synthetic production exercise. Cast portraits, script and inventory are fictional; only explicitly labelled provider previews are actual recorded or live provider outputs. No physical or supplier outcome is implied.",
         );
       const title = command.title.trim() || "Crew scene pack";
+      const candidates = (draft.appearanceCandidates ?? []).filter(
+        (candidate) =>
+          looks.some((look) => look.activeCandidateId === candidate.id),
+      );
+      const contextLooks = draft.looks.filter(
+        (look) =>
+          looks.some((item) => item.id === look.id) ||
+          candidates.some((candidate) => candidate.lookIds.includes(look.id)),
+      );
+      const appearanceContext = {
+        looks: contextLooks,
+        scenes: draft.scenes.filter((scene) =>
+          contextLooks.some((look) => look.sceneIds.includes(scene.id)),
+        ),
+        characters: draft.characters.filter((character) =>
+          contextLooks.some((look) => look.characterId === character.id),
+        ),
+        performers: draft.performers.filter((performer) =>
+          contextLooks.some((look) => look.performerId === performer.id),
+        ),
+        units: draft.units.filter((unit) =>
+          contextLooks.some((look) => look.unitIds.includes(unit.id)),
+        ),
+      };
       const pack: CrewPack = {
         id: makeId("pack"),
         title: warnings.length ? `Working pack · ${title}` : title,
@@ -1372,14 +1944,37 @@ export function applyCommand(
           timeZone: draft.timeZone,
           budgetCents: draft.budgetCents,
           script: draft.script,
+          appearanceCandidates: candidates,
+          appearanceContext,
+          detailReferences: draft.detailReferences ?? [],
         }),
       };
-      for (const performer of pack.snapshot.performers)
+      for (const performer of [
+        ...pack.snapshot.performers,
+        ...(pack.snapshot.appearanceContext?.performers ?? []),
+      ])
         if (performer.faceCapture && !performer.faceCapture.consent.granted) {
           performer.faceCapture.imageUrl = null;
           performer.faceCapture.assetId = null;
         }
-      for (const look of pack.snapshot.looks)
+      for (const look of [
+        ...pack.snapshot.looks,
+        ...(pack.snapshot.appearanceContext?.looks ?? []),
+      ])
+        if (
+          !pack.snapshot.performers.find(
+            (performer) => performer.id === look.performerId,
+          )?.faceCapture?.consent.granted
+        )
+          for (const detail of look.details ?? []) {
+            detail.previews = [];
+            detail.reviewReason =
+              "Face-source permission is missing or withdrawn; independent detail images are omitted from this working pack.";
+          }
+      for (const look of [
+        ...pack.snapshot.looks,
+        ...(pack.snapshot.appearanceContext?.looks ?? []),
+      ])
         if (
           look.beauty &&
           !pack.snapshot.performers.find(
@@ -1488,7 +2083,10 @@ export function applyCommand(
     revision: draft.revision,
     summary,
     provenance:
-      command.type === "add_preview" || command.type === "add_beauty_preview"
+      command.type === "add_preview" ||
+      command.type === "add_beauty_preview" ||
+      command.type === "add_candidate_preview" ||
+      command.type === "add_detail_preview"
         ? command.preview.provenance
         : command.type === "adopt_script"
           ? command.script.provenance

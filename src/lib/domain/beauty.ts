@@ -9,6 +9,7 @@ import type {
 } from "../types";
 import { findRecord, requireFact } from "./errors";
 import { canonicalJson, fingerprint } from "./hash";
+import { invalidateDetails } from "./details";
 
 type BeautyCommand = Extract<
   ProductionCommand,
@@ -188,6 +189,15 @@ export function revokeFaceConsent(
     true,
     "blocked",
   );
+  invalidateDetails(
+    production,
+    production.looks
+      .filter((look) => look.performerId === performerId)
+      .map((look) => look.id),
+    "Face-source permission was withdrawn; all face-derived independent details are blocked.",
+    true,
+    "blocked",
+  );
 }
 
 function supersedeBeautyPacks(production: Production, lookId: string): void {
@@ -216,10 +226,20 @@ export function applyBeautyCommand(
       );
       face.version = (performer.faceCapture?.version ?? 0) + 1;
       if (face.assetId) {
+        delete face.librarySourceId;
         face.synthetic = false;
         face.consent.publicDemo = false;
       }
       performer.faceCapture = face;
+      invalidateDetails(
+        production,
+        production.looks
+          .filter((look) => look.performerId === performer.id)
+          .map((look) => look.id),
+        "Face capture changed; independent hair and necklace evidence must match the new source.",
+        true,
+        face.consent.granted ? "stale" : "blocked",
+      );
       invalidateBeauty(
         production,
         production.looks

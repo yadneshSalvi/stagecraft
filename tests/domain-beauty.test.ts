@@ -9,7 +9,6 @@ import type {
 import {
   applyCommand,
   beautyInputHash,
-  createExampleProduction,
   DomainError,
   getCurrentApproval,
   getCurrentBeautyApproval,
@@ -20,8 +19,14 @@ import {
   previewInputHash,
 } from "@/lib/domain";
 
+import {
+  legacyExample,
+  reviewedRepair,
+  approveManaged,
+} from "./domain-support";
+
 const NOW = "2026-10-31T12:00:00.000Z";
-const example = () => createExampleProduction("beauty-test", NOW);
+const example = () => legacyExample();
 const run = (production: Production, command: ProductionCommand) =>
   applyCommand(production, command, {
     actor: "Synthetic software evaluator",
@@ -268,7 +273,7 @@ describe("independent beauty inputs and exact approval", () => {
 
 describe("bounded beauty invalidation", () => {
   it("a beauty recipe change preserves exact garment approval and adopted units", () => {
-    let baseline = approved();
+    let baseline = approveManaged(approved());
     baseline = run(baseline, { type: "solve_allocation" });
     baseline = run(baseline, {
       type: "adopt_allocation",
@@ -370,7 +375,7 @@ describe("bounded beauty invalidation", () => {
     );
     expect(impact.invalidatedBeautyApprovalIds).toEqual([]);
     expect(impact.preservedBeautyApprovalIds).toEqual([beautyApproval.id]);
-    const proposed = run(baseline, {
+    const proposed = reviewedRepair(baseline, {
       type: "propose_change",
       kind: "garment_unavailable",
       subjectId: "unit-coat-oxblood",
@@ -383,7 +388,9 @@ describe("bounded beauty invalidation", () => {
       proposalId: proposal.id,
       optionId: proposal.options[0].id,
     });
-    expect(getCurrentApproval(nora(changed))).toBeUndefined();
+    expect(getCurrentApproval(nora(changed), changed)?.candidateId).toBe(
+      proposal.options[0].candidateId,
+    );
     expect(getCurrentBeautyApproval(nora(changed))).toEqual(beautyApproval);
     expect(beautyInputHash(changed, "look-nora")).toBe(
       beautyInputHash(baseline, "look-nora"),
@@ -393,7 +400,7 @@ describe("bounded beauty invalidation", () => {
 
   it("a recast invalidates both and requires the replacement's own face source", () => {
     const baseline = approved();
-    const proposed = run(baseline, {
+    const proposed = reviewedRepair(baseline, {
       type: "propose_change",
       kind: "recast",
       subjectId: "char-nora",
@@ -409,7 +416,9 @@ describe("bounded beauty invalidation", () => {
       proposalId: proposal.id,
       optionId: proposal.options[0].id,
     });
-    expect(getCurrentApproval(nora(changed))).toBeUndefined();
+    expect(getCurrentApproval(nora(changed), changed)?.performerId).toBe(
+      "performer-celeste",
+    );
     expect(getCurrentBeautyApproval(nora(changed))).toBeUndefined();
     expect(nora(changed).beauty!.approvals[0]).toMatchObject({
       state: "stale",
@@ -646,7 +655,7 @@ describe("source-scoped consent and frozen beauty handoffs", () => {
 
   it("a changed face fact version prevents stale repair adoption even without a revision bump", () => {
     const baseline = approved();
-    const proposed = run(baseline, {
+    const proposed = reviewedRepair(baseline, {
       type: "propose_change",
       kind: "garment_unavailable",
       subjectId: "unit-coat-oxblood",

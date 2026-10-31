@@ -1,83 +1,107 @@
 # Domain model and decision rules
 
-STAGECRAFT connects an exact, performer-specific appearance decision to physical inventory, a schedule and a crew handoff. Source portraits, provider previews, appearance approvals, fittings and supplier confirmations are separate evidence. None creates the others implicitly.
+STAGECRAFT joins performer-specific appearance decisions to physical inventory, a schedule and a frozen handoff. Source portraits, provider results, creative approvals, fittings and supplier confirmations remain separate evidence. None creates another implicitly.
 
-The pure domain engine lives in `src/lib/domain/`. It performs no network, database or paid provider operations. `applyCommand` returns a new serializable graph, one new production revision and one audit event, leaving its input unchanged. The server persists revisions separately. Rejected commands throw a `DomainError` with a code, HTTP status and actionable message before returning any changed graph.
+The pure browser-safe engine in `src/lib/domain/` performs no network, database or paid-provider operations. `applyCommand` returns a new serializable graph, exactly one production revision and one audit event. Rejection throws an actionable `DomainError` without changing the input. The server persists prior revisions separately.
 
-## Identity and time
+## Identity, time and the example
 
-A character is a story role; a performer is the consenting image subject. A look binds an exact recipe revision to a character, performer and scene scope. A scene has a story day and exact script source ranges. A scheduled occurrence has independent production order, times and location. Shooting order never rewrites story chronology.
+A character is a story role; a performer is an image subject. A look partitions that character's scene appearances. A scene has story chronology and exact source ranges; an occurrence has independent production order, times and location. `storyDaySource` distinguishes script facts, unspecified provisional chronology and reviewed days. A numeric placeholder is not a script fact.
 
-A physical unit has its own identity and fact version. Two garments sharing a catalogue image remain separate physical instances. Windows include a UTC offset, and the production's IANA timezone defines same-day continuous wear.
+Physical units have distinct identities and fact versions. Sharing a catalogue image does not make two records one physical instance. Prices are integer minor currency units. A zero-cost item needs an explicit quote source; unknown price cannot count as free stock. Availability windows include a UTC offset; the production timezone defines same-day continuous wear.
 
-The authored synthetic example, **THE LAST LIGHT**, has seven scenes, three story days, five adult fictional roles, a replacement performer and six synthetic units. Nora's C-014 coat repeats in scenes 01, 04 and 07. New examples schedule shoots nine through eleven days after creation; saved productions retain their dates. The fixture seeds no approvals, fittings or invented provider results. The backend can attach separately recorded, genuine provider outputs.
+New **THE LAST LIGHT** examples contain seven scenes, three story days, five fictional adult roles, six synthetic performers and nine synthetic garment units. Eight looks partition the appearances:
 
-## Script and appearance lineage
+| Character | Story days 1–2                                     | Story day 3                                                             |
+| --------- | -------------------------------------------------- | ----------------------------------------------------------------------- |
+| Nora      | C-014 coat, `look-nora`                            | Same physical coat, `look-nora-finale`; separate stronger makeup recipe |
+| Mae       | S-009 ivory rehearsal blouse, `look-mae-rehearsal` | D-008 midnight dress, `look-mae`                                        |
+| Julian    | T-011 olive jacket on day 2, `look-julian`         | J-031 rust jacket, `look-julian-finale`                                 |
+| Ruth      | S-004 ivory blouse                                 | Same physical blouse                                                    |
+| Elias     | S-003 work shirt on day 2                          | Same physical shirt                                                     |
 
-Script adoption verifies permission, SHA-256, source bounds and mappings. Reimport reconciles stable scene and requirement IDs. Reviewed titles, story days and requirement wording survive extraction. Source ranges rebase to incoming text; changed evidence requests review. An unmatched reviewed cue remains an unreviewed suggestion with an empty evidence range instead of claiming support from the new script. Removing a referenced scene is blocked until its dependencies are remapped. Script text is data and cannot invoke commands.
+Nora, Mae and Ruth have appearances on all three story days. Nora's variants share `continuity-nora-coat`; the allocator cannot select different coats for those variants. Mae and Ruth have distinct physical blouse IDs. New shoots fall nine and ten days after creation, with explicit estimated dressing transitions before the finale. The selected baseline garment quotes total £500, charged once per physical unit.
 
-A preview identifies its exact look revision, performer, capture version, units, source and input fingerprint. The browser-safe SHA-256 covers recipe/source inputs. Price and availability changes do not rewrite pictured evidence; source-asset changes advance affected recipes. An approval names one exact preview, its scene scope, reviewer, rationale and time. A new output inherits no approval. Recast and recipe edits invalidate related actor evidence while preserving unrelated approvals.
+The factory creates two immutable, unapproved Nora candidate recipes, C-021 charcoal and C-033 burgundy. It seeds no output or approval. The backend can attach genuine matching recordings without creating a decision. Hair-colour and necklace plans are optional independent details. All inventory quotes, availability and fit records in the example are visibly synthetic and do not establish an external outcome.
 
-Private photo attachment marks the performer as user-provided, removes inherited public-demo permission and requires scoped processing consent. Withdrawal blocks new previews, approvals and image-bearing packs. The server enforces stored-asset access and deletion. A preview never confirms physical fit or preparation duration.
+Old serialized productions keep their original script, IDs, dates, five-look layout and evidence. Optional new fields default safely when absent; no read operation migrates or relabels saved source truth. The original authored JSON from baseline `a5f1284` is included as a regression fixture.
 
-## Separate beauty detail
+## Source review and custom planning
 
-An optional face capture has its own image, asset, version, provenance and consent. It is never silently substituted for a body image or recomposed into it. An optional beauty recipe has separate versions, previews and approvals. If no beauty recipe is configured, makeup/hair remains unrendered crew direction; the garment output does not imply those effects were generated.
+Script adoption verifies permission, checksum, source bounds and mappings. Reimport reconciles stable scene/requirement IDs, preserves reviewed corrections, rebases evidence ranges and flags changed source. Referenced scene removal is rejected until dependencies are remapped. Script text cannot invoke commands.
 
-Editable beauty parameters are lip colour/intensity and blush colour/intensity. The render policy fixes both skin-smoothing settings to zero and preserves lip morphology. The beauty fingerprint covers the exact face source and beauty parameters, excluding body source, garments and garment revision. An approval identifies one exact beauty output, performer, face version, beauty revision and scene scope. Another output inherits no approval.
+`edit_direction` saves intent as unapproved and clears its previous author approval. Relevant appearance/detail decisions require review; unchanged provider pixels remain reusable. A garment impact flags direction text, essential items and palette entries that still reference the removed unit's name, colour, material or code. The system does not silently rewrite artistic intent.
 
-| Change                               | Garment evidence                        | Beauty evidence               |
-| ------------------------------------ | --------------------------------------- | ----------------------------- |
-| Garment substitution                 | New output/approval required            | Preserved                     |
-| Beauty recipe                        | Preserved                               | New output/approval required  |
-| Body capture                         | New output/approval required            | Preserved                     |
-| Face capture                         | Preserved                               | New output/approval required  |
-| Recast                               | Invalidated for the old actor           | Invalidated for the old actor |
-| Whole-performer consent withdrawal   | Blocked                                 | Blocked                       |
-| Face-only consent withdrawal         | Preserved                               | Blocked                       |
-| Relevant direction/story requirement | Approval needs review                   | Approval needs review         |
-| Production schedule                  | Appearance retained; operations checked | Appearance retained           |
+`draft_schedule` creates missing calls in script order from explicit start, scene duration, gap and location inputs. It preserves already edited calls and story chronology. A character's explicit reversible `ownClothes` flag excludes that role from managed wardrobe demands and missing-cast/look readiness checks. Initial casting of a role with no looks remains possible while other roles are incomplete; it grants no appearance approval.
 
-Beauty evidence is frozen separately within a look and its face-source snapshot. Configured but unapproved beauty prevents readiness and adds a working-pack warning. New packs after face-only withdrawal retain permitted garment images and omit revoked face/beauty pixels. Historical snapshots remain reproducible; online images still require current source-specific permission.
+Explicit example-library imports create project-local identities with trusted source associations. Private source replacement clears the replaced association and inherited synthetic/public-demo image labels. Arbitrary client IDs or paths do not authorize recorded-input reuse; the server verifies library association and exact transport inputs separately.
 
-`Scene.storyDaySource` separately distinguishes days stated by the script, unspecified provisional chronology and reviewed days. A numeric placeholder does not establish a story fact. Review records the day source; a changed explicit day requests review while retaining the prior correction.
+## Exact candidate decisions
 
-## Allocation and checking
+An `AppearanceCandidate` stores immutable ID, performer/capture, complete continuity-group look/scene scope and garment recipe snapshot. Its provider-input fingerprint covers actual source and garment references/category. It excludes working look revision, creative direction and independent face details.
 
-The implemented solver is `stagecraft-bounded-exact/1`, a bounded deterministic exact TypeScript search. It does not run CP-SAT. Its lexicographic objective satisfies hard constraints, minimizes explicitly approved unit substitutions, then minimizes the production-window quote total. Each selected physical unit is charged once in integer minor currency units. This is a planning quote total, not actual spend or a payment/tax ledger.
+A candidate preview must match that exact candidate recipe, permitted source capture and scope. Its approval additionally binds the exact stored output fingerprint, preview ID, current creative-intent hash, reviewer, rationale and time. A new output inherits no decision. A direction edit can therefore require reapproval of existing genuine pixels without a paid rerender.
 
-Hard checks cover demand completeness, physical-unit identity, availability, unavailable/maintenance stock, category, recorded alteration requirements, overlapping use/preparation, overlapping performer attendance and hard budget. Allowed alternatives are explicit unit IDs. An allocation containing an alternative cannot be adopted into the existing pictured recipe: the user must explicitly revise or repair the recipe. The solver never silently chooses an artistic replacement.
+`approve_candidate` does not change the working recipe or casting. Controlled adoption preserves the reviewed preview and approval IDs and retains `activeCandidateId` on every scoped look. Revocation or source/intent staleness cannot turn an adopted candidate into an eligible unapproved base recipe. Aggregate selectors verify current registry evidence; inline copies are kept in sync for simple frozen display.
 
-A separate checker reconstructs coverage, exact intervals, facts, costs and pairwise unit overlaps before adoption. Demand normalization and transition definitions are shared domain rules; a separate brute-force test oracle also verifies 192 small problems.
+The original recipe also needs an exact current approval. `approvedSubstituteIds` is legacy descriptive metadata, not approval permission. Allocator eligibility comes only from exact approved active looks or approved candidate records for the current performer and complete continuity scope.
 
-Recorded preparation occupies a unit before use. Consecutive same-performer appearances in the exact same look, on one local day and at one location, retain custody through gaps and prepare once unless a reset transition is recorded. The unit cannot be borrowed during that gap. An earlier scene edit invalidates a later continuous-wear interval when its boundary changes. Unknown preparation remains an evidence gap and is never asserted to take zero minutes.
+`recordingEvidence` preserves the original recording ID, provider input hash and original subject/recipe identifiers when the server deliberately binds verified identical library inputs to a new look or physical unit. A fresh project-specific approval is still required; original manifests are not rewritten.
 
-Live changes are directional and tied to exact performer/occurrence pairs. Reverse timing is not reused. Recorded durations must fit the actual gap. A bounded nonpreemptive crew checker tests shared dresser/station capacity, including staggered changes. It handles at most twelve tasks per resource and 30,000 nodes; it proves existence without persisting a detailed crew call-time schedule.
+The example-only `set_example_decisions` command is explicit and reversible. It attributes each available exact current output decision to **Example reviewer (sample decision)**, tags its source, and never manufactures missing output. Disabling it revokes tagged current sample decisions while preserving manual decisions. Default examples have no approvals.
 
-The allocation engine reviews at most 100 demands with a default 50,000-node bound:
+## Independent face details
 
-| Status          | Meaning                                                                                                     |
-| --------------- | ----------------------------------------------------------------------------------------------------------- |
-| `OPTIMAL`       | Exhaustive search proved the declared objective under recorded constraints; the assignment passed checking. |
-| `FEASIBLE`      | A checked assignment exists, but the bound prevents an optimality claim.                                    |
-| `INFEASIBLE`    | Recorded hard constraints or exhaustive permitted combinations rule out a plan. No constraint is relaxed.   |
-| `UNKNOWN`       | Scope, incomplete demand or the search bound prevents a checked conclusion.                                 |
-| `INVALID_INPUT` | Missing or malformed facts prevent a valid solve.                                                           |
+Face captures have separate pixels, versions, provenance and permission. A body image or automatic crop is never silently substituted. Makeup, hair colour and necklace each have independent recipe versions, outputs and approvals. Notes remain unrendered until actual matching output exists.
 
-The shared contract reserves `TIME_LIMIT`; this node-bounded engine currently uses the statuses above. An optimal quote plan can remain operationally provisional. Missing travel, measurements, preparation, fitting and supplier evidence remain `unverified`. Transport is not optimized or assumed instantaneous. Measurement comparisons are provisional screens; the engine invents no allowance or alteration.
+Makeup exposes lip/blush colour and intensity; smoothing is fixed to zero and lip morphology is unchanged. Hair colour exposes documented full-colour presets, not a claim of hair cut, length or physical wig. Necklace uses a registered reference and background-removal setting; output does not establish jewellery fit.
 
-## Proposals, sourcing and packs
+| Change                           | Garment decision                                                                   | Makeup / hair / necklace decisions                                         |
+| -------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Garment candidate adoption       | Preserves the candidate's exact reviewed identity                                  | Preserved for the same actor                                               |
+| One independent detail recipe    | Preserved                                                                          | Only that detail requires new output/approval                              |
+| Body source                      | Requires matching body output/approval                                             | Preserved                                                                  |
+| Face source                      | Preserved                                                                          | Requires matching face output/approval                                     |
+| Recast                           | Prospective candidate can be reviewed first; old-actor evidence becomes historical | Old-actor evidence invalidated; replacement needs separate output/approval |
+| Whole-performer withdrawal       | Blocked                                                                            | Blocked                                                                    |
+| Face-only withdrawal             | Preserved                                                                          | Blocked                                                                    |
+| Relevant direction / story scope | Approval needs review; unchanged pixels can remain                                 | Approval needs review                                                      |
+| Production schedule              | Operations rechecked                                                               | Appearance retained                                                        |
 
-Repairs bind a base revision and canonical input fingerprint containing inventory fact versions. Adoption requires the exact current revision and facts, then rechecks feasibility. Any intervening accepted command stales a proposal; there is no silent rebase.
+Configured unapproved details prevent readiness and add separate working-pack warnings. New packs after face withdrawal omit face sources and derived detail pixels from both selected handoff content and full approval context. Historical snapshots remain immutable; online access remains subject to current permission.
 
-A garment repair changes affected recipes, blocks dependent assignments, flags its sourcing and supersedes relevant packs. Historical renders remain comparisons. A recast retains direction, story requirements and item/date reservations while invalidating actor-specific appearance and fitting evidence. Another performer's fitting on a shared unit is retained but does not establish fit for the replacement.
+## Allocation and constraint checking
 
-Repair adoption creates an unapproved recipe revision. Fresh exact output and explicit approval follow. The present schema does not store a separately rendered candidate recipe before adoption; the interface must show the outstanding review.
+`stagecraft-bounded-exact/2-approved-choices` is bounded exact TypeScript search, not CP-SAT. It chooses one approved recipe per continuity group across every call. Hard constraints include demand completeness, exact approval lineage, physical-unit identity, availability/status, category, alteration requirements, overlapping unit/preparation use, performer attendance and budget.
 
-Sourcing progresses through `draft → requested → held → confirmed → received → returned`, with optional direct requested-to-confirmed, decline and cancellation paths. Each recorded transition needs a named operator, evidence and external reference. Holds/confirmations require current sourced quotes and covering availability. Missing price is not free stock. Confirmation, receipt and return are separate stages; none manufactures a fitting. Synthetic requests cannot become real supplier outcomes. These commands record evidence and do not send external messages.
+Among admissible approved choices, the objective minimizes production-window quote cost, charged once per physical unit, then performer garment changeovers. It does not silently change the working book: allocation adoption is an explicit command that also adopts any selected reviewed candidates while retaining their evidence identities. The input hash includes admissible exact approval/output identities and current intent, as well as inventory fact versions and schedule.
 
-Readiness evaluates the current clock, so a quote can expire without a production edit. It requires reviewed source requirements, complete cast/looks, exact approvals, a checked adopted allocation, fitting/supplier evidence, no unresolved operational findings and current handoff coverage. Provisional or synthetic evidence cannot establish physical readiness.
+The assignment checker verifies coverage, exact intervals, evidence IDs, group coherence, physical facts, unique-unit costs and pairwise overlaps. It shares interval/demand construction with search, so the product honestly calls this a **Constraint check**. New results set `constraintChecked`, with `independentlyChecked:false`. A separate brute-force test oracle covers 192 small resource/budget cases; that is test evidence, not an independently implemented production checker.
 
-A pack freezes relevant character names/directions, looks and exact evidence, performer sources, units, occurrences, scenes, sourcing, allocations, transitions, currency, timezone, budget and script. It records source revision/time. Outstanding work produces an explicit **Working pack** with warnings. `current` means not superseded; it does not mean ready. Relevant changes supersede online packs without rewriting their snapshots. Printed/downloaded files retain their frozen revision.
+| Status          | Meaning                                                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FEASIBLE`      | A checked fixed plan exists, or a bounded search found a checked plan without proving the objective.                                              |
+| `OPTIMAL`       | At least one group had multiple usable approved physical recipes and exhaustive search proved the declared objective.                             |
+| `INFEASIBLE`    | Current hard constraints or exhaustive admissible combinations rule out a plan, including absence of required approval. No constraint is relaxed. |
+| `UNKNOWN`       | Missing facts, unknown price, incomplete scope or a search bound prevent a checked conclusion.                                                    |
+| `INVALID_INPUT` | Missing/malformed scheduling or inventory facts prevent a valid solve.                                                                            |
 
-The model does not independently verify manually asserted external events, book suppliers, calculate cancellation fees, optimize transport, reserve stock across unrelated productions or implement payments. Synthetic and AI evaluation is software evidence, not participant research, physical fitting or commercial impact.
+The default bound is 50,000 nodes and 100 demands. `TIME_LIMIT` remains reserved in the shared contract. Only feasible/optimal results that passed the constraint check can be adopted. Missing approval is reported as an actionable admissibility finding, not proof that a real garment could never fit.
+
+Recorded preparation occupies a unit before use. Consecutive same-performer use of the exact same look on one local day/location retains custody through gaps and prepares once unless a reset transition is recorded. Earlier end-time changes invalidate dependent continuous-wear intervals. Unknown preparation remains explicitly unverified and never establishes actual zero-duration preparation.
+
+Live changes are directional and tied to exact performer/occurrence pairs; reverse timing is not inferred. A bounded nonpreemptive crew check verifies shared capacity, including staggered changes, up to twelve tasks per resource and 30,000 nodes. It proves schedule existence without persisting detailed crew call times. Unknown travel, measurements, preparation, fit and supplier evidence remain unverified; no allowance or alteration is invented.
+
+## Repairs, sourcing and frozen handoffs
+
+A repair proposal includes immutable candidate comparisons, exact affected work, preserved evidence and creative-reference flags. It binds a base revision and canonical fact/evidence hash. Candidate review or any other accepted command stales the old proposal: refresh impact before adoption. Adoption rechecks the current exact reviewed choice. Earlier production snapshots remain reproducible.
+
+Garment repair blocks dependent allocations, flags removed-unit sourcing and supersedes relevant packs while preserving unrelated approvals and independent face details. Recast retains story direction and item/date supplier reservations. It resets only relevant old-performer fitting evidence; another performer's fitting on a shared unit remains recorded but cannot establish replacement fit.
+
+Sourcing records `draft → requested → held → confirmed → received → returned`, with supported direct confirmation, decline and cancellation branches. Each transition needs named operator, evidence and external reference. Current quotes and covering availability are required where applicable. Confirmation, receipt and return are separate; none manufactures a fitting. Synthetic requests cannot become real supplier outcomes. Domain commands record evidence and send no external messages.
+
+Readiness uses the current clock, so quotes can expire without a production edit. It requires reviewed source, managed cast/looks, exact garment and configured detail decisions, a checked adopted allocation, fitting/source evidence, no unresolved operational findings and current handoff coverage. Synthetic/provisional evidence cannot establish physical readiness.
+
+Packs freeze selected scene content plus full active-candidate `appearanceContext`, so a one-occurrence handoff can still verify a decision spanning multiple continuity looks. Snapshots include character direction, exact outputs/decisions, performer sources, units, calls, script, sourcing, allocations, transitions, currency, timezone and budget. Outstanding evidence produces a **Working pack**. `current` means not superseded, not physically ready. Relevant changes supersede packs without rewriting them.
+
+The engine does not verify externally asserted events, book suppliers, optimize transport, reserve across unrelated productions or implement payments. Software and AI evaluation remains separate from participant research, physical fitting or commercial impact.

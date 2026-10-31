@@ -6,6 +6,7 @@ import type {
   Scene,
 } from "../types";
 import { sha256 } from "./hash";
+import { appearanceRecipeHash } from "./lineage";
 
 const FIXTURE_TIME = "2026-10-31T12:00:00.000Z";
 
@@ -32,6 +33,17 @@ export function createBlankProduction(
     performers: [],
     characters: [],
     looks: [],
+    appearanceCandidates: [],
+    detailReferences: [
+      {
+        id: "detail-brass-pendant",
+        librarySourceId: "detail-brass-pendant",
+        name: "Small brass pendant · synthetic reference",
+        imageUrl: "/assets/accessories/brass-pendant.webp",
+        assetId: null,
+        synthetic: true,
+      },
+    ],
     units: [],
     allocations: [],
     transitions: [],
@@ -107,6 +119,7 @@ export function createExampleProduction(
   ];
   production.performers = cast.map(([key, name, pronouns]) => ({
     id: `performer-${key}`,
+    librarySourceId: `performer-${key}`,
     name,
     pronouns,
     imageUrl: `/assets/cast/${key}.webp`,
@@ -124,6 +137,7 @@ export function createExampleProduction(
   }));
   production.performers.push({
     id: "performer-celeste",
+    librarySourceId: "performer-celeste",
     name: "Celeste Rowan",
     pronouns: "she / her",
     imageUrl: "/assets/cast/celeste.webp",
@@ -139,11 +153,12 @@ export function createExampleProduction(
     },
     measurements: { chestCm: null, waistCm: null, heightCm: null },
   });
-  for (const key of ["ada", "celeste"]) {
+  for (const key of ["ada", "celeste", "mina"]) {
     const performer = production.performers.find(
       (candidate) => candidate.id === `performer-${key}`,
     )!;
     performer.faceCapture = {
+      librarySourceId: `performer-${key}-face`,
       imageUrl: `/assets/cast/${key}-face.webp`,
       assetId: null,
       version: 1,
@@ -175,14 +190,17 @@ export function createExampleProduction(
       essential: ["Ivory work shirt"],
     },
     mae: {
-      text: "A midnight dress with a muted berry lip and softly pinned hair. A precise stage silhouette with natural skin texture.",
+      text: "An ivory rehearsal blouse on story days 1 and 2 gives way to a midnight stage dress on day 3. Preserve natural skin texture; hair colour and makeup details have separate evidence.",
       palette: ["#20283C", "#7A4054"],
-      essential: ["Midnight stage dress"],
+      essential: [
+        "Ivory rehearsal blouse on days 1 and 2",
+        "Midnight stage dress on day 3",
+      ],
     },
     julian: {
-      text: "An olive tailored jacket, unbuttoned collar and a deliberate, slightly undone silhouette.",
+      text: "An olive tailored jacket on day 2 changes to a rust jacket for the final performance on day 3. Keep the deliberate, slightly undone silhouette.",
       palette: ["#59604D", "#CEC2A9"],
-      essential: ["Olive tailored jacket"],
+      essential: ["Olive tailored jacket on day 2", "Rust jacket on day 3"],
     },
     ruth: {
       text: "An ivory blouse, practical hair and a brass key ring. Keep the wardrobe custodian's working details legible.",
@@ -217,7 +235,7 @@ export function createExampleProduction(
       heading: "INT. DRESSING ROOM - MORNING",
       chars: ["mae", "ruth"],
       cues: [
-        "MAE lifts a midnight-blue dress from its garment bag.",
+        "MAE wears an ivory rehearsal blouse while lifting a midnight-blue dress from its garment bag.",
         "RUTH wears an ivory blouse and carries a brass key ring.",
       ],
     },
@@ -226,10 +244,11 @@ export function createExampleProduction(
       title: "A rehearsal without an audience",
       day: 2,
       heading: "INT. AUDITORIUM - AFTERNOON",
-      chars: ["julian", "mae"],
+      chars: ["julian", "mae", "ruth"],
       cues: [
         "JULIAN crosses the empty auditorium in an olive tailored jacket.",
-        "MAE rehearses in the midnight-blue dress, her hair softly pinned.",
+        "MAE rehearses in her ivory blouse, her bob a warm chocolate brown.",
+        "RUTH watches in the same ivory blouse, a brass key ring at her waist.",
       ],
     },
     {
@@ -250,7 +269,7 @@ export function createExampleProduction(
       heading: "INT. FOYER - NIGHT",
       chars: ["mae", "julian"],
       cues: [
-        "MAE waits in the midnight-blue dress as rain rattles the glass.",
+        "MAE waits in the same ivory rehearsal blouse as rain rattles the glass.",
         "JULIAN's olive tailored jacket is still unbuttoned; he pockets the last unsold ticket.",
       ],
     },
@@ -274,7 +293,10 @@ export function createExampleProduction(
       cues: [
         "NORA steps into the last light wearing the oxblood velvet coat once more.",
         "ELIAS stands beside her in his ivory work shirt.",
-        "MAE wears the midnight-blue dress, JULIAN the olive tailored jacket, and RUTH her ivory blouse.",
+        "MAE wears the midnight-blue dress; her digital wig direction is now warm copper.",
+        "JULIAN wears a rust tailored jacket for the final performance.",
+        "RUTH wears her ivory blouse and carries the brass key ring.",
+        "NORA's berry lip and rose blush are stronger for the final light; the coat is unchanged.",
       ],
     },
   ];
@@ -314,14 +336,14 @@ export function createExampleProduction(
     };
   });
   production.script = {
-    id: "script-last-light-v1",
-    label: "Synthetic draft 1",
+    id: "script-last-light-v2",
+    label: "Synthetic draft 2 · day variants",
     title: "THE LAST LIGHT",
     text: scriptText,
     sha256: sha256(scriptText),
     rightsConfirmed: true,
     createdAt: now,
-    model: "authored-synthetic-fixture/v1",
+    model: "authored-synthetic-fixture/v2",
     provenance: "synthetic",
   };
   const unitDefaults = {
@@ -387,6 +409,16 @@ export function createExampleProduction(
       priceCents: 11000,
     },
     {
+      id: "unit-coat-burgundy",
+      code: "C-033",
+      name: "Burgundy wool coat",
+      category: "outerwear",
+      imageUrl: "/assets/garments/burgundy-coat.webp",
+      color: "Burgundy",
+      material: "Wool",
+      priceCents: 13000,
+    },
+    {
       id: "unit-dress-midnight",
       code: "D-008",
       name: "Midnight stage dress",
@@ -426,10 +458,31 @@ export function createExampleProduction(
       material: "Cotton",
       priceCents: 3200,
     },
+    {
+      id: "unit-blouse-mae",
+      code: "S-009",
+      name: "Mae's ivory rehearsal blouse · physical unit 3",
+      category: "upper_body",
+      imageUrl: "/assets/garments/ivory-shirt.webp",
+      color: "Ivory",
+      material: "Cotton",
+      priceCents: 2800,
+    },
+    {
+      id: "unit-jacket-rust",
+      code: "J-031",
+      name: "Rust tailored jacket",
+      category: "upper_body",
+      imageUrl: "/assets/garments/rust-jacket.webp",
+      color: "Rust",
+      material: "Wool blend",
+      priceCents: 5000,
+    },
   ];
   production.units = units.map((unit) => ({
     ...structuredClone(unitDefaults),
     ...unit,
+    librarySourceId: unit.id,
   }));
   const recipes = [
     {
@@ -531,6 +584,103 @@ export function createExampleProduction(
     reviewReason:
       "Separate beauty recipe configured. A genuine face-detail provider result and exact beauty approval are still required.",
   };
+  const nora = production.looks.find((look) => look.id === "look-nora")!;
+  nora.continuityGroupId = "continuity-nora-coat";
+  nora.sceneIds = ["scene-01", "scene-04"];
+  nora.storyDays = [1, 2];
+  const finale = structuredClone(nora);
+  finale.id = "look-nora-finale";
+  finale.title = "The returning coat · final light";
+  finale.sceneIds = ["scene-07"];
+  finale.storyDays = [3];
+  finale.beauty!.recipe.lipIntensity = 65;
+  finale.beauty!.recipe.blushIntensity = 45;
+  const mae = production.looks.find((look) => look.id === "look-mae")!;
+  mae.sceneIds = ["scene-07"];
+  mae.storyDays = [3];
+  const rehearsal = structuredClone(mae);
+  rehearsal.id = "look-mae-rehearsal";
+  rehearsal.title = "Before the final song · rehearsal";
+  rehearsal.sceneIds = ["scene-02", "scene-03", "scene-05"];
+  rehearsal.storyDays = [1, 2];
+  rehearsal.unitIds = ["unit-blouse-mae"];
+  rehearsal.category = "upper_body";
+  rehearsal.preparationMinutes = 15;
+  rehearsal.hair =
+    "Chocolate-brown bob; digital colour direction reviewed separately.";
+  const julian = production.looks.find((look) => look.id === "look-julian")!;
+  julian.sceneIds = ["scene-03", "scene-05"];
+  julian.storyDays = [2];
+  const rust = structuredClone(julian);
+  rust.id = "look-julian-finale";
+  rust.title = "The last ticket · rust finale";
+  rust.sceneIds = ["scene-07"];
+  rust.storyDays = [3];
+  rust.unitIds = ["unit-jacket-rust"];
+  production.looks.push(finale, rehearsal, rust);
+  production.detailReferences = [
+    {
+      id: "detail-brass-pendant",
+      librarySourceId: "detail-brass-pendant",
+      name: "Small brass pendant · synthetic reference",
+      imageUrl: "/assets/accessories/brass-pendant.webp",
+      assetId: null,
+      synthetic: true,
+    },
+  ];
+  for (const look of [nora, finale])
+    look.details = [
+      {
+        kind: "necklace",
+        revision: 1,
+        recipe: {
+          kind: "necklace",
+          referenceId: "detail-brass-pendant",
+          removeBackground: true,
+        },
+        previews: [],
+        approvals: [],
+        reviewReason:
+          "Independent necklace reference configured. No rendered detail, physical jewellery fit or approval is implied.",
+      },
+    ];
+  for (const look of [rehearsal, mae])
+    look.details = [
+      {
+        kind: "hair_color",
+        revision: 1,
+        recipe: {
+          kind: "hair_color",
+          preset: look.id === rehearsal.id ? "Chocolate Brown" : "Copper Red",
+        },
+        previews: [],
+        approvals: [],
+        reviewReason:
+          "Independent hair-colour direction configured. Colour output does not establish a wig, hair length or hairstyle.",
+      },
+    ];
+  for (const scene of production.scenes)
+    scene.lookIds = production.looks
+      .filter((look) => look.sceneIds.includes(scene.id))
+      .map((look) => look.id);
+  production.appearanceCandidates = ["charcoal", "burgundy"].map((color) => {
+    const recipe = {
+      unitIds: [`unit-coat-${color}`],
+      category: "outerwear" as const,
+    };
+    return {
+      id: `candidate-nora-${color}`,
+      lookIds: ["look-nora", "look-nora-finale"],
+      sceneIds: ["scene-01", "scene-04", "scene-07"],
+      performerId: "performer-ada",
+      captureVersion: 1,
+      recipe,
+      recipeHash: appearanceRecipeHash(recipe),
+      previews: [],
+      approvals: [],
+      createdAt: now,
+    };
+  });
   const slots = [
     ["04", dayAfter(9), "09:00", "10:00"],
     ["01", dayAfter(9), "11:00", "12:00"],
@@ -538,7 +688,7 @@ export function createExampleProduction(
     ["06", dayAfter(10), "09:00", "10:00"],
     ["03", dayAfter(10), "11:00", "12:00"],
     ["05", dayAfter(10), "14:00", "15:00"],
-    ["07", dayAfter(11), "18:00", "19:30"],
+    ["07", dayAfter(10), "18:00", "19:30"],
   ];
   production.occurrences = slots.map(([number, date, start, end], index) => ({
     id: `occ-${number}`,
@@ -550,6 +700,30 @@ export function createExampleProduction(
     location: "Seaside Theatre",
     order: index + 1,
   }));
+  production.transitions = [
+    {
+      id: "transition-mae-finale",
+      performerId: "performer-mina",
+      fromOccurrenceId: "occ-05",
+      toOccurrenceId: "occ-07",
+      minutes: 40,
+      evidence: "estimate",
+      crewResource: "Wardrobe team A",
+      crewCapacity: 1,
+      note: "Synthetic estimate: ivory blouse to midnight dress and copper digital-wig direction on the same shoot day. Record the actual dressing duration separately.",
+    },
+    {
+      id: "transition-julian-finale",
+      performerId: "performer-jules",
+      fromOccurrenceId: "occ-05",
+      toOccurrenceId: "occ-07",
+      minutes: 25,
+      evidence: "estimate",
+      crewResource: "Wardrobe team A",
+      crewCapacity: 1,
+      note: "Synthetic estimate: olive jacket to rust jacket on the same shoot day; physical change duration is not observed.",
+    },
+  ];
   production.sourcing = [
     {
       id: "source-coat-draft",

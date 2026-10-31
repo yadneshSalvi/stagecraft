@@ -3,9 +3,12 @@ import type { Production, Transition } from "@/lib/types";
 import {
   applyCommand,
   createExampleProduction,
-  solveAllocation,
+  solveAllocation as runSolver,
+  getCurrentCandidateApproval,
   validateAllocation,
 } from "@/lib/domain";
+
+import { approveManaged, command, reviewCandidate } from "./domain-support";
 
 const NOW = "2026-10-31T12:00:00.000Z";
 const EPOCH = Date.parse("2026-11-09T10:00:00.000Z");
@@ -14,6 +17,53 @@ interface Slot {
   start: number;
   end: number;
   primary: number;
+}
+
+/** Physical-constraint tests arrange explicit test-only decisions; rejection/revocation is covered separately. */
+function authorizePhysicalProblem(production: Production): Production {
+  let p = structuredClone(production);
+  p.appearanceCandidates = (p.appearanceCandidates ?? []).filter((candidate) =>
+    candidate.lookIds.some((id) => {
+      const look = p.looks.find((item) => item.id === id);
+      return (
+        look &&
+        (look.activeCandidateId === candidate.id ||
+          p.units
+            .find((unit) => unit.id === look.unitIds[0])
+            ?.approvedSubstituteIds.includes(candidate.recipe.unitIds[0]))
+      );
+    }),
+  );
+  p = approveManaged(p);
+  for (const look of p.looks) {
+    const primary = p.units.find((unit) => unit.id === look.unitIds[0]);
+    for (const id of primary?.approvedSubstituteIds ?? []) {
+      if (p.units.find((unit) => unit.id === id)?.category !== look.category)
+        continue;
+      const existing = p.appearanceCandidates?.find(
+        (candidate) =>
+          candidate.lookIds.length === 1 &&
+          candidate.lookIds[0] === look.id &&
+          candidate.recipe.unitIds[0] === id &&
+          getCurrentCandidateApproval(p, candidate),
+      );
+      if (existing) continue;
+      p = command(p, {
+        type: "create_candidate",
+        lookId: look.id,
+        unitIds: [id],
+      });
+      p = reviewCandidate(p, p.appearanceCandidates!.at(-1)!.id);
+    }
+  }
+  return p;
+}
+function solveAllocation(
+  production: Production,
+  options: Parameters<typeof runSolver>[1] = {},
+) {
+  Object.assign(production, authorizePhysicalProblem(production));
+  return runSolver(production, options);
 }
 
 function problem(
@@ -69,6 +119,12 @@ function problem(
     end: at(slot.end),
     order: index + 1,
   }));
+  for (const look of production.looks) {
+    delete look.continuityGroupId;
+    delete look.activeCandidateId;
+    look.details = [];
+  }
+  production.appearanceCandidates = [];
   production.allocations = [];
   production.allocationResult = null;
   production.transitions = [];
@@ -77,10 +133,10 @@ function problem(
   production.proposals = [];
   production.events = [];
   production.budgetCents = 10000;
-  return production;
+  return authorizePhysicalProblem(production);
 }
 
-describe("physical-unit feasibility and the independent checker", () => {
+describe("physical-unit feasibility and the constraint checker", () => {
   it("two overlapping demands need two physical instances, with explicit alternative permission", () => {
     const slots = [
       { start: 0, end: 10, primary: 0 },
@@ -90,14 +146,16 @@ describe("physical-unit feasibility and the independent checker", () => {
     const solved = solveAllocation(production, { now: NOW });
     expect(solved).toMatchObject({
       status: "OPTIMAL",
-      independentlyChecked: true,
+      constraintChecked: true,
       totalCostCents: 300,
     });
     expect(
       new Set(solved.assignments.map((assignment) => assignment.unitId)).size,
     ).toBe(2);
     expect(
-      solved.findings.some((finding) => finding.code === "SUBSTITUTE_REVIEW"),
+      solved.assignments.every(
+        (assignment) => !!assignment.approvalId && !!assignment.previewId,
+      ),
     ).toBe(true);
     const forbidden = problem(slots, [100, 200], false);
     const impossible = solveAllocation(forbidden, { now: NOW });
@@ -112,7 +170,7 @@ describe("physical-unit feasibility and the independent checker", () => {
     ]);
   });
 
-  it("does not silently adopt an alternative into the pictured recipe", () => {
+  it("keeps the working recipe until explicit allocation adoption and preserves reviewed candidate identity", () => {
     const production = problem(
       [
         { start: 0, end: 10, primary: 0 },
@@ -125,19 +183,28 @@ describe("physical-unit feasibility and the independent checker", () => {
       { type: "solve_allocation" },
       { actor: "test", now: NOW },
     );
-    expect(() =>
-      applyCommand(
-        solved,
-        {
-          type: "adopt_allocation",
-          inputHash: solved.allocationResult!.inputHash,
-        },
-        { actor: "test", now: NOW },
-      ),
-    ).toThrow(/Explicitly revise or repair/);
     expect(solved.looks.every((look) => look.unitIds[0] === "unit-0")).toBe(
       true,
     );
+    const adopted = applyCommand(
+      solved,
+      {
+        type: "adopt_allocation",
+        inputHash: solved.allocationResult!.inputHash,
+      },
+      { actor: "test", now: NOW },
+    );
+    expect(new Set(adopted.looks.map((look) => look.unitIds[0])).size).toBe(2);
+    const reviewed = adopted.allocations.find(
+      (assignment) => assignment.candidateId,
+    )!;
+    expect(
+      adopted.looks.find((look) => look.id === reviewed.lookId)
+        ?.activeCandidateId,
+    ).toBe(reviewed.candidateId);
+    expect(
+      getCurrentCandidateApproval(adopted, reviewed.candidateId!)?.id,
+    ).toBe(reviewed.approvalId);
   });
 
   it("reuses a held unit across nonoverlapping use and charges the production-window quote once", () => {
@@ -162,9 +229,9 @@ describe("physical-unit feasibility and the independent checker", () => {
     production.budgetCents = 1250;
     const solved = solveAllocation(production, { now: NOW });
     expect(solved).toMatchObject({
-      status: "OPTIMAL",
+      status: "FEASIBLE",
       totalCostCents: 1250,
-      independentlyChecked: true,
+      constraintChecked: true,
     });
     expect(solved.assignments).toHaveLength(2);
     expect(
@@ -314,7 +381,7 @@ describe("physical-unit feasibility and the independent checker", () => {
       result.findings.some((finding) => finding.code === "PERFORMER_OVERLAP"),
     ).toBe(true);
     expect(JSON.stringify(baseline)).toBe(original);
-    expect(solveAllocation(baseline, { now: NOW }).status).toBe("OPTIMAL");
+    expect(solveAllocation(baseline, { now: NOW }).status).toBe("FEASIBLE");
   });
 });
 
@@ -345,8 +412,8 @@ describe("live directional changes, continuous wear and shared crew", () => {
     }
     const solved = solveAllocation(production, { now: NOW });
     expect(solved).toMatchObject({
-      status: "OPTIMAL",
-      independentlyChecked: true,
+      status: "FEASIBLE",
+      constraintChecked: true,
       totalCostCents: 500,
     });
     expect(
@@ -400,7 +467,7 @@ describe("live directional changes, continuous wear and shared crew", () => {
       scene.lookIds = [production.looks[0].id];
     }
     production = applyCommand(
-      production,
+      authorizePhysicalProblem(production),
       { type: "solve_allocation" },
       { actor: "test", now: NOW },
     );
@@ -540,15 +607,15 @@ describe("live directional changes, continuous wear and shared crew", () => {
       impossible.findings.some((finding) => finding.code === "CREW_CAPACITY"),
     ).toBe(true);
     expect(solveAllocation(sharedCrew(8, 2), { now: NOW }).status).toBe(
-      "OPTIMAL",
+      "FEASIBLE",
     );
   });
 
   it("can stagger two changes within a valid shared crew window", () => {
     const solved = solveAllocation(sharedCrew(5, 1), { now: NOW });
     expect(solved).toMatchObject({
-      status: "OPTIMAL",
-      independentlyChecked: true,
+      status: "FEASIBLE",
+      constraintChecked: true,
     });
     expect(
       solved.findings.some((finding) => finding.code === "CREW_CAPACITY"),
@@ -575,7 +642,8 @@ describe("bounded exact search and held-out exhaustive optima", () => {
     });
     const feasible = solveAllocation(production, { now: NOW, maxNodes: 5 });
     expect(feasible.status).toBe("FEASIBLE");
-    expect(feasible.independentlyChecked).toBe(true);
+    expect(feasible.independentlyChecked).toBe(false);
+    expect(feasible.constraintChecked).toBe(true);
     expect(
       validateAllocation(production, feasible.assignments, { now: NOW }).valid,
     ).toBe(true);
@@ -640,30 +708,30 @@ describe("bounded exact search and held-out exhaustive optima", () => {
                   const changes = selected.filter(
                     (unit, index) => unit !== slots[index].primary,
                   ).length;
-                  if (
-                    !best ||
-                    changes < best.changes ||
-                    (changes === best.changes && cost < best.cost)
-                  )
-                    best = { changes, cost };
+                  if (!best || cost < best.cost) best = { changes, cost };
                 }
             const solved = solveAllocation(production, { now: NOW });
             const label = `mask=${mask}, overlap=${overlap}, budget=${budget}, alternatives=${alternatives}`;
             if (!best) expect(solved.status, label).toBe("INFEASIBLE");
             else {
-              expect(solved.status, label).toBe("OPTIMAL");
-              expect(solved.independentlyChecked, label).toBe(true);
+              const choices = production.looks.some((look) => {
+                const base = production.units.find(
+                  (unit) => unit.id === look.unitIds[0],
+                )!;
+                return (
+                  [base.id, ...base.approvedSubstituteIds].filter(
+                    (id) =>
+                      production.units.find((unit) => unit.id === id)
+                        ?.status === "available",
+                  ).length > 1
+                );
+              });
+              expect(solved.status, label).toBe(
+                choices ? "OPTIMAL" : "FEASIBLE",
+              );
+              expect(solved.constraintChecked, label).toBe(true);
+              expect(solved.independentlyChecked, label).toBe(false);
               expect(solved.totalCostCents, label).toBe(best.cost);
-              expect(
-                solved.assignments.filter(
-                  (assignment) =>
-                    assignment.unitId !==
-                    production.looks.find(
-                      (look) => look.id === assignment.lookId,
-                    )!.unitIds[0],
-                ).length,
-                label,
-              ).toBe(best.changes);
               expect(
                 validateAllocation(production, solved.assignments, { now: NOW })
                   .valid,

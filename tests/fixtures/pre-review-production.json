@@ -1,0 +1,1009 @@
+{
+  "sourceCommit": "a5f128467e72e9fdfa37ddfc5f0649278eda3129",
+  "example": {
+    "id": "c187ec26-e53c-421e-9a38-8e00c5f19caf",
+    "title": "THE LAST LIGHT",
+    "subtitle": "Seven scenes. Three story days. One coat that holds the story together.",
+    "mode": "film",
+    "currency": "GBP",
+    "timeZone": "Europe/London",
+    "budgetCents": 50000,
+    "revision": 1,
+    "createdAt": "2026-10-31T12:00:00.000Z",
+    "updatedAt": "2026-10-31T12:00:00.000Z",
+    "fixture": true,
+    "script": {
+      "id": "script-last-light-v1",
+      "label": "Synthetic draft 1",
+      "title": "THE LAST LIGHT",
+      "text": "THE LAST LIGHT\nAn original synthetic short-film extract for STAGECRAFT.\nAll characters are fictional adults.\n\nSCENE 01 - STORY DAY 1\nEXT. SEASIDE THEATRE - DAWN\n\nNORA arrives in an oxblood velvet coat, its hem dark from the sea mist.\n\nSCENE 02 - STORY DAY 1\nINT. DRESSING ROOM - MORNING\n\nMAE lifts a midnight-blue dress from its garment bag.\nRUTH wears an ivory blouse and carries a brass key ring.\n\nSCENE 03 - STORY DAY 2\nINT. AUDITORIUM - AFTERNOON\n\nJULIAN crosses the empty auditorium in an olive tailored jacket.\nMAE rehearses in the midnight-blue dress, her hair softly pinned.\n\nSCENE 04 - STORY DAY 2\nINT. STAGE - LATE AFTERNOON\n\nNORA keeps the same oxblood velvet coat over her shoulders.\nELIAS rolls the sleeves of an ivory work shirt before opening the lighting box.\n\nSCENE 05 - STORY DAY 2\nINT. FOYER - NIGHT\n\nMAE waits in the midnight-blue dress as rain rattles the glass.\nJULIAN's olive tailored jacket is still unbuttoned; he pockets the last unsold ticket.\n\nSCENE 06 - STORY DAY 3\nINT. WARDROBE - MORNING\n\nRUTH, still in her ivory blouse, sets the brass key ring on the table.\nELIAS returns in the same ivory work shirt, sleeves rolled.\n\nSCENE 07 - STORY DAY 3\nINT. STAGE - DUSK\n\nNORA steps into the last light wearing the oxblood velvet coat once more.\nELIAS stands beside her in his ivory work shirt.\nMAE wears the midnight-blue dress, JULIAN the olive tailored jacket, and RUTH her ivory blouse.\n\n",
+      "sha256": "ea1cbebd01aa910f260e0aadff2d748fe10b1d50a1c0cf8aab99555a9ec060a4",
+      "rightsConfirmed": true,
+      "createdAt": "2026-10-31T12:00:00.000Z",
+      "model": "authored-synthetic-fixture/v1",
+      "provenance": "synthetic"
+    },
+    "scenes": [
+      {
+        "id": "scene-01",
+        "number": "01",
+        "title": "The return",
+        "heading": "EXT. SEASIDE THEATRE - DAWN",
+        "storyDay": 1,
+        "storyDaySource": "script",
+        "characterIds": ["char-nora"],
+        "lookIds": ["look-nora"],
+        "sourceStart": 110,
+        "sourceEnd": 235,
+        "reviewed": false,
+        "requirements": [
+          {
+            "id": "req-01-1",
+            "characterId": "char-nora",
+            "text": "NORA arrives in an oxblood velvet coat, its hem dark from the sea mist.",
+            "explicit": true,
+            "sourceStart": 162,
+            "sourceEnd": 233,
+            "reviewed": false
+          }
+        ]
+      },
+      {
+        "id": "scene-02",
+        "number": "02",
+        "title": "The empty dressing room",
+        "heading": "INT. DRESSING ROOM - MORNING",
+        "storyDay": 1,
+        "storyDaySource": "script",
+        "characterIds": ["char-mae", "char-ruth"],
+        "lookIds": ["look-mae", "look-ruth"],
+        "sourceStart": 235,
+        "sourceEnd": 400,
+        "reviewed": false,
+        "requirements": [
+          {
+            "id": "req-02-1",
+            "characterId": "char-mae",
+            "text": "MAE lifts a midnight-blue dress from its garment bag.",
+            "explicit": true,
+            "sourceStart": 288,
+            "sourceEnd": 341,
+            "reviewed": false
+          },
+          {
+            "id": "req-02-2",
+            "characterId": "char-ruth",
+            "text": "RUTH wears an ivory blouse and carries a brass key ring.",
+            "explicit": true,
+            "sourceStart": 342,
+            "sourceEnd": 398,
+            "reviewed": false
+          }
+        ]
+      },
+      {
+        "id": "scene-03",
+        "number": "03",
+        "title": "A rehearsal without an audience",
+        "heading": "INT. AUDITORIUM - AFTERNOON",
+        "storyDay": 2,
+        "storyDaySource": "script",
+        "characterIds": ["char-julian", "char-mae"],
+        "lookIds": ["look-julian", "look-mae"],
+        "sourceStart": 400,
+        "sourceEnd": 584,
+        "reviewed": false,
+        "requirements": [
+          {
+            "id": "req-03-1",
+            "characterId": "char-julian",
+            "text": "JULIAN crosses the empty auditorium in an olive tailored jacket.",
+            "explicit": true,
+            "sourceStart": 452,
+            "sourceEnd": 516,
+            "reviewed": false
+          },
+          {
+            "id": "req-03-2",
+            "characterId": "char-mae",
+            "text": "MAE rehearses in the midnight-blue dress, her hair softly pinned.",
+            "explicit": true,
+            "sourceStart": 517,
+            "sourceEnd": 582,
+            "reviewed": false
+          }
+        ]
+      },
+      {
+        "id": "scene-04",
+        "number": "04",
+        "title": "Keeping the lights on",
+        "heading": "INT. STAGE - LATE AFTERNOON",
+        "storyDay": 2,
+        "storyDaySource": "script",
+        "characterIds": ["char-nora", "char-elias"],
+        "lookIds": ["look-nora", "look-elias"],
+        "sourceStart": 584,
+        "sourceEnd": 777,
+        "reviewed": false,
+        "requirements": [
+          {
+            "id": "req-04-1",
+            "characterId": "char-nora",
+            "text": "NORA keeps the same oxblood velvet coat over her shoulders.",
+            "explicit": true,
+            "sourceStart": 636,
+            "sourceEnd": 695,
+            "reviewed": false
+          },
+          {
+            "id": "req-04-2",
+            "characterId": "char-elias",
+            "text": "ELIAS rolls the sleeves of an ivory work shirt before opening the lighting box.",
+            "explicit": true,
+            "sourceStart": 696,
+            "sourceEnd": 775,
+            "reviewed": false
+          }
+        ]
+      },
+      {
+        "id": "scene-05",
+        "number": "05",
+        "title": "The storm outside",
+        "heading": "INT. FOYER - NIGHT",
+        "storyDay": 2,
+        "storyDaySource": "script",
+        "characterIds": ["char-mae", "char-julian"],
+        "lookIds": ["look-mae", "look-julian"],
+        "sourceStart": 777,
+        "sourceEnd": 972,
+        "reviewed": false,
+        "requirements": [
+          {
+            "id": "req-05-1",
+            "characterId": "char-mae",
+            "text": "MAE waits in the midnight-blue dress as rain rattles the glass.",
+            "explicit": true,
+            "sourceStart": 820,
+            "sourceEnd": 883,
+            "reviewed": false
+          },
+          {
+            "id": "req-05-2",
+            "characterId": "char-julian",
+            "text": "JULIAN's olive tailored jacket is still unbuttoned; he pockets the last unsold ticket.",
+            "explicit": true,
+            "sourceStart": 884,
+            "sourceEnd": 970,
+            "reviewed": false
+          }
+        ]
+      },
+      {
+        "id": "scene-06",
+        "number": "06",
+        "title": "The wardrobe key",
+        "heading": "INT. WARDROBE - MORNING",
+        "storyDay": 3,
+        "storyDaySource": "script",
+        "characterIds": ["char-ruth", "char-elias"],
+        "lookIds": ["look-ruth", "look-elias"],
+        "sourceStart": 972,
+        "sourceEnd": 1152,
+        "reviewed": false,
+        "requirements": [
+          {
+            "id": "req-06-1",
+            "characterId": "char-ruth",
+            "text": "RUTH, still in her ivory blouse, sets the brass key ring on the table.",
+            "explicit": true,
+            "sourceStart": 1020,
+            "sourceEnd": 1090,
+            "reviewed": false
+          },
+          {
+            "id": "req-06-2",
+            "characterId": "char-elias",
+            "text": "ELIAS returns in the same ivory work shirt, sleeves rolled.",
+            "explicit": true,
+            "sourceStart": 1091,
+            "sourceEnd": 1150,
+            "reviewed": false
+          }
+        ]
+      },
+      {
+        "id": "scene-07",
+        "number": "07",
+        "title": "The last light",
+        "heading": "INT. STAGE - DUSK",
+        "storyDay": 3,
+        "storyDaySource": "script",
+        "characterIds": [
+          "char-nora",
+          "char-elias",
+          "char-mae",
+          "char-julian",
+          "char-ruth"
+        ],
+        "lookIds": [
+          "look-nora",
+          "look-elias",
+          "look-mae",
+          "look-julian",
+          "look-ruth"
+        ],
+        "sourceStart": 1152,
+        "sourceEnd": 1414,
+        "reviewed": false,
+        "requirements": [
+          {
+            "id": "req-07-1",
+            "characterId": "char-nora",
+            "text": "NORA steps into the last light wearing the oxblood velvet coat once more.",
+            "explicit": true,
+            "sourceStart": 1194,
+            "sourceEnd": 1267,
+            "reviewed": false
+          },
+          {
+            "id": "req-07-2",
+            "characterId": "char-elias",
+            "text": "ELIAS stands beside her in his ivory work shirt.",
+            "explicit": true,
+            "sourceStart": 1268,
+            "sourceEnd": 1316,
+            "reviewed": false
+          },
+          {
+            "id": "req-07-3",
+            "characterId": "char-mae",
+            "text": "MAE wears the midnight-blue dress, JULIAN the olive tailored jacket, and RUTH her ivory blouse.",
+            "explicit": true,
+            "sourceStart": 1317,
+            "sourceEnd": 1412,
+            "reviewed": false
+          }
+        ]
+      }
+    ],
+    "occurrences": [
+      {
+        "id": "occ-04",
+        "sceneId": "scene-04",
+        "label": "Shoot 1 · scene 04",
+        "kind": "shoot",
+        "start": "2026-11-09T09:00:00.000Z",
+        "end": "2026-11-09T10:00:00.000Z",
+        "location": "Seaside Theatre",
+        "order": 1
+      },
+      {
+        "id": "occ-01",
+        "sceneId": "scene-01",
+        "label": "Shoot 2 · scene 01",
+        "kind": "shoot",
+        "start": "2026-11-09T11:00:00.000Z",
+        "end": "2026-11-09T12:00:00.000Z",
+        "location": "Seaside Theatre",
+        "order": 2
+      },
+      {
+        "id": "occ-02",
+        "sceneId": "scene-02",
+        "label": "Shoot 3 · scene 02",
+        "kind": "shoot",
+        "start": "2026-11-09T14:00:00.000Z",
+        "end": "2026-11-09T15:00:00.000Z",
+        "location": "Seaside Theatre",
+        "order": 3
+      },
+      {
+        "id": "occ-06",
+        "sceneId": "scene-06",
+        "label": "Shoot 4 · scene 06",
+        "kind": "shoot",
+        "start": "2026-11-10T09:00:00.000Z",
+        "end": "2026-11-10T10:00:00.000Z",
+        "location": "Seaside Theatre",
+        "order": 4
+      },
+      {
+        "id": "occ-03",
+        "sceneId": "scene-03",
+        "label": "Shoot 5 · scene 03",
+        "kind": "shoot",
+        "start": "2026-11-10T11:00:00.000Z",
+        "end": "2026-11-10T12:00:00.000Z",
+        "location": "Seaside Theatre",
+        "order": 5
+      },
+      {
+        "id": "occ-05",
+        "sceneId": "scene-05",
+        "label": "Shoot 6 · scene 05",
+        "kind": "shoot",
+        "start": "2026-11-10T14:00:00.000Z",
+        "end": "2026-11-10T15:00:00.000Z",
+        "location": "Seaside Theatre",
+        "order": 6
+      },
+      {
+        "id": "occ-07",
+        "sceneId": "scene-07",
+        "label": "Shoot 7 · scene 07",
+        "kind": "shoot",
+        "start": "2026-11-11T18:00:00.000Z",
+        "end": "2026-11-11T19:30:00.000Z",
+        "location": "Seaside Theatre",
+        "order": 7
+      }
+    ],
+    "performers": [
+      {
+        "id": "performer-ada",
+        "name": "Ada Mercer",
+        "pronouns": "she / her",
+        "imageUrl": "/assets/cast/ada.webp",
+        "assetId": null,
+        "captureVersion": 1,
+        "synthetic": true,
+        "consent": {
+          "granted": true,
+          "purpose": "Synthetic adult character portrait for this fictional demonstration.",
+          "publicDemo": true,
+          "recordedAt": "2026-10-31T12:00:00.000Z"
+        },
+        "measurements": {
+          "chestCm": null,
+          "waistCm": null,
+          "heightCm": null
+        },
+        "faceCapture": {
+          "imageUrl": "/assets/cast/ada-face.webp",
+          "assetId": null,
+          "version": 1,
+          "synthetic": true,
+          "consent": {
+            "granted": true,
+            "publicDemo": true,
+            "purpose": "Separate synthetic adult face source for the fictional beauty-detail demonstration; no real participant.",
+            "recordedAt": "2026-10-31T12:00:00.000Z"
+          }
+        }
+      },
+      {
+        "id": "performer-theo",
+        "name": "Theo Reed",
+        "pronouns": "he / him",
+        "imageUrl": "/assets/cast/theo.webp",
+        "assetId": null,
+        "captureVersion": 1,
+        "synthetic": true,
+        "consent": {
+          "granted": true,
+          "purpose": "Synthetic adult character portrait for this fictional demonstration.",
+          "publicDemo": true,
+          "recordedAt": "2026-10-31T12:00:00.000Z"
+        },
+        "measurements": {
+          "chestCm": null,
+          "waistCm": null,
+          "heightCm": null
+        }
+      },
+      {
+        "id": "performer-mina",
+        "name": "Mina Park",
+        "pronouns": "she / her",
+        "imageUrl": "/assets/cast/mina.webp",
+        "assetId": null,
+        "captureVersion": 1,
+        "synthetic": true,
+        "consent": {
+          "granted": true,
+          "purpose": "Synthetic adult character portrait for this fictional demonstration.",
+          "publicDemo": true,
+          "recordedAt": "2026-10-31T12:00:00.000Z"
+        },
+        "measurements": {
+          "chestCm": null,
+          "waistCm": null,
+          "heightCm": null
+        }
+      },
+      {
+        "id": "performer-jules",
+        "name": "Jules Laurent",
+        "pronouns": "they / them",
+        "imageUrl": "/assets/cast/jules.webp",
+        "assetId": null,
+        "captureVersion": 1,
+        "synthetic": true,
+        "consent": {
+          "granted": true,
+          "purpose": "Synthetic adult character portrait for this fictional demonstration.",
+          "publicDemo": true,
+          "recordedAt": "2026-10-31T12:00:00.000Z"
+        },
+        "measurements": {
+          "chestCm": null,
+          "waistCm": null,
+          "heightCm": null
+        }
+      },
+      {
+        "id": "performer-ruth",
+        "name": "Ruth Ellis",
+        "pronouns": "she / her",
+        "imageUrl": "/assets/cast/ruth.webp",
+        "assetId": null,
+        "captureVersion": 1,
+        "synthetic": true,
+        "consent": {
+          "granted": true,
+          "purpose": "Synthetic adult character portrait for this fictional demonstration.",
+          "publicDemo": true,
+          "recordedAt": "2026-10-31T12:00:00.000Z"
+        },
+        "measurements": {
+          "chestCm": null,
+          "waistCm": null,
+          "heightCm": null
+        }
+      },
+      {
+        "id": "performer-celeste",
+        "name": "Celeste Rowan",
+        "pronouns": "she / her",
+        "imageUrl": "/assets/cast/celeste.webp",
+        "assetId": null,
+        "captureVersion": 1,
+        "synthetic": true,
+        "consent": {
+          "granted": true,
+          "purpose": "Synthetic adult replacement performer for the labelled recast exercise.",
+          "publicDemo": true,
+          "recordedAt": "2026-10-31T12:00:00.000Z"
+        },
+        "measurements": {
+          "chestCm": null,
+          "waistCm": null,
+          "heightCm": null
+        },
+        "faceCapture": {
+          "imageUrl": "/assets/cast/celeste-face.webp",
+          "assetId": null,
+          "version": 1,
+          "synthetic": true,
+          "consent": {
+            "granted": true,
+            "publicDemo": true,
+            "purpose": "Separate synthetic adult face source for the fictional beauty-detail demonstration; no real participant.",
+            "recordedAt": "2026-10-31T12:00:00.000Z"
+          }
+        }
+      }
+    ],
+    "characters": [
+      {
+        "id": "char-nora",
+        "name": "Nora Vale",
+        "description": "A returning stage manager, holding a theatre together for one final night.",
+        "performerId": "performer-ada",
+        "direction": {
+          "revision": 1,
+          "text": "The oxblood velvet coat is a continuity motif across arrival, rehearsal and the final light. Keep its worn texture visible.",
+          "palette": ["#632C3D", "#242633", "#D4AE6A"],
+          "essential": [
+            "A long velvet outer layer",
+            "The coat repeats in scenes 01, 04 and 07"
+          ],
+          "approvedBy": null
+        }
+      },
+      {
+        "id": "char-elias",
+        "name": "Elias Vale",
+        "description": "Nora's brother, the theatre's practical but reluctant electrician.",
+        "performerId": "performer-theo",
+        "direction": {
+          "revision": 1,
+          "text": "A practical ivory shirt, rolled sleeves and restrained makeup. Work marks are continuity notes, not generated skin corrections.",
+          "palette": ["#E6DDC9", "#45494C"],
+          "essential": ["Ivory work shirt"],
+          "approvedBy": null
+        }
+      },
+      {
+        "id": "char-mae",
+        "name": "Mae Lin",
+        "description": "A singer returning to the stage where she first found her voice.",
+        "performerId": "performer-mina",
+        "direction": {
+          "revision": 1,
+          "text": "A midnight dress with a muted berry lip and softly pinned hair. A precise stage silhouette with natural skin texture.",
+          "palette": ["#20283C", "#7A4054"],
+          "essential": ["Midnight stage dress"],
+          "approvedBy": null
+        }
+      },
+      {
+        "id": "char-julian",
+        "name": "Julian Voss",
+        "description": "A promoter trying to keep the last performance alive.",
+        "performerId": "performer-jules",
+        "direction": {
+          "revision": 1,
+          "text": "An olive tailored jacket, unbuttoned collar and a deliberate, slightly undone silhouette.",
+          "palette": ["#59604D", "#CEC2A9"],
+          "essential": ["Olive tailored jacket"],
+          "approvedBy": null
+        }
+      },
+      {
+        "id": "char-ruth",
+        "name": "Ruth Bell",
+        "description": "The long-serving wardrobe custodian and keeper of the theatre's history.",
+        "performerId": "performer-ruth",
+        "direction": {
+          "revision": 1,
+          "text": "An ivory blouse, practical hair and a brass key ring. Keep the wardrobe custodian's working details legible.",
+          "palette": ["#E9E0CB", "#A68B55"],
+          "essential": ["Ivory blouse", "Brass key ring"],
+          "approvedBy": null
+        }
+      }
+    ],
+    "looks": [
+      {
+        "id": "look-nora",
+        "title": "The returning coat",
+        "characterId": "char-nora",
+        "performerId": "performer-ada",
+        "revision": 1,
+        "sceneIds": ["scene-01", "scene-04", "scene-07"],
+        "storyDays": [1, 2, 3],
+        "unitIds": ["unit-coat-oxblood"],
+        "category": "outerwear",
+        "silhouette": "The oxblood velvet coat is a continuity motif across arrival, rehearsal and the final light. Keep its worn texture visible.",
+        "makeup": {
+          "notes": "Muted berry lip, warm brown liner; natural skin texture.",
+          "palette": ["#632C3D", "#242633", "#D4AE6A"],
+          "skinSmoothStrength": 0,
+          "skinSmoothColorIntensity": 0
+        },
+        "hair": "Loose low knot, with a few wind-touched strands.",
+        "accessories": "Small brass pendant; continuity reference only.",
+        "preparationMinutes": 20,
+        "preparationEvidence": "estimate",
+        "previews": [],
+        "approvals": [],
+        "note": "Synthetic design and preparation estimate. Garment previews, separate makeup detail and physical evidence carry their own provenance.",
+        "reviewReason": null,
+        "beauty": {
+          "revision": 1,
+          "recipe": {
+            "lipColor": "#853E5D",
+            "lipIntensity": 40,
+            "blushColor": "#9D526C",
+            "blushIntensity": 30
+          },
+          "previews": [],
+          "approvals": [],
+          "reviewReason": "Separate beauty recipe configured. A genuine face-detail provider result and exact beauty approval are still required."
+        }
+      },
+      {
+        "id": "look-elias",
+        "title": "Keeping the lights on",
+        "characterId": "char-elias",
+        "performerId": "performer-theo",
+        "revision": 1,
+        "sceneIds": ["scene-04", "scene-06", "scene-07"],
+        "storyDays": [2, 3],
+        "unitIds": ["unit-shirt-ivory"],
+        "category": "upper_body",
+        "silhouette": "A practical ivory shirt, rolled sleeves and restrained makeup. Work marks are continuity notes, not generated skin corrections.",
+        "makeup": {
+          "notes": "Neutral, unretouched baseline; record any work marks manually.",
+          "palette": ["#E6DDC9", "#45494C"],
+          "skinSmoothStrength": 0,
+          "skinSmoothColorIntensity": 0
+        },
+        "hair": "Natural, pushed back before work.",
+        "accessories": "Prop electrician's notebook; no live electrical work.",
+        "preparationMinutes": 12,
+        "preparationEvidence": "estimate",
+        "previews": [],
+        "approvals": [],
+        "note": "Synthetic design and preparation estimate. Garment previews, separate makeup detail and physical evidence carry their own provenance.",
+        "reviewReason": null
+      },
+      {
+        "id": "look-mae",
+        "title": "One final song",
+        "characterId": "char-mae",
+        "performerId": "performer-mina",
+        "revision": 1,
+        "sceneIds": ["scene-02", "scene-03", "scene-05", "scene-07"],
+        "storyDays": [1, 2, 3],
+        "unitIds": ["unit-dress-midnight"],
+        "category": "full_body",
+        "silhouette": "A midnight dress with a muted berry lip and softly pinned hair. A precise stage silhouette with natural skin texture.",
+        "makeup": {
+          "notes": "Muted berry lip and cool brown eye; no skin smoothing.",
+          "palette": ["#20283C", "#7A4054"],
+          "skinSmoothStrength": 0,
+          "skinSmoothColorIntensity": 0
+        },
+        "hair": "Softly pinned at the nape.",
+        "accessories": "Small silver studs.",
+        "preparationMinutes": 25,
+        "preparationEvidence": "estimate",
+        "previews": [],
+        "approvals": [],
+        "note": "Synthetic design and preparation estimate. Garment previews, separate makeup detail and physical evidence carry their own provenance.",
+        "reviewReason": null
+      },
+      {
+        "id": "look-julian",
+        "title": "The last ticket",
+        "characterId": "char-julian",
+        "performerId": "performer-jules",
+        "revision": 1,
+        "sceneIds": ["scene-03", "scene-05", "scene-07"],
+        "storyDays": [2, 3],
+        "unitIds": ["unit-jacket-olive"],
+        "category": "upper_body",
+        "silhouette": "An olive tailored jacket, unbuttoned collar and a deliberate, slightly undone silhouette.",
+        "makeup": {
+          "notes": "Restrained matte lip and soft brown definition; natural texture.",
+          "palette": ["#59604D", "#CEC2A9"],
+          "skinSmoothStrength": 0,
+          "skinSmoothColorIntensity": 0
+        },
+        "hair": "A deliberate, slightly undone side part.",
+        "accessories": "One paper ticket in the inner pocket.",
+        "preparationMinutes": 18,
+        "preparationEvidence": "estimate",
+        "previews": [],
+        "approvals": [],
+        "note": "Synthetic design and preparation estimate. Garment previews, separate makeup detail and physical evidence carry their own provenance.",
+        "reviewReason": null
+      },
+      {
+        "id": "look-ruth",
+        "title": "Keeper of the keys",
+        "characterId": "char-ruth",
+        "performerId": "performer-ruth",
+        "revision": 1,
+        "sceneIds": ["scene-02", "scene-06", "scene-07"],
+        "storyDays": [1, 3],
+        "unitIds": ["unit-blouse-ivory"],
+        "category": "upper_body",
+        "silhouette": "An ivory blouse, practical hair and a brass key ring. Keep the wardrobe custodian's working details legible.",
+        "makeup": {
+          "notes": "Subtle rose lip, no skin smoothing; preserve natural texture.",
+          "palette": ["#E9E0CB", "#A68B55"],
+          "skinSmoothStrength": 0,
+          "skinSmoothColorIntensity": 0
+        },
+        "hair": "Practical pinned bun.",
+        "accessories": "Brass key ring, story-essential prop.",
+        "preparationMinutes": 15,
+        "preparationEvidence": "estimate",
+        "previews": [],
+        "approvals": [],
+        "note": "Synthetic design and preparation estimate. Garment previews, separate makeup detail and physical evidence carry their own provenance.",
+        "reviewReason": null
+      }
+    ],
+    "units": [
+      {
+        "assetId": null,
+        "supplier": "Seabright Wardrobe · synthetic supplier",
+        "ownership": "rental",
+        "location": "Seaside Theatre",
+        "condition": "Synthetic catalogue record; physical condition not inspected.",
+        "status": "available",
+        "measurements": {
+          "chestCm": null,
+          "waistCm": null,
+          "lengthCm": null
+        },
+        "fitting": {
+          "performerId": null,
+          "status": "not_measured",
+          "evidence": "Synthetic fixture; no physical fitting has occurred.",
+          "provenance": "synthetic"
+        },
+        "availability": {
+          "from": "2026-11-08T00:00:00.000Z",
+          "to": "2026-11-12T23:59:00.000Z",
+          "source": "Synthetic planning window; supplier confirmation required.",
+          "checkedAt": "2026-10-31T12:00:00.000Z",
+          "confirmed": false,
+          "provenance": "synthetic"
+        },
+        "priceSource": "Synthetic GBP quote for the full production window; charged once per physical unit.",
+        "priceValidUntil": "2026-11-08T23:59:00.000Z",
+        "substitutionFamily": null,
+        "approvedSubstituteIds": [],
+        "version": 1,
+        "id": "unit-coat-oxblood",
+        "code": "C-014",
+        "name": "Oxblood velvet coat",
+        "category": "outerwear",
+        "imageUrl": "/assets/garments/oxblood-coat.webp",
+        "color": "Oxblood",
+        "material": "Velvet",
+        "priceCents": 14500
+      },
+      {
+        "assetId": null,
+        "supplier": "Seabright Wardrobe · synthetic supplier",
+        "ownership": "rental",
+        "location": "Seaside Theatre",
+        "condition": "Synthetic catalogue record; physical condition not inspected.",
+        "status": "available",
+        "measurements": {
+          "chestCm": null,
+          "waistCm": null,
+          "lengthCm": null
+        },
+        "fitting": {
+          "performerId": null,
+          "status": "not_measured",
+          "evidence": "Synthetic fixture; no physical fitting has occurred.",
+          "provenance": "synthetic"
+        },
+        "availability": {
+          "from": "2026-11-08T00:00:00.000Z",
+          "to": "2026-11-12T23:59:00.000Z",
+          "source": "Synthetic planning window; supplier confirmation required.",
+          "checkedAt": "2026-10-31T12:00:00.000Z",
+          "confirmed": false,
+          "provenance": "synthetic"
+        },
+        "priceSource": "Synthetic GBP quote for the full production window; charged once per physical unit.",
+        "priceValidUntil": "2026-11-08T23:59:00.000Z",
+        "substitutionFamily": null,
+        "approvedSubstituteIds": [],
+        "version": 1,
+        "id": "unit-coat-charcoal",
+        "code": "C-021",
+        "name": "Charcoal wool coat",
+        "category": "outerwear",
+        "imageUrl": "/assets/garments/charcoal-coat.webp",
+        "color": "Charcoal",
+        "material": "Wool",
+        "priceCents": 11000
+      },
+      {
+        "assetId": null,
+        "supplier": "Seabright Wardrobe · synthetic supplier",
+        "ownership": "rental",
+        "location": "Seaside Theatre",
+        "condition": "Synthetic catalogue record; physical condition not inspected.",
+        "status": "available",
+        "measurements": {
+          "chestCm": null,
+          "waistCm": null,
+          "lengthCm": null
+        },
+        "fitting": {
+          "performerId": null,
+          "status": "not_measured",
+          "evidence": "Synthetic fixture; no physical fitting has occurred.",
+          "provenance": "synthetic"
+        },
+        "availability": {
+          "from": "2026-11-08T00:00:00.000Z",
+          "to": "2026-11-12T23:59:00.000Z",
+          "source": "Synthetic planning window; supplier confirmation required.",
+          "checkedAt": "2026-10-31T12:00:00.000Z",
+          "confirmed": false,
+          "provenance": "synthetic"
+        },
+        "priceSource": "Synthetic GBP quote for the full production window; charged once per physical unit.",
+        "priceValidUntil": "2026-11-08T23:59:00.000Z",
+        "substitutionFamily": null,
+        "approvedSubstituteIds": [],
+        "version": 1,
+        "id": "unit-dress-midnight",
+        "code": "D-008",
+        "name": "Midnight stage dress",
+        "category": "full_body",
+        "imageUrl": "/assets/garments/midnight-dress.webp",
+        "color": "Midnight blue",
+        "material": "Crepe",
+        "priceCents": 9500
+      },
+      {
+        "assetId": null,
+        "supplier": "Seabright Wardrobe · synthetic supplier",
+        "ownership": "rental",
+        "location": "Seaside Theatre",
+        "condition": "Synthetic catalogue record; physical condition not inspected.",
+        "status": "available",
+        "measurements": {
+          "chestCm": null,
+          "waistCm": null,
+          "lengthCm": null
+        },
+        "fitting": {
+          "performerId": null,
+          "status": "not_measured",
+          "evidence": "Synthetic fixture; no physical fitting has occurred.",
+          "provenance": "synthetic"
+        },
+        "availability": {
+          "from": "2026-11-08T00:00:00.000Z",
+          "to": "2026-11-12T23:59:00.000Z",
+          "source": "Synthetic planning window; supplier confirmation required.",
+          "checkedAt": "2026-10-31T12:00:00.000Z",
+          "confirmed": false,
+          "provenance": "synthetic"
+        },
+        "priceSource": "Synthetic GBP quote for the full production window; charged once per physical unit.",
+        "priceValidUntil": "2026-11-08T23:59:00.000Z",
+        "substitutionFamily": null,
+        "approvedSubstituteIds": [],
+        "version": 1,
+        "id": "unit-shirt-ivory",
+        "code": "S-003",
+        "name": "Ivory work shirt · physical unit 1",
+        "category": "upper_body",
+        "imageUrl": "/assets/garments/ivory-shirt.webp",
+        "color": "Ivory",
+        "material": "Cotton",
+        "priceCents": 2500
+      },
+      {
+        "assetId": null,
+        "supplier": "Seabright Wardrobe · synthetic supplier",
+        "ownership": "rental",
+        "location": "Seaside Theatre",
+        "condition": "Synthetic catalogue record; physical condition not inspected.",
+        "status": "available",
+        "measurements": {
+          "chestCm": null,
+          "waistCm": null,
+          "lengthCm": null
+        },
+        "fitting": {
+          "performerId": null,
+          "status": "not_measured",
+          "evidence": "Synthetic fixture; no physical fitting has occurred.",
+          "provenance": "synthetic"
+        },
+        "availability": {
+          "from": "2026-11-08T00:00:00.000Z",
+          "to": "2026-11-12T23:59:00.000Z",
+          "source": "Synthetic planning window; supplier confirmation required.",
+          "checkedAt": "2026-10-31T12:00:00.000Z",
+          "confirmed": false,
+          "provenance": "synthetic"
+        },
+        "priceSource": "Synthetic GBP quote for the full production window; charged once per physical unit.",
+        "priceValidUntil": "2026-11-08T23:59:00.000Z",
+        "substitutionFamily": null,
+        "approvedSubstituteIds": [],
+        "version": 1,
+        "id": "unit-jacket-olive",
+        "code": "T-011",
+        "name": "Olive tailored jacket",
+        "category": "upper_body",
+        "imageUrl": "/assets/garments/olive-suit.webp",
+        "color": "Olive",
+        "material": "Wool blend",
+        "priceCents": 12500
+      },
+      {
+        "assetId": null,
+        "supplier": "Seabright Wardrobe · synthetic supplier",
+        "ownership": "rental",
+        "location": "Seaside Theatre",
+        "condition": "Synthetic catalogue record; physical condition not inspected.",
+        "status": "available",
+        "measurements": {
+          "chestCm": null,
+          "waistCm": null,
+          "lengthCm": null
+        },
+        "fitting": {
+          "performerId": null,
+          "status": "not_measured",
+          "evidence": "Synthetic fixture; no physical fitting has occurred.",
+          "provenance": "synthetic"
+        },
+        "availability": {
+          "from": "2026-11-08T00:00:00.000Z",
+          "to": "2026-11-12T23:59:00.000Z",
+          "source": "Synthetic planning window; supplier confirmation required.",
+          "checkedAt": "2026-10-31T12:00:00.000Z",
+          "confirmed": false,
+          "provenance": "synthetic"
+        },
+        "priceSource": "Synthetic GBP quote for the full production window; charged once per physical unit.",
+        "priceValidUntil": "2026-11-08T23:59:00.000Z",
+        "substitutionFamily": null,
+        "approvedSubstituteIds": [],
+        "version": 1,
+        "id": "unit-blouse-ivory",
+        "code": "S-004",
+        "name": "Ivory blouse · physical unit 2",
+        "category": "upper_body",
+        "imageUrl": "/assets/garments/ivory-shirt.webp",
+        "color": "Ivory",
+        "material": "Cotton",
+        "priceCents": 3200
+      }
+    ],
+    "allocations": [],
+    "transitions": [],
+    "allocationResult": null,
+    "sourcing": [
+      {
+        "id": "source-coat-draft",
+        "unitIds": ["unit-coat-oxblood"],
+        "supplier": "Seabright Wardrobe · synthetic supplier",
+        "from": "2026-11-08T00:00:00.000Z",
+        "to": "2026-11-12T23:59:00.000Z",
+        "status": "draft",
+        "sourceRevision": 1,
+        "quoteCents": 14500,
+        "quoteValidUntil": "2026-11-08T23:59:00.000Z",
+        "provenance": "synthetic",
+        "operator": null,
+        "evidence": null,
+        "externalReference": null,
+        "updatedAt": "2026-10-31T12:00:00.000Z",
+        "stale": false,
+        "note": "Synthetic sourcing draft. No request, supplier confirmation or physical receipt has occurred."
+      }
+    ],
+    "proposals": [],
+    "packs": [],
+    "events": [
+      {
+        "id": "c187ec26-e53c-421e-9a38-8e00c5f19caf-created",
+        "type": "production_created",
+        "actor": "STAGECRAFT example",
+        "at": "2026-10-31T12:00:00.000Z",
+        "revision": 1,
+        "summary": "Created an explicitly synthetic film production. Portraits are source images; no approvals or provider previews are seeded.",
+        "provenance": "synthetic"
+      }
+    ]
+  },
+  "blank": {
+    "id": "2710d393-895a-43f7-ad1e-c324cd974928",
+    "title": "Pre-review blank",
+    "subtitle": "A new production, ready for your first scene.",
+    "mode": "film",
+    "currency": "GBP",
+    "timeZone": "Europe/London",
+    "budgetCents": 50000,
+    "revision": 1,
+    "createdAt": "2026-10-31T12:00:00.000Z",
+    "updatedAt": "2026-10-31T12:00:00.000Z",
+    "fixture": false,
+    "script": null,
+    "scenes": [],
+    "occurrences": [],
+    "performers": [],
+    "characters": [],
+    "looks": [],
+    "units": [],
+    "allocations": [],
+    "transitions": [],
+    "allocationResult": null,
+    "sourcing": [],
+    "proposals": [],
+    "packs": [],
+    "events": []
+  }
+}

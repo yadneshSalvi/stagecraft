@@ -16,8 +16,23 @@ export {
   previewInputHash,
   allocationInputHash,
   repairInputHash,
+  appearanceRecipeHash,
+  appearanceIntentHash,
+  previewEvidenceHash,
+  resolveAppearanceCandidate,
+  candidateInputHash,
+  candidateIntentHash,
+  getCurrentCandidatePreview,
+  getCurrentCandidateApproval,
+  getApprovedAppearanceChoices,
 } from "./lineage";
 export { solveAllocation, validateAllocation } from "./allocation";
+export {
+  detailInputHash,
+  detailIntentHash,
+  getCurrentDetailPreview,
+  getCurrentDetailApproval,
+} from "./details";
 export type { AllocationOptions, AllocationValidation } from "./allocation";
 export { previewChange } from "./change";
 export type { ChangeRequest } from "./change";

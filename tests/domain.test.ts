@@ -18,9 +18,11 @@ import {
   validateAllocation,
 } from "@/lib/domain";
 
+import { legacyExample, reviewedRepair } from "./domain-support";
+
 const NOW = "2026-10-31T12:00:00.000Z";
 const context = { actor: "Synthetic test evaluator", now: NOW };
-const example = () => createExampleProduction("test-production", NOW);
+const example = () => legacyExample();
 const run = (production: Production, command: ProductionCommand, now = NOW) =>
   applyCommand(production, command, { ...context, now });
 
@@ -152,13 +154,18 @@ describe("truthful production fixtures and immutable commands", () => {
     ).toBe(true);
     const allocation = solveAllocation(production, { now: NOW });
     expect(allocation).toMatchObject({
-      status: "OPTIMAL",
-      independentlyChecked: true,
-      totalCostCents: 42200,
+      status: "INFEASIBLE",
+      independentlyChecked: false,
+      totalCostCents: 0,
     });
     expect(
-      allocation.findings.some((finding) => finding.severity === "conflict"),
-    ).toBe(false);
+      allocation.findings.some(
+        (finding) => finding.code === "APPEARANCE_APPROVAL_REQUIRED",
+      ),
+    ).toBe(true);
+    expect(solveAllocation(approveAll(production), { now: NOW })).toMatchObject(
+      { status: "FEASIBLE", constraintChecked: true, totalCostCents: 42200 },
+    );
     expect(getReadiness(production, NOW).ready).toBe(false);
   });
 
@@ -370,7 +377,7 @@ describe("reviewed changes and stale-proposal protection", () => {
     expect(impact.allocationIds).toHaveLength(3);
     expect(impact.sourcingIds).toEqual(["source-coat-draft"]);
     expect(impact.preservedApprovalIds).toHaveLength(4);
-    const proposed = run(baseline, {
+    const proposed = reviewedRepair(baseline, {
       type: "propose_change",
       kind: "garment_unavailable",
       subjectId: "unit-coat-oxblood",
@@ -388,7 +395,7 @@ describe("reviewed changes and stale-proposal protection", () => {
     expect(proposal.options[0]).toMatchObject({
       feasible: true,
       costDeltaCents: -3500,
-      requiresVisualApproval: true,
+      requiresVisualApproval: false,
     });
     const repaired = run(freeze(proposed), {
       type: "adopt_repair",
@@ -398,7 +405,10 @@ describe("reviewed changes and stale-proposal protection", () => {
     expect(repaired.revision).toBe(proposed.revision + 1);
     expect(repaired.looks[0].unitIds).toEqual(["unit-coat-charcoal"]);
     expect(repaired.looks[0].revision).toBe(2);
-    expect(repaired.looks[0].approvals[0].state).toBe("stale");
+    expect(repaired.looks[0].approvals[0].state).toBe("historical");
+    expect(getCurrentApproval(repaired.looks[0], repaired)?.candidateId).toBe(
+      proposal.options[0].candidateId,
+    );
     expect(repaired.units[0].status).toBe("unavailable");
     expect(repaired.sourcing[0].stale).toBe(true);
     expect(
@@ -417,7 +427,7 @@ describe("reviewed changes and stale-proposal protection", () => {
     expect(repaired.characters[0].direction).toEqual(
       proposed.characters[0].direction,
     );
-    expect(proposed.proposals[0].status).toBe("proposed");
+    expect(proposed.proposals.at(-1)!.status).toBe("proposed");
     for (const look of repaired.looks.slice(1))
       expect(getCurrentApproval(look)).toEqual(
         getCurrentApproval(proposed.looks.find((old) => old.id === look.id)!),
@@ -436,7 +446,7 @@ describe("reviewed changes and stale-proposal protection", () => {
         provenance: "observed",
       },
     });
-    const proposed = run(baseline, {
+    const proposed = reviewedRepair(baseline, {
       type: "propose_change",
       kind: "recast",
       subjectId: "char-nora",
@@ -456,7 +466,9 @@ describe("reviewed changes and stale-proposal protection", () => {
     expect(adopted.characters[0].performerId).toBe("performer-celeste");
     expect(adopted.looks[0].performerId).toBe("performer-celeste");
     expect(adopted.looks[0].previews[0].performerId).toBe("performer-ada");
-    expect(getCurrentApproval(adopted.looks[0])).toBeUndefined();
+    expect(getCurrentApproval(adopted.looks[0], adopted)?.performerId).toBe(
+      "performer-celeste",
+    );
     expect(adopted.units[0].fitting).toMatchObject({
       performerId: "performer-celeste",
       status: "not_measured",
@@ -496,7 +508,7 @@ describe("reviewed changes and stale-proposal protection", () => {
   });
 
   it("blocks allocation adoption after any revision or inventory fact change", () => {
-    const solved = run(example(), { type: "solve_allocation" });
+    const solved = run(approveAll(example()), { type: "solve_allocation" });
     const adoption: ProductionCommand = {
       type: "adopt_allocation",
       inputHash: solved.allocationResult!.inputHash,
@@ -939,8 +951,9 @@ describe("held-out fixture and recast evidence cases", () => {
     expect(future.occurrences[0].start).toBe("2027-02-21T09:00:00.000Z");
     expect(future.units[0].priceValidUntil).toBe("2027-02-20T23:59:00.000Z");
     expect(
-      solveAllocation(future, { now: "2027-02-12T18:00:00.000Z" }).status,
-    ).toBe("OPTIMAL");
+      solveAllocation(approveAll(future), { now: "2027-02-12T18:00:00.000Z" })
+        .status,
+    ).toBe("FEASIBLE");
     const original = example();
     const edited = run(
       original,
@@ -961,14 +974,14 @@ describe("held-out fixture and recast evidence cases", () => {
       evidence: "A distinct test-only actor fitting",
       provenance: "observed",
     };
-    const proposed = run(production, {
+    const proposed = reviewedRepair(production, {
       type: "propose_change",
       kind: "recast",
       subjectId: "char-nora",
       replacementId: "performer-celeste",
       seeded: true,
     });
-    const proposal = proposed.proposals[0];
+    const proposal = proposed.proposals.at(-1)!;
     const adopted = run(proposed, {
       type: "adopt_repair",
       proposalId: proposal.id,

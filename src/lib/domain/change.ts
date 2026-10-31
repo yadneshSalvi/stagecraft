@@ -6,7 +6,14 @@ import type {
 } from "../types";
 import { solveAllocation } from "./allocation";
 import { findRecord } from "./errors";
-import { repairInputHash } from "./lineage";
+import {
+  repairInputHash,
+  continuityLookIds,
+  getCurrentCandidateApproval,
+  sameIds,
+} from "./lineage";
+import { adoptAppearanceCandidate } from "./candidates";
+import { invalidateDetails } from "./details";
 
 export interface ChangeRequest {
   kind: RepairProposal["kind"];
@@ -127,6 +134,45 @@ export function previewChange(
           .filter((approval) => approval.state === "current")
           .map((approval) => approval.id) ?? [],
     );
+  const creativeFlags =
+    request.kind === "garment_unavailable"
+      ? production.characters
+          .filter((character) =>
+            looks.some((look) => look.characterId === character.id),
+          )
+          .flatMap((character) => {
+            const removed = findRecord(
+              production.units,
+              request.subjectId,
+              "Physical unit",
+            );
+            const text = [
+              character.direction.text,
+              ...character.direction.essential,
+              ...character.direction.palette,
+            ]
+              .join(" ")
+              .toLowerCase();
+            const references = [
+              removed.name,
+              removed.code,
+              removed.color,
+              removed.material,
+            ].filter(
+              (value) =>
+                value.trim().length > 2 && text.includes(value.toLowerCase()),
+            );
+            return references.length
+              ? [
+                  {
+                    characterId: character.id,
+                    unitId: removed.id,
+                    references: unique(references),
+                  },
+                ]
+              : [];
+          })
+      : [];
   const subjectName =
     request.kind === "garment_unavailable"
       ? findRecord(production.units, request.subjectId, "Physical unit").code
@@ -134,6 +180,31 @@ export function previewChange(
           (character) => character.id === request.subjectId,
         )?.name ??
         findRecord(production.performers, request.subjectId, "Performer").name);
+  const invalidatedDetailApprovalIds = unique(
+    looks.flatMap((look) =>
+      request.kind === "recast"
+        ? (look.details ?? []).flatMap((detail) =>
+            detail.approvals
+              .filter((approval) => approval.state === "current")
+              .map((approval) => approval.id),
+          )
+        : [],
+    ),
+  );
+  const preservedDetailApprovalIds = unique(
+    production.looks
+      .filter(
+        (look) =>
+          request.kind === "garment_unavailable" || !lookIds.includes(look.id),
+      )
+      .flatMap((look) =>
+        (look.details ?? []).flatMap((detail) =>
+          detail.approvals
+            .filter((approval) => approval.state === "current")
+            .map((approval) => approval.id),
+        ),
+      ),
+  );
   return {
     lookIds,
     sceneIds,
@@ -141,21 +212,37 @@ export function previewChange(
     allocationIds,
     sourcingIds,
     packIds,
-    invalidatedApprovalIds,
-    preservedApprovalIds,
-    invalidatedBeautyApprovalIds,
-    preservedBeautyApprovalIds,
+    invalidatedApprovalIds: unique(invalidatedApprovalIds),
+    preservedApprovalIds: unique(preservedApprovalIds),
+    invalidatedBeautyApprovalIds: unique(invalidatedBeautyApprovalIds),
+    preservedBeautyApprovalIds: unique(preservedBeautyApprovalIds),
+    invalidatedDetailApprovalIds,
+    preservedDetailApprovalIds,
+    creativeFlags,
     explanation: [
       `${subjectName} affects ${looks.length} look${looks.length === 1 ? "" : "s"}, ${sceneIds.length} scene${sceneIds.length === 1 ? "" : "s"} and ${occurrenceIds.length} scheduled occurrence${occurrenceIds.length === 1 ? "" : "s"}.`,
       request.kind === "garment_unavailable"
-        ? "Replacing the pictured garment creates new recipe revisions. Exact appearance approvals must be refreshed; dependent allocations and sourcing drafts need review."
+        ? "A replacement needs its own exact candidate output and current creative-intent approval. Adoption preserves that reviewed identity; dependent allocations and sourcing drafts still need review."
         : "The replacement performer retains the character direction and story requirements. Actor-specific previews, appearance approvals and fitting evidence require fresh review.",
       "Adoption creates a new production revision; frozen earlier snapshots and their evidence remain reproducible.",
     ],
     preserved: [
-      `${preservedApprovalIds.length} unrelated appearance approval${preservedApprovalIds.length === 1 ? " remains" : "s remain"} intact.`,
+      ...(preservedApprovalIds.length
+        ? [
+            `${unique(preservedApprovalIds).length} unrelated appearance approval${unique(preservedApprovalIds).length === 1 ? " remains" : "s remain"} intact.`,
+          ]
+        : []),
       "Character direction, script source and story chronology remain intact.",
-      `${preservedBeautyApprovalIds.length} independent beauty approval${preservedBeautyApprovalIds.length === 1 ? " remains" : "s remain"} intact. ${request.kind === "garment_unavailable" ? "A garment substitution does not alter the independent face-detail recipe." : "Makeup approvals for unrelated performers are preserved; the replacement performer needs their own face source, output and approval."}`,
+      ...(preservedBeautyApprovalIds.length
+        ? [
+            `${preservedBeautyApprovalIds.length} independent beauty approval${preservedBeautyApprovalIds.length === 1 ? " remains" : "s remain"} intact. ${request.kind === "garment_unavailable" ? "A garment substitution does not alter the independent face-detail recipe." : "Makeup approvals for unrelated performers are preserved; the replacement performer needs their own face source, output and approval."}`,
+          ]
+        : []),
+      ...(preservedDetailApprovalIds.length
+        ? [
+            `${preservedDetailApprovalIds.length} independent hair-colour or necklace decisions remain intact.`,
+          ]
+        : []),
       ...(request.kind === "recast"
         ? [
             "Item-and-date supplier reservations are preserved; a reservation does not establish fit for the replacement performer.",
@@ -165,6 +252,45 @@ export function previewChange(
           ]),
     ],
   };
+}
+
+export function matchingRepairCandidates(
+  production: Production,
+  request: ChangeRequest,
+  replacementId: string,
+) {
+  const lookIds = affectedLookIds(production, request);
+  const visited = new Set<string>();
+  return production.looks
+    .filter((look) => lookIds.includes(look.id))
+    .flatMap((look) => {
+      const key = look.continuityGroupId ?? look.id;
+      if (visited.has(key)) return [];
+      visited.add(key);
+      const scope = continuityLookIds(production, look);
+      const unitIds =
+        request.kind === "garment_unavailable"
+          ? look.unitIds.map((id) =>
+              id === request.subjectId ? replacementId : id,
+            )
+          : look.unitIds;
+      const performerId =
+        request.kind === "recast" ? replacementId : look.performerId;
+      const performer = production.performers.find(
+        (item) => item.id === performerId,
+      );
+      const candidate = [...(production.appearanceCandidates ?? [])]
+        .reverse()
+        .find(
+          (item) =>
+            item.performerId === performerId &&
+            item.captureVersion === performer?.captureVersion &&
+            sameIds(item.lookIds, scope) &&
+            sameIds(item.recipe.unitIds, unitIds) &&
+            item.recipe.category === look.category,
+        );
+      return candidate ? [candidate] : [];
+    });
 }
 
 function recipeCost(production: Production): number {
@@ -192,6 +318,14 @@ export function simulateRepair(
 ): Production {
   const draft = structuredClone(production);
   const lookIds = affectedLookIds(draft, request);
+  const approved = matchingRepairCandidates(
+    draft,
+    request,
+    replacementId,
+  ).filter((candidate) => !!getCurrentCandidateApproval(draft, candidate));
+  const approvedLookIds = new Set(
+    approved.flatMap((candidate) => candidate.lookIds),
+  );
   if (request.kind === "garment_unavailable") {
     const removed = findRecord(draft.units, request.subjectId, "Physical unit");
     findRecord(draft.units, replacementId, "Replacement unit");
@@ -203,13 +337,22 @@ export function simulateRepair(
       look.unitIds = look.unitIds.map((id) =>
         id === request.subjectId ? replacementId : id,
       );
-      look.revision += 1;
+      if (!approvedLookIds.has(look.id)) {
+        look.revision += 1;
+        delete look.activeCandidateId;
+      }
     }
   } else {
     const replacement = findRecord(
       draft.performers,
       replacementId,
       "Replacement performer",
+    );
+    invalidateDetails(
+      draft,
+      lookIds,
+      "Casting changed; independent details belong to the previous performer.",
+      true,
     );
     const characters = draft.characters.filter(
       (character) =>
@@ -221,13 +364,36 @@ export function simulateRepair(
         .filter((look) => lookIds.includes(look.id))
         .map((look) => look.performerId),
     );
+    for (const candidate of draft.appearanceCandidates ?? [])
+      if (
+        priorPerformerIds.includes(candidate.performerId) &&
+        candidate.performerId !== replacement.id &&
+        candidate.lookIds.some((id) => lookIds.includes(id))
+      )
+        for (const decision of candidate.approvals)
+          if (decision.state === "current") {
+            decision.state = "stale";
+            decision.reason =
+              "The performer was recast; restoring this actor requires a fresh exact decision.";
+          }
     for (const character of characters) character.performerId = replacement.id;
     for (const look of draft.looks.filter((look) =>
       lookIds.includes(look.id),
     )) {
       look.performerId = replacement.id;
-      look.revision += 1;
-      if (look.beauty) look.beauty.revision += 1;
+      if (!approvedLookIds.has(look.id)) {
+        look.revision += 1;
+        delete look.activeCandidateId;
+      }
+      if (look.beauty) {
+        look.beauty.revision += 1;
+        for (const approval of look.beauty.approvals)
+          if (approval.state === "current") {
+            approval.state = "stale";
+            approval.reason =
+              "Casting changed; the face detail belongs to the previous performer.";
+          }
+      }
     }
     for (const unit of draft.units.filter((unit) =>
       draft.looks.some(
@@ -249,6 +415,12 @@ export function simulateRepair(
       }
     }
   }
+  for (const candidate of approved)
+    adoptAppearanceCandidate(draft, candidate, {
+      now: production.updatedAt,
+      makeId: (kind) => `${kind}-repair-simulation`,
+      invalidate: () => {},
+    });
   return draft;
 }
 
@@ -306,7 +478,25 @@ export function buildRepairProposal(
     const feasible =
       castingOnly ||
       ((allocation.status === "OPTIMAL" || allocation.status === "FEASIBLE") &&
-        allocation.independentlyChecked);
+        !!allocation.constraintChecked &&
+        allocation.assignments
+          .filter((assignment) => impact.lookIds.includes(assignment.lookId))
+          .every((assignment) =>
+            scratch.looks
+              .find((look) => look.id === assignment.lookId)
+              ?.unitIds.includes(assignment.unitId),
+          ));
+    const appearanceCandidates = matchingRepairCandidates(
+      production,
+      request,
+      candidate.id,
+    );
+    const requiresVisualApproval =
+      !castingOnly &&
+      (!appearanceCandidates.length ||
+        appearanceCandidates.some(
+          (item) => !getCurrentCandidateApproval(production, item),
+        ));
     return {
       id: `${context.id}-option-${candidate.id}`,
       label: candidate.label,
@@ -314,14 +504,18 @@ export function buildRepairProposal(
         request.kind === "garment_unavailable" ? candidate.id : null,
       replacementPerformerId: request.kind === "recast" ? candidate.id : null,
       costDeltaCents: recipeCost(scratch) - originalCost,
-      requiresVisualApproval: true,
+      requiresVisualApproval,
+      candidateId: appearanceCandidates[0]?.id,
+      candidateIds: appearanceCandidates.map((item) => item.id),
       findings: castingOnly ? [] : allocation.findings,
       feasible,
       explanation: castingOnly
         ? "Assigns this performer to an uncast character. No look or physical demand exists yet; create and approve the appearance before allocation."
         : feasible
-          ? "Fits the recorded physical schedule and hard budget. Adopting creates an unapproved recipe revision; fresh exact appearance approval, fitting and supplier evidence remain separate requirements."
-          : "The recorded constraints do not establish a feasible allocation. Review the specific findings; no artistic, timing or budget constraint was relaxed.",
+          ? "This exact reviewed candidate satisfies the current managed allocation constraints. Adoption preserves its preview and approval identities; fitting and supplier evidence remain separate."
+          : requiresVisualApproval
+            ? "Review and approve the candidate's exact provider output, then refresh this impact proposal. Unapproved appearances cannot be assigned. Other physical findings remain visible."
+            : "The recorded constraints do not establish a feasible allocation. Review the specific findings; no artistic, timing or budget constraint was relaxed.",
     };
   });
   return {

@@ -1,4 +1,5 @@
 import type { Production, Readiness } from "../types";
+import { getCurrentDetailApproval } from "./details";
 import { validateAllocation } from "./allocation";
 import {
   beautyInputHash,
@@ -12,32 +13,44 @@ import {
 } from "./lineage";
 
 export { getCurrentApproval, getCurrentPreview } from "./lineage";
+export {
+  getCurrentCandidatePreview,
+  getCurrentCandidateApproval,
+  getApprovedAppearanceChoices,
+} from "./lineage";
 export { getCurrentBeautyApproval, getCurrentBeautyPreview } from "./beauty";
+export { getCurrentDetailApproval, getCurrentDetailPreview } from "./details";
 
 /** Pure, browser-safe readiness. A current document or visual approval is not physical readiness. */
 export function getReadiness(
   production: Production,
   now = new Date().toISOString(),
 ): Readiness {
-  const scheduledLooks = production.looks.filter((look) =>
+  const managedLooks = production.looks.filter(
+    (look) =>
+      !production.characters.find(
+        (character) => character.id === look.characterId,
+      )?.ownClothes,
+  );
+  const scheduledLooks = managedLooks.filter((look) =>
     production.occurrences.some((occurrence) =>
       look.sceneIds.includes(occurrence.sceneId),
     ),
   );
-  const appearanceApproved = production.looks.filter((look) => {
+  const appearanceApproved = managedLooks.filter((look) => {
     const performer = production.performers.find(
       (item) => item.id === look.performerId,
     );
-    const preview = getCurrentPreview(look);
+    const preview = getCurrentPreview(look, production);
     return (
       !!performer?.consent.granted &&
       !!preview &&
-      !!getCurrentApproval(look) &&
+      !!getCurrentApproval(look, production) &&
       preview.captureVersion === performer.captureVersion &&
       preview.inputHash === previewInputHash(production, look)
     );
   }).length;
-  const beautyLooks = production.looks.filter((look) => !!look.beauty);
+  const beautyLooks = managedLooks.filter((look) => !!look.beauty);
   const beautyTotal = beautyLooks.length;
   const beautyApproved = beautyLooks.filter((look) => {
     const face = production.performers.find(
@@ -53,8 +66,19 @@ export function getReadiness(
       preview.inputHash === beautyInputHash(production, look)
     );
   }).length;
+  const detailLooks = managedLooks.flatMap((look) =>
+    (look.details ?? []).map((detail) => ({ look, detail })),
+  );
+  const detailsTotal = detailLooks.length;
+  const detailsApproved = detailLooks.filter(
+    ({ look, detail }) =>
+      !!getCurrentDetailApproval(look, detail.kind, production),
+  ).length;
   const activeAllocations = production.allocations.filter(
     (allocation) => allocation.state === "allocated",
+  );
+  const hasManagedDemand = scheduledLooks.some(
+    (look) => look.unitIds.length > 0,
   );
   const check = validateAllocation(production, activeAllocations, { now });
   const blockedAllocations = Math.max(
@@ -130,6 +154,7 @@ export function getReadiness(
     );
   const missingCast = production.characters.some(
     (character) =>
+      !character.ownClothes &&
       !production.performers.some(
         (performer) => performer.id === character.performerId,
       ),
@@ -137,6 +162,8 @@ export function getReadiness(
   const missingLooks = production.scenes.some((scene) =>
     scene.characterIds.some(
       (characterId) =>
+        !production.characters.find((character) => character.id === characterId)
+          ?.ownClothes &&
         !production.looks.some(
           (look) =>
             look.characterId === characterId &&
@@ -144,7 +171,7 @@ export function getReadiness(
         ),
     ),
   );
-  const noConsent = production.looks.some(
+  const noConsent = managedLooks.some(
     (look) =>
       !production.performers.find(
         (performer) => performer.id === look.performerId,
@@ -161,14 +188,16 @@ export function getReadiness(
       "Review the source-linked script breakdown and confirm its story days.";
   else if (missingCast)
     nextAction = "Add the cast and assign a performer to each character.";
-  else if (!production.looks.length || missingLooks)
+  else if (missingLooks)
     nextAction =
       "Create the missing character looks and link their scene appearances.";
   else if (noConsent)
     nextAction =
       "Record the required performer image permission before creating or approving previews.";
-  else if (appearanceApproved < production.looks.length)
-    nextAction = production.looks.some((look) => !getCurrentPreview(look))
+  else if (appearanceApproved < managedLooks.length)
+    nextAction = managedLooks.some(
+      (look) => !getCurrentPreview(look, production),
+    )
       ? "Create an actual provider preview for the looks still showing source portraits."
       : "Review and approve the exact current preview for each look.";
   else if (beautyApproved < beautyTotal)
@@ -184,7 +213,10 @@ export function getReadiness(
         : "Review and approve the exact current beauty detail independently of the garment appearance.";
   else if (!production.occurrences.length)
     nextAction = "Schedule the scenes independently of their story order.";
-  else if (!activeAllocations.length)
+  else if (detailsApproved < detailsTotal)
+    nextAction =
+      "Review and approve each configured hair-colour or necklace detail separately. Garment and makeup decisions do not approve these details.";
+  else if (hasManagedDemand && !activeAllocations.length)
     nextAction = "Solve and adopt a checked physical-unit allocation.";
   else if (blockedAllocations)
     nextAction =
@@ -203,10 +235,11 @@ export function getReadiness(
     !missingCast &&
     !missingLooks &&
     !noConsent &&
-    production.looks.length > 0 &&
-    appearanceApproved === production.looks.length &&
+    production.characters.length > 0 &&
+    appearanceApproved === managedLooks.length &&
     beautyApproved === beautyTotal &&
-    activeAllocations.length > 0 &&
+    detailsApproved === detailsTotal &&
+    (!hasManagedDemand || activeAllocations.length > 0) &&
     check.valid &&
     !blockedAllocations &&
     !pendingFittings &&
@@ -217,7 +250,9 @@ export function getReadiness(
     appearanceApproved,
     beautyApproved,
     beautyTotal,
-    looksTotal: production.looks.length,
+    detailsApproved,
+    detailsTotal,
+    looksTotal: managedLooks.length,
     blockedAllocations,
     pendingSourcing,
     pendingFittings,

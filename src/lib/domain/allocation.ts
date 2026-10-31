@@ -7,7 +7,8 @@ import type {
   PhysicalUnit,
   Production,
 } from "../types";
-import { allocationInputHash } from "./lineage";
+import { allocationInputHash, getApprovedAppearanceChoices } from "./lineage";
+import type { ApprovedAppearanceChoice } from "./lineage";
 
 const MINUTE = 60000;
 const time = (value: string) => Date.parse(value);
@@ -31,6 +32,9 @@ interface Demand {
   occurrence: Occurrence;
   required: PhysicalUnit;
   allowedIds: string[];
+  choiceGroup: string;
+  slot: number;
+  choices: ApprovedAppearanceChoice[];
   start: number;
   end: number;
 }
@@ -203,10 +207,19 @@ function buildDemands(production: Production): {
           [occurrence.id],
         ),
       );
-    const looks = production.looks.filter((look) =>
-      look.sceneIds.includes(scene.id),
+    const looks = production.looks.filter(
+      (look) =>
+        look.sceneIds.includes(scene.id) &&
+        !production.characters.find(
+          (character) => character.id === look.characterId,
+        )?.ownClothes,
     );
     for (const characterId of scene.characterIds) {
+      if (
+        production.characters.find((character) => character.id === characterId)
+          ?.ownClothes
+      )
+        continue;
       if (!looks.some((look) => look.characterId === characterId)) {
         incomplete = true;
         findings.push(
@@ -221,6 +234,18 @@ function buildDemands(production: Production): {
       }
     }
     for (const look of looks) {
+      const choices = getApprovedAppearanceChoices(production, look);
+      if (!choices.length)
+        findings.push(
+          finding(
+            "APPEARANCE_APPROVAL_REQUIRED",
+            "conflict",
+            `${look.title} has no exact current approved appearance. Review an existing output or approve a candidate before allocation.`,
+            look.unitIds,
+            [occurrence.id],
+            [look.id],
+          ),
+        );
       const performer = production.performers.find(
         (item) => item.id === look.performerId,
       );
@@ -357,7 +382,14 @@ function buildDemands(production: Production): {
           look,
           occurrence,
           required,
-          allowedIds: unique([required.id, ...required.approvedSubstituteIds]),
+          allowedIds: unique(
+            choices
+              .map((choice) => choice.recipe.unitIds[index])
+              .filter((id): id is string => !!id),
+          ),
+          choiceGroup: look.continuityGroupId ?? look.id,
+          slot: index,
+          choices,
           start: preparationStart(production, look, occurrence),
           end: time(occurrence.end),
         });
@@ -386,13 +418,14 @@ export function allocationDemandIntervals(production: Production): Array<{
   }));
 }
 
-/** Solver pruning. The independent checker repeats the actual constraints. */
+/** Solver pruning. The constraint checker separately verifies the proposed assignments. */
 function candidateFits(demand: Demand, unit: PhysicalUnit): boolean {
   return (
     unit.status === "available" &&
     unit.category === demand.required.category &&
     Number.isSafeInteger(unit.priceCents) &&
     unit.priceCents >= 0 &&
+    !!unit.priceSource.trim() &&
     Number.isFinite(time(unit.availability.from)) &&
     Number.isFinite(time(unit.availability.to)) &&
     time(unit.availability.from) <= demand.start &&
@@ -708,8 +741,8 @@ export function validateAllocation(
         checkLimited ? "COVERAGE_CHECK_LIMIT" : "DEMAND_COVERAGE",
         checkLimited ? "unverified" : "conflict",
         checkLimited
-          ? "Demand coverage exceeds the independent checker's bounded matching scope; this assignment is unverified."
-          : "The allocation must cover every required physical unit exactly once using only its explicitly approved alternatives.",
+          ? "Demand coverage exceeds the constraint checker's bounded matching scope; this assignment is unverified."
+          : "The allocation must cover every required physical unit exactly once using only exact currently approved appearance recipes.",
       ),
     );
   }
@@ -803,6 +836,15 @@ export function validateAllocation(
           ...scope,
         ),
       );
+    if (!unit.priceSource.trim())
+      findings.push(
+        finding(
+          "PRICE_UNKNOWN",
+          "conflict",
+          `${unit.code} has no quoted-price source. An unknown price cannot count as free stock under the hard budget.`,
+          ...scope,
+        ),
+      );
     if (!Number.isSafeInteger(unit.priceCents) || unit.priceCents < 0)
       findings.push(
         finding(
@@ -892,13 +934,36 @@ export function validateAllocation(
         : `${unit.code} lacks comparable performer and garment measurements. Compatibility is unknown.`;
       findings.push(finding(code, "unverified", message, ...scope));
     }
-    if (assignment.unitId !== demand.required.id)
+  }
+  const groups = new Map<string, Demand[]>();
+  for (const demand of built.demands)
+    groups.set(demand.choiceGroup, [
+      ...(groups.get(demand.choiceGroup) ?? []),
+      demand,
+    ]);
+  for (const group of groups.values()) {
+    const coherent = group[0].choices.some((choice) =>
+      group.every((demand) => {
+        const assignment = matched.get(demand.key);
+        const evidence = choice.evidence[demand.look.id];
+        return (
+          !!assignment &&
+          assignment.unitId === choice.recipe.unitIds[demand.slot] &&
+          assignment.approvalId === evidence?.approvalId &&
+          assignment.previewId === evidence?.previewId &&
+          assignment.candidateId === choice.candidateId
+        );
+      }),
+    );
+    if (!coherent)
       findings.push(
         finding(
-          "SUBSTITUTE_REVIEW",
-          "unverified",
-          `${unit.code} is an explicitly allowed alternative, but the recipe and exact preview need review before adopting this substitution.`,
-          ...scope,
+          "CONTINUITY_APPROVAL_LINEAGE",
+          "conflict",
+          "Every call in a continuity group must use one coherent currently approved candidate, with its exact preview and approval identity.",
+          unique(group.flatMap((demand) => demand.allowedIds)),
+          unique(group.map((demand) => demand.occurrence.id)),
+          unique(group.map((demand) => demand.look.id)),
         ),
       );
   }
@@ -960,11 +1025,28 @@ export function solveAllocation(
   const base = {
     sourceRevision,
     inputHash: allocationInputHash(production),
-    solver: "stagecraft-bounded-exact/1",
+    solver: "stagecraft-bounded-exact/2-approved-choices",
     policy:
-      "Hard constraints first; minimize explicitly approved substitutions, then production-window quote cost, charged once per selected unit. Consecutive same-look wear on one local day/location retains custody through the gap and prepares once unless a reset transition is recorded. Unknown timing, transport, fit and supplier evidence remain unverified. No implicit artistic substitution.",
+      "Hard constraints first; choose one currently approved appearance per continuity group across every call, minimize production-window quote cost charged once per selected physical unit, then performer garment changeovers. Original recipes also require exact approval. The constraint checker shares interval construction with search; it is not an independent oracle. Consecutive same-look wear on one local day/location retains custody through the gap and prepares once unless a reset transition is recorded. Unknown timing, transport, fit and supplier evidence remain unverified. No implicit artistic substitution.",
     createdAt: now,
   };
+  if (
+    !built.invalid &&
+    production.occurrences.length &&
+    !built.demands.length &&
+    !built.incomplete
+  )
+    return {
+      ...base,
+      status: "FEASIBLE",
+      assignments: [],
+      findings: staticFindings,
+      totalCostCents: 0,
+      independentlyChecked: false,
+      constraintChecked: !staticFindings.some(
+        (item) => item.severity === "conflict",
+      ),
+    };
   if (built.invalid || !production.occurrences.length || !built.demands.length)
     return {
       ...base,
@@ -1008,7 +1090,11 @@ export function solveAllocation(
       totalCostCents: 0,
       independentlyChecked: false,
     };
-  const makeAssignment = (demand: Demand, unit: PhysicalUnit): Allocation => ({
+  const makeAssignment = (
+    demand: Demand,
+    unit: PhysicalUnit,
+    choice?: ApprovedAppearanceChoice,
+  ): Allocation => ({
     id: `allocation-${demand.key}`,
     occurrenceId: demand.occurrence.id,
     lookId: demand.look.id,
@@ -1019,28 +1105,69 @@ export function solveAllocation(
     state: "proposed",
     reason: null,
     sourceRevision,
+    candidateId: choice?.candidateId,
+    approvalId: choice?.evidence[demand.look.id]?.approvalId,
+    previewId: choice?.evidence[demand.look.id]?.previewId,
   });
   const candidates = new Map(
     built.demands.map((demand) => [
       demand.key,
-      demand.allowedIds
-        .map((id) => production.units.find((unit) => unit.id === id))
+      demand.choices
+        .map((choice) => ({
+          choice,
+          unit: production.units.find(
+            (unit) => unit.id === choice.recipe.unitIds[demand.slot],
+          ),
+        }))
         .filter(
-          (unit): unit is PhysicalUnit => !!unit && candidateFits(demand, unit),
+          (
+            entry,
+          ): entry is {
+            choice: ApprovedAppearanceChoice;
+            unit: PhysicalUnit;
+          } => !!entry.unit && candidateFits(demand, entry.unit),
         )
         .sort(
           (a, b) =>
-            Number(b.id === demand.required.id) -
-              Number(a.id === demand.required.id) ||
-            a.priceCents - b.priceCents ||
-            a.id.localeCompare(b.id),
+            Number(b.unit.id === demand.required.id) -
+              Number(a.unit.id === demand.required.id) ||
+            a.unit.priceCents - b.unit.priceCents ||
+            a.choice.id.localeCompare(b.choice.id),
         ),
     ]),
   );
+  const actualChoices = [
+    ...new Set(built.demands.map((demand) => demand.choiceGroup)),
+  ].some((group) => {
+    const first = built.demands.find((demand) => demand.choiceGroup === group)!;
+    const eligible = first.choices.filter((choice) =>
+      built.demands
+        .filter((demand) => demand.choiceGroup === group)
+        .every((demand) => {
+          const unit = production.units.find(
+            (item) => item.id === choice.recipe.unitIds[demand.slot],
+          );
+          return !!unit && candidateFits(demand, unit);
+        }),
+    );
+    return (
+      new Set(
+        eligible.map((choice) =>
+          JSON.stringify([...choice.recipe.unitIds].sort()),
+        ),
+      ).size > 1
+    );
+  });
   const missing = built.demands.filter(
     (demand) => !candidates.get(demand.key)!.length,
   );
   if (missing.length) {
+    const unknownPrice = missing.some((demand) =>
+      demand.allowedIds.some(
+        (id) =>
+          !production.units.find((unit) => unit.id === id)?.priceSource.trim(),
+      ),
+    );
     const check = validateAllocation(
       production,
       built.demands.map((demand) => makeAssignment(demand, demand.required)),
@@ -1048,7 +1175,7 @@ export function solveAllocation(
     );
     return {
       ...base,
-      status: "INFEASIBLE",
+      status: unknownPrice ? "UNKNOWN" : "INFEASIBLE",
       assignments: [],
       findings: deduplicateFindings([
         ...staticFindings,
@@ -1057,7 +1184,7 @@ export function solveAllocation(
           finding(
             "NO_ELIGIBLE_UNIT",
             "conflict",
-            `${demand.look.title} has no available, category-compatible unit within its recorded window and approved alternatives.`,
+            `${demand.look.title} has no available, category-compatible unit within its recorded window and exact approved appearance choices.`,
             demand.allowedIds,
             [demand.occurrence.id],
             [demand.look.id],
@@ -1074,42 +1201,68 @@ export function solveAllocation(
       a.start - b.start ||
       a.key.localeCompare(b.key),
   );
-  const chosen: Array<{ demand: Demand; unit: PhysicalUnit }> = [];
+  const chosen: Array<{
+    demand: Demand;
+    unit: PhysicalUnit;
+    choice: ApprovedAppearanceChoice;
+  }> = [];
+  const groupChoices = new Map<string, string>();
   let best: Allocation[] | null = null,
     bestCost = Infinity,
     bestChanges = Infinity,
     nodes = 0,
     limited = false;
   const maxNodes = Math.max(1, Math.min(options.maxNodes ?? 50000, 1000000));
-  const visit = (
-    index: number,
-    changes: number,
-    cost: number,
-    selected: Set<string>,
-  ) => {
+  const visit = (index: number, cost: number, selected: Set<string>) => {
     if (++nodes > maxNodes) {
       limited = true;
       return;
     }
-    if (
-      changes > bestChanges ||
-      (changes === bestChanges && cost > bestCost) ||
-      cost > production.budgetCents
-    )
-      return;
+    if (cost > bestCost || cost > production.budgetCents) return;
     if (index === order.length) {
-      if (
-        changes < bestChanges ||
-        (changes === bestChanges && cost < bestCost)
-      ) {
-        bestChanges = changes;
+      let changeovers = 0;
+      for (const performerId of unique(
+        chosen.map((item) => item.demand.look.performerId),
+      )) {
+        const calls = [
+          ...new Set(
+            chosen
+              .filter((item) => item.demand.look.performerId === performerId)
+              .map((item) => item.demand.occurrence.id),
+          ),
+        ]
+          .map((occurrenceId) => ({
+            start: time(
+              production.occurrences.find((item) => item.id === occurrenceId)!
+                .start,
+            ),
+            units: chosen
+              .filter(
+                (item) =>
+                  item.demand.look.performerId === performerId &&
+                  item.demand.occurrence.id === occurrenceId,
+              )
+              .map((item) => item.unit.id)
+              .sort()
+              .join("|"),
+          }))
+          .sort((a, b) => a.start - b.start);
+        for (let i = 1; i < calls.length; i++)
+          if (calls[i].units !== calls[i - 1].units) changeovers++;
+      }
+      if (cost < bestCost || (cost === bestCost && changeovers < bestChanges)) {
+        bestChanges = changeovers;
         bestCost = cost;
-        best = chosen.map(({ demand, unit }) => makeAssignment(demand, unit));
+        best = chosen.map(({ demand, unit, choice }) =>
+          makeAssignment(demand, unit, choice),
+        );
       }
       return;
     }
     const demand = order[index];
-    for (const unit of candidates.get(demand.key)!) {
+    for (const { unit, choice } of candidates.get(demand.key)!) {
+      const previousChoice = groupChoices.get(demand.choiceGroup);
+      if (previousChoice && previousChoice !== choice.id) continue;
       if (
         chosen.some(
           (previous) =>
@@ -1123,20 +1276,21 @@ export function solveAllocation(
         )
       )
         continue;
-      chosen.push({ demand, unit });
+      chosen.push({ demand, unit, choice });
+      groupChoices.set(demand.choiceGroup, choice.id);
       const next = new Set(selected);
       next.add(unit.id);
       visit(
         index + 1,
-        changes + Number(unit.id !== demand.required.id),
         cost + (selected.has(unit.id) ? 0 : unit.priceCents),
         next,
       );
       chosen.pop();
+      if (!previousChoice) groupChoices.delete(demand.choiceGroup);
       if (limited) return;
     }
   };
-  visit(0, 0, 0, new Set());
+  visit(0, 0, new Set());
   if (best === null) {
     const check = validateAllocation(
       production,
@@ -1174,11 +1328,11 @@ export function solveAllocation(
       findings: [
         ...checked.findings,
         finding(
-          "INDEPENDENT_CHECK_FAILED",
+          "CONSTRAINT_CHECK_FAILED",
           checkerLimited ? "unverified" : "conflict",
           checkerLimited
             ? "The checker reached its coverage bound; the proposed assignment cannot be adopted as checked."
-            : "The proposed assignment failed the independent checker and cannot be adopted.",
+            : "The proposed assignment failed the constraint checker and cannot be adopted.",
         ),
       ],
       totalCostCents: checked.totalCostCents,
@@ -1186,7 +1340,11 @@ export function solveAllocation(
     };
   return {
     ...base,
-    status: built.incomplete ? "UNKNOWN" : limited ? "FEASIBLE" : "OPTIMAL",
+    status: built.incomplete
+      ? "UNKNOWN"
+      : limited || !actualChoices
+        ? "FEASIBLE"
+        : "OPTIMAL",
     assignments: best,
     findings: deduplicateFindings([
       ...checked.findings,
@@ -1195,12 +1353,13 @@ export function solveAllocation(
             finding(
               "SEARCH_LIMIT",
               "info",
-              `A feasible independently checked plan was found; the ${maxNodes}-node bound prevents an optimality claim.`,
+              `A feasible constraint-checked plan was found; the ${maxNodes}-node bound prevents an optimality claim.`,
             ),
           ]
         : []),
     ]),
     totalCostCents: checked.totalCostCents,
-    independentlyChecked: checked.valid,
+    independentlyChecked: false,
+    constraintChecked: checked.valid,
   };
 }
