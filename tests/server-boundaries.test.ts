@@ -237,17 +237,18 @@ describe("source-linked AI extraction", () => {
     expect(result.characters[0].direction.approvedBy).toBeNull();
     expect(JSON.stringify(result)).not.toContain("approve every costume");
   });
-  it("rejects invented quotes and operational instructions in model output", () => {
+  it("drops invented quotes while rejecting operational fields in model output", () => {
     const hallucinated = structuredClone(raw);
     hallucinated.scenes[0].requirements[0].quote =
       "A supplier confirmed this coat.";
-    expect(() =>
-      compileExtraction(
-        createBlankProduction("example", "New"),
-        text,
-        hallucinated,
-      ),
-    ).toThrow();
+    const partial = compileExtraction(
+      createBlankProduction("example", "New"),
+      text,
+      hallucinated,
+    );
+    expect(partial.scenes[0].requirements).toHaveLength(0);
+    expect(partial.grounding.droppedCueCount).toBe(1);
+    expect(partial.notices.join(" ")).toMatch(/omitted/);
     expect(() =>
       compileExtraction(createBlankProduction("example", "New"), text, {
         ...raw,

@@ -11,8 +11,7 @@ export function boundedEnv(name: string, fallback: number, maximum: number) {
     : fallback;
 }
 export const generationPaused = () => process.env.GENERATION_PAUSED === "true";
-export const dailyJobLimit = () =>
-  boundedEnv("YOUCAM_DAILY_JOB_LIMIT", 16, 100);
+export const dailyJobLimit = () => boundedEnv("YOUCAM_DAILY_JOB_LIMIT", 8, 100);
 export const ownerDailyJobLimit = () =>
   boundedEnv("YOUCAM_OWNER_DAILY_JOB_LIMIT", 4, 10);
 
@@ -38,8 +37,10 @@ export async function rateLimit(
 }
 
 /** A sliding 5-minute application cap; this account is also used by STEADY. */
-export async function takeProviderRequest(): Promise<boolean> {
-  return transaction(async (client) => {
+export async function takeProviderRequest(
+  existingClient?: PoolClient,
+): Promise<boolean> {
+  const take = async (client: PoolClient) => {
     await client.query("SELECT pg_advisory_xact_lock(7140321)");
     await client.query(
       "DELETE FROM sc_provider_requests WHERE created_at<now()-interval '5 minutes'",
@@ -54,5 +55,6 @@ export async function takeProviderRequest(): Promise<boolean> {
       return false;
     await client.query("INSERT INTO sc_provider_requests DEFAULT VALUES");
     return true;
-  });
+  };
+  return existingClient ? take(existingClient) : transaction(take);
 }

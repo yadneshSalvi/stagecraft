@@ -1,4 +1,13 @@
 import { z } from "zod";
+export const CreditBalanceResponseSchema = z.object({
+  status: z.literal(200),
+  results: z.array(
+    z.object({
+      amount: z.number().finite().nonnegative(),
+      expiry: z.number().finite().nonnegative().nullable().optional(),
+    }),
+  ),
+});
 
 export const TransportUrlSchema = z
   .string()

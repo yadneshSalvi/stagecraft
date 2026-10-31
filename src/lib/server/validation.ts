@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { MAX_SCRIPT_CHARACTERS } from "./script-schema";
 import { BeautyRecipeSchema } from "@/lib/youcam/beauty";
+import { DetailRecipeSchema } from "@/lib/youcam/details";
 
 export const identifier = z
   .string()
@@ -187,6 +189,93 @@ const transition = z
 
 /** Provider results and extracted script adoption are server-only commands. */
 export const commandSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      type: z.literal("create_candidate"),
+      lookId: identifier,
+      unitIds: z.array(identifier).min(1).max(8),
+      performerId: identifier.optional(),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("approve_candidate"),
+      candidateId: identifier,
+      previewId: identifier,
+      approvedBy: name,
+      rationale: text(3000),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("revoke_candidate_approval"),
+      candidateId: identifier,
+      approvalId: identifier,
+    })
+    .strict(),
+  z
+    .object({ type: z.literal("adopt_candidate"), candidateId: identifier })
+    .strict(),
+  z
+    .object({ type: z.literal("set_example_decisions"), enabled: z.boolean() })
+    .strict(),
+  z
+    .object({
+      type: z.literal("edit_direction"),
+      characterId: identifier,
+      text: text(3000),
+      essential: z.array(text(300)).max(30),
+      palette: z
+        .array(z.string().regex(/^#[\dA-Fa-f]{6}$/))
+        .max(10)
+        .optional(),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("import_example_performer"),
+      sourcePerformerId: identifier,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("import_example_unit"),
+      sourceUnitId: identifier,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("set_own_clothes"),
+      characterId: identifier,
+      ownClothes: z.boolean(),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("draft_schedule"),
+      start: iso,
+      sceneMinutes: z.number().int().min(1).max(1440),
+      gapMinutes: z.number().int().min(0).max(1440),
+      location: name,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("update_detail"),
+      lookId: identifier,
+      recipe: DetailRecipeSchema,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("approve_detail"),
+      lookId: identifier,
+      kind: z.enum(["hair_color", "necklace"]),
+      previewId: identifier,
+      approvedBy: name,
+      rationale: text(3000),
+    })
+    .strict(),
   z
     .object({
       type: z.literal("update_production"),
@@ -398,7 +487,8 @@ export const previewRequestSchema = z
   .object({
     lookId: identifier,
     mode: z.enum(["live", "recorded"]),
-    kind: z.enum(["garment", "beauty"]).optional(),
+    kind: z.enum(["garment", "beauty", "hair_color", "necklace"]).optional(),
+    candidateId: identifier.optional(),
     commandId: identifier,
     expectedRevision: nonnegative,
   })
@@ -424,7 +514,11 @@ export const finalizeSchema = z
   .strict();
 export const scriptRequestSchema = z
   .object({
-    text: z.string().trim().min(20).max(60_000),
+    text: z
+      .string()
+      .min(20)
+      .max(MAX_SCRIPT_CHARACTERS)
+      .refine((value) => value.trim().length >= 20),
     title: name,
     label: name,
     rightsConfirmed: z.literal(true),

@@ -3,11 +3,20 @@ import { start, getRun } from "workflow/api";
 import { previewWorkflow } from "@/workflows/preview";
 import { eraseProjectWorkflow } from "@/workflows/erase-project";
 import { getPool } from "./db";
-import { getInternalJob, terminalJob, failJob } from "./jobs";
+import {
+  getInternalJob,
+  terminalJob,
+  failJob,
+  resumeRecordedJob,
+} from "./jobs";
 
 export async function dispatchPreview(jobId: string, recover = false) {
   let job = await getInternalJob(jobId);
-  if (!job || job.mode !== "live" || terminalJob(job)) return;
+  if (!job || terminalJob(job)) return;
+  if (job.mode === "recorded") {
+    await resumeRecordedJob(jobId);
+    return;
+  }
   if (recover && job.workflow_run_id) {
     try {
       const run = getRun(job.workflow_run_id);

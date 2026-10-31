@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 import type { GarmentCategory } from "@/lib/types";
+import type { VerifiedRecordingAssociation } from "@/lib/server/recording-associations";
 import { garmentCategory } from "./recipes";
 
 const sha = z.string().regex(/^[a-f0-9]{64}$/);
@@ -70,18 +71,25 @@ export function clothesInputHash(
 }
 
 export async function recordedPreviews(): Promise<Recording[]> {
-  try {
-    const body = JSON.parse(
-      await readFile(
-        join(process.cwd(), "public/examples/recorded-previews.json"),
-        "utf8",
-      ),
-    );
-    const parsed = RecordingManifestSchema.safeParse(body);
-    return parsed.success ? parsed.data.previews : [];
-  } catch {
-    return [];
-  }
+  const manifests = await Promise.all(
+    ["recorded-previews.json", "recorded-review-previews.json"].map(
+      async (filename) => {
+        try {
+          return RecordingManifestSchema.parse(
+            JSON.parse(
+              await readFile(
+                join(process.cwd(), "public/examples", filename),
+                "utf8",
+              ),
+            ),
+          ).previews;
+        } catch {
+          return [];
+        }
+      },
+    ),
+  );
+  return manifests.flat();
 }
 
 export async function matchRecording(input: {
@@ -91,6 +99,7 @@ export async function matchRecording(input: {
   category: GarmentCategory;
   sourceSha256: string;
   garmentSha256: string;
+  association?: VerifiedRecordingAssociation;
 }): Promise<Recording | null> {
   const inputHash = clothesInputHash(
     input.sourceSha256,
@@ -98,11 +107,19 @@ export async function matchRecording(input: {
     input.category,
   );
   for (const item of await recordedPreviews()) {
+    const direct =
+      item.lookId === input.lookId &&
+      item.performerId === input.performerId &&
+      item.unitIds.length === input.unitIds.length &&
+      item.unitIds.every((unit, index) => unit === input.unitIds[index]);
+    const associated =
+      input.association &&
+      item.performerId === input.association.canonicalPerformerId &&
+      item.sourceImagePath === input.association.sourceImagePath &&
+      item.garmentImagePath === input.association.referenceImagePath &&
+      item.unitIds.length === input.unitIds.length;
     if (
-      item.lookId !== input.lookId ||
-      item.performerId !== input.performerId ||
-      item.unitIds.length !== input.unitIds.length ||
-      item.unitIds.some((unit, index) => unit !== input.unitIds[index]) ||
+      !(direct || associated) ||
       item.category !== input.category ||
       item.inputHash !== inputHash ||
       item.sourceUploadSha256 !== input.sourceSha256 ||

@@ -1,5 +1,9 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { sha256Bytes } from "./images";
+import { detailProviderInputHash } from "@/lib/youcam/details";
 import type { PoolClient } from "pg";
 import type {
   GarmentCategory,
@@ -8,21 +12,43 @@ import type {
   Production,
   BeautyRecipe,
   BeautyPreview,
+  DetailKind,
+  DetailRecipe,
+  DetailPreview,
+  RecordingEvidence,
+  ProductionCommand,
 } from "@/lib/types";
-import { applyCommand, previewInputHash, beautyInputHash } from "@/lib/domain";
+import {
+  applyCommand,
+  previewInputHash,
+  beautyInputHash,
+  detailInputHash,
+  resolveAppearanceCandidate,
+  candidateInputHash,
+} from "@/lib/domain";
+import { candidateScopeCurrent } from "@/lib/domain/lineage";
+import { recordingAssociation } from "./recording-associations";
+import {
+  recordedDetailPreviews,
+  matchDetailRecording,
+  type DetailRecording,
+} from "@/lib/youcam/recorded-details";
 import {
   recordedPreviews,
   matchRecording,
   type Recording,
+  clothesInputHash,
 } from "@/lib/youcam/recorded";
 import {
   recordedBeautyPreviews,
   matchBeautyRecording,
   type BeautyRecording,
+  beautyProviderInputHash,
 } from "@/lib/youcam/recorded-beauty";
 import { youcamConfigured } from "@/lib/youcam";
 import { readInputImage, storageConfigured, insertAsset } from "./assets";
 import { getPool, transaction } from "./db";
+import { readPreviewBudget, requireFreshPreviewBudget } from "./preview-budget";
 import { ApiError, revisionConflict } from "./errors";
 import { hash, isUuid, ownedProject, persistProject } from "./projects";
 import {
@@ -42,6 +68,9 @@ export interface GarmentJobInput {
   source: { assetId: string | null; imageUrl: string | null; sha256: string };
   garment: { assetId: string | null; imageUrl: string | null; sha256: string };
   recordingId: string | null;
+  candidateId?: string;
+  recipeHash?: string;
+  scopeLookIds?: string[];
 }
 export interface BeautyJobInput {
   kind: "beauty";
@@ -52,14 +81,30 @@ export interface BeautyJobInput {
   source: { assetId: string | null; imageUrl: string | null; sha256: string };
   recordingId: string | null;
 }
-export type JobInput = GarmentJobInput | BeautyJobInput;
+export interface DetailJobInput {
+  kind: DetailKind;
+  performerId: string;
+  faceCaptureVersion: number;
+  detailRevision: number;
+  recipe: DetailRecipe;
+  source: { assetId: string | null; imageUrl: string | null; sha256: string };
+  reference?: {
+    assetId: string | null;
+    imageUrl: string | null;
+    sha256: string;
+  };
+  recordingId: string | null;
+}
+export type JobInput = GarmentJobInput | BeautyJobInput | DetailJobInput;
+export const isGarmentJobInput = (input: JobInput): input is GarmentJobInput =>
+  !input.kind || input.kind === "garment";
 export interface ProviderJob {
   id: string;
   project_id: string;
   owner_id: string;
   look_id: string;
   mode: "live" | "recorded";
-  kind?: "garment" | "beauty";
+  kind?: NonNullable<PreviewJob["kind"]>;
   command_id: string;
   request_hash: string;
   input_hash: string;
@@ -94,11 +139,70 @@ export const presentJob = (job: ProviderJob): PreviewJob => ({
 export const terminalJob = (job: ProviderJob) =>
   ["succeeded", "failed", "cancelled", "ambiguous"].includes(job.state);
 
+/** Resume only the saved zero-cost recording projection, never a provider task. */
+export async function resumeRecordedJob(jobId: string) {
+  const job = await getInternalJob(jobId);
+  if (!job || job.mode !== "recorded" || terminalJob(job)) return;
+  const input = job.input;
+  const records = isGarmentJobInput(input)
+    ? await recordedPreviews()
+    : input.kind === "beauty"
+      ? await recordedBeautyPreviews()
+      : await recordedDetailPreviews();
+  const record = records.find((item) => item.id === input.recordingId);
+  const fingerprint = isGarmentJobInput(input)
+    ? clothesInputHash(
+        input.source.sha256,
+        input.garment.sha256,
+        input.category,
+      )
+    : input.kind === "beauty"
+      ? beautyProviderInputHash(input.source.sha256, input.recipe)
+      : detailProviderInputHash(
+          input.source.sha256,
+          input.recipe,
+          input.reference?.sha256,
+        );
+  const bytes = record
+    ? await readFile(join(process.cwd(), "public", record.imagePath)).catch(
+        () => null,
+      )
+    : null;
+  if (
+    !record ||
+    record.inputHash !== fingerprint ||
+    !bytes ||
+    sha256Bytes(bytes) !== record.outputSha256
+  ) {
+    await failJob(
+      jobId,
+      "RECORDING_NOT_AVAILABLE",
+      "The saved recording evidence could not be verified. Choose another recorded result.",
+    );
+    return;
+  }
+  await completeRecordedJob(jobId, record);
+}
+
 export function jobMatchesProject(project: Production, job: ProviderJob) {
+  if ((job.kind || "garment") !== (job.input.kind || "garment")) return false;
   const performer = project.performers.find(
     (item) => item.id === job.input.performerId,
   );
   const look = project.looks.find((item) => item.id === job.look_id);
+  if (job.input.kind === "hair_color" || job.input.kind === "necklace") {
+    const face = performer?.faceCapture,
+      detail = look?.details?.find((item) => item.kind === job.input.kind);
+    return Boolean(
+      face?.consent.granted &&
+      look &&
+      detail &&
+      look.performerId === performer?.id &&
+      face.version === job.input.faceCaptureVersion &&
+      detail.revision === job.input.detailRevision &&
+      detailInputHash(project, look, job.input.kind) === job.input_hash,
+    );
+  }
   if (job.kind === "beauty") {
     if (job.input.kind !== "beauty") return false;
     const face = performer?.faceCapture;
@@ -111,7 +215,27 @@ export function jobMatchesProject(project: Production, job: ProviderJob) {
       beautyInputHash(project, look) === job.input_hash,
     );
   }
-  if (job.input.kind === "beauty") return false;
+  if (!isGarmentJobInput(job.input)) return false;
+  if (job.input.candidateId) {
+    try {
+      const { candidate } = resolveAppearanceCandidate(
+        project,
+        job.input.candidateId,
+      );
+      return Boolean(
+        performer?.consent.granted &&
+        performer.imageUrl &&
+        performer.captureVersion === job.input.captureVersion &&
+        candidate.captureVersion === job.input.captureVersion &&
+        candidateScopeCurrent(project, candidate) &&
+        candidate.lookIds.includes(job.look_id) &&
+        candidate.recipeHash === job.input.recipeHash &&
+        candidateInputHash(project, candidate) === job.input_hash,
+      );
+    } catch {
+      return false;
+    }
+  }
   return Boolean(
     performer?.consent.granted &&
     look &&
@@ -149,14 +273,39 @@ export async function ownedJob(
   return job;
 }
 
-function renderSubjects(project: Production, lookId: string) {
-  const look = project.looks.find((item) => item.id === lookId);
+function renderSubjects(
+  project: Production,
+  lookId: string,
+  candidateId?: string,
+) {
+  let look = project.looks.find((item) => item.id === lookId);
   if (!look)
     throw new ApiError(
       404,
       "LOOK_NOT_FOUND",
       "Choose a look from this production.",
     );
+  const resolved = candidateId
+    ? resolveAppearanceCandidate(project, candidateId)
+    : null;
+  if (
+    resolved &&
+    (!candidateScopeCurrent(project, resolved.candidate) ||
+      !resolved.candidate.lookIds.includes(lookId) ||
+      resolved.performer.captureVersion !== resolved.candidate.captureVersion)
+  )
+    throw new ApiError(
+      409,
+      "CANDIDATE_CHANGED",
+      "This candidate source or scope changed. Create a current candidate before rendering.",
+    );
+  if (resolved)
+    look = {
+      ...look,
+      performerId: resolved.candidate.performerId,
+      unitIds: [...resolved.candidate.recipe.unitIds],
+      category: resolved.candidate.recipe.category,
+    };
   const performer = project.performers.find(
     (item) => item.id === look.performerId,
   );
@@ -179,7 +328,7 @@ function renderSubjects(project: Production, lookId: string) {
       "GARMENT_REQUIRED",
       "Choose a physical garment from this production.",
     );
-  return { look, performer, unit };
+  return { look, performer, unit, candidate: resolved?.candidate };
 }
 
 function renderBeautySubjects(project: Production, lookId: string) {
@@ -202,6 +351,46 @@ function renderBeautySubjects(project: Production, lookId: string) {
     );
   return { look, performer, face };
 }
+function renderDetailSubjects(
+  project: Production,
+  lookId: string,
+  kind: DetailKind,
+) {
+  const look = project.looks.find((item) => item.id === lookId),
+    detail = look?.details?.find((item) => item.kind === kind);
+  const performer = project.performers.find(
+      (item) => item.id === look?.performerId,
+    ),
+    face = performer?.faceCapture;
+  if (!look || !detail)
+    throw new ApiError(
+      422,
+      "DETAIL_RECIPE_REQUIRED",
+      "Save an independent detail recipe before generating its preview.",
+    );
+  if (!performer || !face?.consent.granted || !face.imageUrl)
+    throw new ApiError(
+      422,
+      "FACE_CONSENT_REQUIRED",
+      "Add a separate permitted face capture before generating this detail.",
+    );
+  const reference =
+    detail.recipe.kind === "necklace"
+      ? project.detailReferences?.find(
+          (item) =>
+            item.id ===
+            (detail.recipe as Extract<DetailRecipe, { kind: "necklace" }>)
+              .referenceId,
+        )
+      : undefined;
+  if (kind === "necklace" && !reference)
+    throw new ApiError(
+      422,
+      "DETAIL_REFERENCE_REQUIRED",
+      "Choose a trusted necklace reference from this production.",
+    );
+  return { look, detail, performer, face, reference };
+}
 
 export async function createPreviewJob(
   ownerId: string,
@@ -211,17 +400,20 @@ export async function createPreviewJob(
     mode: "live" | "recorded";
     commandId: string;
     expectedRevision?: number;
-    kind?: "garment" | "beauty";
+    kind?: NonNullable<PreviewJob["kind"]>;
+    candidateId?: string;
   },
   seedExample = false,
 ): Promise<ProviderJob> {
   const project = await ownedProject(ownerId, projectId);
   const kind = request.kind || "garment";
-  const estimatedUnits = kind === "beauty" ? 1 : 2;
+  const estimatedUnits = kind === "garment" ? 2 : 1;
   const requestHash = hash({
     lookId: request.lookId,
     mode: request.mode,
     ...(kind === "beauty" ? { kind } : {}),
+    ...(kind === "hair_color" || kind === "necklace" ? { kind } : {}),
+    ...(request.candidateId ? { candidateId: request.candidateId } : {}),
   });
   const previous = await getPool().query<ProviderJob>(
     "SELECT * FROM sc_jobs WHERE project_id=$1 AND command_id=$2",
@@ -234,6 +426,13 @@ export async function createPreviewJob(
         "COMMAND_REUSED",
         "This request identifier was already used for another preview.",
       );
+    if (
+      previous.rows[0].mode === "recorded" &&
+      !terminalJob(previous.rows[0])
+    ) {
+      await resumeRecordedJob(previous.rows[0].id);
+      return (await getInternalJob(previous.rows[0].id))!;
+    }
     return previous.rows[0];
   }
   if (
@@ -241,12 +440,34 @@ export async function createPreviewJob(
     project.revision !== request.expectedRevision
   )
     throw revisionConflict();
+  if (kind !== "garment" && request.candidateId)
+    throw new ApiError(
+      400,
+      "INVALID_INPUT",
+      "Appearance candidates apply only to garment previews.",
+    );
+  const candidateId =
+    kind === "garment"
+      ? request.candidateId ||
+        project.looks.find((item) => item.id === request.lookId)
+          ?.activeCandidateId
+      : undefined;
   const garmentSubjects =
-    kind === "garment" ? renderSubjects(project, request.lookId) : null;
+    kind === "garment"
+      ? renderSubjects(project, request.lookId, candidateId)
+      : null;
   const beautySubjects =
     kind === "beauty" ? renderBeautySubjects(project, request.lookId) : null;
-  const look = garmentSubjects?.look || beautySubjects!.look;
-  const performer = garmentSubjects?.performer || beautySubjects!.performer;
+  const detailSubjects =
+    kind === "hair_color" || kind === "necklace"
+      ? renderDetailSubjects(project, request.lookId, kind)
+      : null;
+  const look =
+    garmentSubjects?.look || beautySubjects?.look || detailSubjects!.look;
+  const performer =
+    garmentSubjects?.performer ||
+    beautySubjects?.performer ||
+    detailSubjects!.performer;
   if (request.mode === "live") {
     if (generationPaused())
       throw new ApiError(
@@ -261,25 +482,69 @@ export async function createPreviewJob(
         "Live previews are temporarily unavailable. Your production remains editable.",
         true,
       );
+    await requireFreshPreviewBudget(estimatedUnits);
   }
   if (!seedExample || request.mode !== "recorded")
     await rateLimit(`preview:${ownerId}`, 12, 300);
-  let recording: Recording | BeautyRecording | null = null;
+  let recording: Recording | BeautyRecording | DetailRecording | null = null;
   let inputHash: string;
   let input: JobInput;
-  if (beautySubjects) {
+  if (detailSubjects) {
+    const [sourceImage, referenceImage] = await Promise.all([
+      readInputImage(ownerId, detailSubjects.face, "face"),
+      detailSubjects.reference
+        ? readInputImage(ownerId, detailSubjects.reference)
+        : Promise.resolve(null),
+    ]);
+    const recipe = detailSubjects.detail.recipe;
+    const association = recordingAssociation(project, performer, "face");
+    if (request.mode === "recorded" && association)
+      recording = await matchDetailRecording({
+        kind: detailSubjects.detail.kind,
+        performerId: performer.id,
+        sourceSha256: sourceImage.sha256,
+        recipe,
+        referenceSha256: referenceImage?.sha256,
+        association,
+      });
+    inputHash = detailInputHash(project, look, detailSubjects.detail.kind);
+    input = {
+      kind: detailSubjects.detail.kind,
+      performerId: performer.id,
+      faceCaptureVersion: detailSubjects.face.version,
+      detailRevision: detailSubjects.detail.revision,
+      recipe: structuredClone(recipe),
+      source: {
+        assetId: detailSubjects.face.assetId,
+        imageUrl: detailSubjects.face.imageUrl,
+        sha256: sourceImage.sha256,
+      },
+      ...(detailSubjects.reference && referenceImage
+        ? {
+            reference: {
+              assetId: detailSubjects.reference.assetId,
+              imageUrl: detailSubjects.reference.imageUrl,
+              sha256: referenceImage.sha256,
+            },
+          }
+        : {}),
+      recordingId: recording?.id || null,
+    };
+  } else if (beautySubjects) {
     const sourceImage = await readInputImage(
       ownerId,
       beautySubjects.face,
       "face",
     );
     const recipe = beautySubjects.look.beauty!.recipe;
-    if (request.mode === "recorded")
+    const association = recordingAssociation(project, performer, "face");
+    if (request.mode === "recorded" && association)
       recording = await matchBeautyRecording({
         lookId: look.id,
         performerId: performer.id,
         sourceSha256: sourceImage.sha256,
         recipe,
+        association,
       });
     inputHash = beautyInputHash(project, look);
     input = {
@@ -301,7 +566,13 @@ export async function createPreviewJob(
       readInputImage(ownerId, performer),
       readInputImage(ownerId, unit),
     ]);
-    if (request.mode === "recorded")
+    const association = recordingAssociation(
+      project,
+      performer,
+      "garment",
+      unit,
+    );
+    if (request.mode === "recorded" && association)
       recording = await matchRecording({
         lookId: look.id,
         performerId: performer.id,
@@ -309,12 +580,15 @@ export async function createPreviewJob(
         category: look.category,
         sourceSha256: sourceImage.sha256,
         garmentSha256: garmentImage.sha256,
+        association,
       });
-    inputHash = previewInputHash(project, look);
+    inputHash = candidateId
+      ? candidateInputHash(project, candidateId)
+      : previewInputHash(project, look);
     input = {
       performerId: performer.id,
       captureVersion: performer.captureVersion,
-      recipeRevision: look.revision,
+      recipeRevision: candidateId ? 1 : look.revision,
       unitIds: [...look.unitIds],
       category: look.category,
       source: {
@@ -328,13 +602,20 @@ export async function createPreviewJob(
         sha256: garmentImage.sha256,
       },
       recordingId: recording?.id || null,
+      ...(garmentSubjects?.candidate
+        ? {
+            candidateId: garmentSubjects.candidate.id,
+            recipeHash: garmentSubjects.candidate.recipeHash,
+            scopeLookIds: [...garmentSubjects.candidate.lookIds],
+          }
+        : {}),
     };
   }
   if (request.mode === "recorded" && !recording)
     throw new ApiError(
       422,
       "RECORDING_NOT_AVAILABLE",
-      kind === "beauty"
+      kind !== "garment"
         ? "No recorded beauty detail matches this performer, face capture and exact effect recipe. Choose a matching example or request a live detail."
         : "No recorded preview matches this performer image, garment and category. Choose a matching example or request a live preview.",
     );
@@ -361,7 +642,11 @@ export async function createPreviewJob(
     if (
       (kind === "beauty"
         ? beautyInputHash(latest, request.lookId)
-        : previewInputHash(latest, request.lookId)) !== inputHash
+        : kind === "hair_color" || kind === "necklace"
+          ? detailInputHash(latest, request.lookId, kind)
+          : candidateId
+            ? candidateInputHash(latest, candidateId)
+            : previewInputHash(latest, request.lookId)) !== inputHash
     )
       throw new ApiError(
         409,
@@ -369,11 +654,13 @@ export async function createPreviewJob(
         "This look changed while its inputs were being prepared. Review the current recipe and try again.",
       );
     if (kind === "beauty") renderBeautySubjects(latest, request.lookId);
-    else renderSubjects(latest, request.lookId);
+    else if (kind === "hair_color" || kind === "necklace")
+      renderDetailSubjects(latest, request.lookId, kind);
+    else renderSubjects(latest, request.lookId, candidateId);
     if (request.mode === "live") {
       await client.query("SELECT pg_advisory_xact_lock(7140323)");
       const quota = await client.query<{ total: string; owner: string }>(
-        "SELECT count(*) AS total,count(*) FILTER(WHERE owner_id=$1) AS owner FROM sc_quota_reservations WHERE day=(now() AT TIME ZONE 'UTC')::date",
+        "SELECT count(*) AS total,count(*) FILTER(WHERE owner_id=$1) AS owner FROM sc_quota_reservations WHERE NOT released AND day=(now() AT TIME ZONE 'UTC')::date",
         [ownerId],
       );
       if (
@@ -393,6 +680,14 @@ export async function createPreviewJob(
           429,
           "PREVIEW_QUEUE_FULL",
           "Three live previews are already in progress. Wait for one to finish before starting another.",
+          true,
+        );
+      const budget = await readPreviewBudget(client);
+      if (!budget.available || budget.remaining < estimatedUnits)
+        throw new ApiError(
+          503,
+          "LIVE_PREVIEWS_RESTING",
+          "Fresh previews are resting; recorded results and your saved production remain available.",
           true,
         );
     }
@@ -415,7 +710,7 @@ export async function createPreviewJob(
         inputHash,
         input,
         request.mode === "live"
-          ? kind === "beauty"
+          ? kind !== "garment"
             ? "Queued to prepare the permitted separate face capture."
             : "Queued to prepare the permitted performer and garment images."
           : "Loading the matching recorded provider result.",
@@ -434,15 +729,30 @@ async function addPreview(
   client: PoolClient,
   project: Production,
   job: ProviderJob,
-  preview: Preview | BeautyPreview,
+  preview: Preview | BeautyPreview | DetailPreview,
 ) {
-  const after = applyCommand(
-    project,
+  const command: ProductionCommand =
     "beautyRevision" in preview
       ? { type: "add_beauty_preview", lookId: job.look_id, preview }
-      : { type: "add_preview", lookId: job.look_id, preview },
-    { actor: job.owner_id, now: new Date().toISOString(), id: randomUUID() },
-  );
+      : "detailRevision" in preview
+        ? {
+            type: "add_detail_preview",
+            lookId: job.look_id,
+            kind: preview.kind,
+            preview,
+          }
+        : preview.candidateId
+          ? {
+              type: "add_candidate_preview",
+              candidateId: preview.candidateId,
+              preview,
+            }
+          : { type: "add_preview", lookId: job.look_id, preview };
+  const after = applyCommand(project, command, {
+    actor: job.owner_id,
+    now: new Date().toISOString(),
+    id: randomUUID(),
+  });
   await persistProject(
     client,
     project,
@@ -455,9 +765,30 @@ async function addPreview(
     [job.id, preview.id],
   );
 }
+function recordedEvidence(
+  recording: Recording | BeautyRecording | DetailRecording,
+  job: ProviderJob,
+): RecordingEvidence {
+  const originalUnitIds =
+    "unitIds" in recording ? recording.unitIds : undefined;
+  const exact =
+    recording.lookId === job.look_id &&
+    recording.performerId === job.input.performerId &&
+    (!originalUnitIds ||
+      (isGarmentJobInput(job.input) &&
+        JSON.stringify(originalUnitIds) === JSON.stringify(job.input.unitIds)));
+  return {
+    recordingId: recording.id,
+    providerInputHash: recording.inputHash,
+    originalLookId: recording.lookId,
+    originalPerformerId: recording.performerId,
+    ...(originalUnitIds ? { originalUnitIds: [...originalUnitIds] } : {}),
+    binding: exact ? "exact_inputs" : "verified_library_inputs",
+  };
+}
 export async function completeRecordedJob(
   jobId: string,
-  recording: Recording | BeautyRecording,
+  recording: Recording | BeautyRecording | DetailRecording,
 ) {
   const initial = await getInternalJob(jobId);
   if (!initial) return;
@@ -472,6 +803,41 @@ export async function completeRecordedJob(
     if (!job || terminalJob(job)) return;
     if (job.cancel_requested || !jobMatchesProject(project, job)) {
       await cancelJob(jobId, client);
+      return;
+    }
+    if (job.input.kind === "hair_color" || job.input.kind === "necklace") {
+      if (
+        (recording.operation !== "hair_color_v2" &&
+          recording.operation !== "necklace_v2") ||
+        recording.kind !== job.input.kind
+      )
+        throw new ApiError(
+          422,
+          "RECORDING_KIND_MISMATCH",
+          "Choose a provider recording for this independent detail.",
+        );
+      const preview: DetailPreview = {
+        id: `preview-${job.id}`,
+        lookId: job.look_id,
+        kind: job.input.kind,
+        detailRevision: job.input.detailRevision,
+        performerId: job.input.performerId,
+        faceCaptureVersion: job.input.faceCaptureVersion,
+        imageUrl: recording.imagePath,
+        assetId: null,
+        sourceImageUrl: job.input.source.imageUrl!,
+        operation:
+          job.input.kind === "hair_color"
+            ? "YouCam Hair Color · recorded separate detail"
+            : "YouCam Necklace · recorded separate detail",
+        provenance: "recorded_provider",
+        createdAt: recording.recordedAt,
+        inputHash: job.input_hash,
+        estimatedUnits: recording.estimatedUnits,
+        inspectionNotes: recording.inspectionNotes,
+        recordingEvidence: recordedEvidence(recording, job),
+      };
+      await addPreview(client, project, job, preview);
       return;
     }
     if (job.input.kind === "beauty") {
@@ -496,6 +862,7 @@ export async function completeRecordedJob(
         inputHash: job.input_hash,
         estimatedUnits: recording.estimatedUnits,
         inspectionNotes: recording.inspectionNotes,
+        recordingEvidence: recordedEvidence(recording, job),
       };
       await addPreview(client, project, job, preview);
       return;
@@ -506,10 +873,16 @@ export async function completeRecordedJob(
         "RECORDING_KIND_MISMATCH",
         "This provider result is not a garment preview.",
       );
+    if (!isGarmentJobInput(job.input))
+      throw new ApiError(
+        422,
+        "RECORDING_KIND_MISMATCH",
+        "Choose a garment result for this recipe.",
+      );
     const preview: Preview = {
       id: `preview-${job.id}`,
-      lookId: job.look_id,
-      recipeRevision: job.input.recipeRevision,
+      lookId: job.input.candidateId ? job.input.scopeLookIds![0] : job.look_id,
+      recipeRevision: job.input.candidateId ? 1 : job.input.recipeRevision,
       performerId: job.input.performerId,
       captureVersion: job.input.captureVersion,
       imageUrl: recording.imagePath,
@@ -522,6 +895,14 @@ export async function completeRecordedJob(
       inputHash: job.input_hash,
       estimatedUnits: recording.estimatedUnits,
       inspectionNotes: recording.inspectionNotes,
+      recordingEvidence: recordedEvidence(recording, job),
+      ...(job.input.candidateId
+        ? {
+            candidateId: job.input.candidateId,
+            recipeHash: job.input.recipeHash,
+            scopeLookIds: job.input.scopeLookIds,
+          }
+        : {}),
     };
     await addPreview(client, project, job, preview);
   });
@@ -558,7 +939,7 @@ export async function completeLiveJob(
       projectId: job.project_id,
       ownerId: job.owner_id,
       subjectId: job.input.performerId,
-      purpose: job.input.kind === "beauty" ? "beauty_preview" : "preview",
+      purpose: isGarmentJobInput(job.input) ? "preview" : "beauty_preview",
       pathname,
       photo,
       provenance: "live_provider",
@@ -567,6 +948,31 @@ export async function completeLiveJob(
       jobId,
       asset.id,
     ]);
+    if (job.input.kind === "hair_color" || job.input.kind === "necklace") {
+      const preview: DetailPreview = {
+        id: `preview-${job.id}`,
+        lookId: job.look_id,
+        kind: job.input.kind,
+        detailRevision: job.input.detailRevision,
+        performerId: job.input.performerId,
+        faceCaptureVersion: job.input.faceCaptureVersion,
+        imageUrl: `/api/assets/${id}`,
+        assetId: id,
+        sourceImageUrl: job.input.source.imageUrl!,
+        operation:
+          job.input.kind === "hair_color"
+            ? "YouCam Hair Color · live separate detail"
+            : "YouCam Necklace · live separate detail",
+        provenance: "live_provider",
+        createdAt: new Date().toISOString(),
+        inputHash: job.input_hash,
+        estimatedUnits: job.estimated_units,
+        inspectionNotes:
+          "Actual independent YouCam detail from a permitted separate face capture. Inspect colour, object shape and facial boundaries before explicit approval.",
+      };
+      await addPreview(client, project, job, preview);
+      return true;
+    }
     if (job.input.kind === "beauty") {
       const preview: BeautyPreview = {
         id: `preview-${job.id}`,
@@ -588,10 +994,16 @@ export async function completeLiveJob(
       await addPreview(client, project, job, preview);
       return true;
     }
+    if (!isGarmentJobInput(job.input))
+      throw new ApiError(
+        422,
+        "PREVIEW_KIND_MISMATCH",
+        "This output does not match the selected garment recipe.",
+      );
     const preview: Preview = {
       id: `preview-${job.id}`,
-      lookId: job.look_id,
-      recipeRevision: job.input.recipeRevision,
+      lookId: job.input.candidateId ? job.input.scopeLookIds![0] : job.look_id,
+      recipeRevision: job.input.candidateId ? 1 : job.input.recipeRevision,
       performerId: job.input.performerId,
       captureVersion: job.input.captureVersion,
       imageUrl: `/api/assets/${id}`,
@@ -605,6 +1017,13 @@ export async function completeLiveJob(
       estimatedUnits: job.estimated_units,
       inspectionNotes:
         "Actual YouCam Clothes V4 result. Inspect identity, pose, garment detail and continuity before approving. Hair and makeup notes, physical fit, measurements and supplier availability are not established by this garment preview.",
+      ...(job.input.candidateId
+        ? {
+            candidateId: job.input.candidateId,
+            recipeHash: job.input.recipeHash,
+            scopeLookIds: job.input.scopeLookIds,
+          }
+        : {}),
     };
     await addPreview(client, project, job, preview);
     return true;
@@ -651,7 +1070,9 @@ export async function attachExampleRecordings(
 ): Promise<Production> {
   const haveGarmentRecordings = (await recordedPreviews()).length > 0;
   const haveBeautyRecordings = (await recordedBeautyPreviews()).length > 0;
-  if (!haveGarmentRecordings && !haveBeautyRecordings) return project;
+  const haveDetailRecordings = (await recordedDetailPreviews()).length > 0;
+  if (!haveGarmentRecordings && !haveBeautyRecordings && !haveDetailRecordings)
+    return project;
   for (const look of project.looks) {
     try {
       if (haveGarmentRecordings)
@@ -695,6 +1116,53 @@ export async function attachExampleRecordings(
           throw error;
       }
     }
+    if (haveDetailRecordings)
+      for (const detail of look.details || []) {
+        try {
+          await createPreviewJob(
+            ownerId,
+            project.id,
+            {
+              lookId: look.id,
+              mode: "recorded",
+              kind: detail.kind,
+              commandId: `example-${detail.kind}-${look.id}`,
+            },
+            true,
+          );
+        } catch (error) {
+          if (
+            !(error instanceof ApiError) ||
+            !["RECORDING_NOT_AVAILABLE", "FACE_CONSENT_REQUIRED"].includes(
+              error.code,
+            )
+          )
+            throw error;
+        }
+      }
   }
+  if (haveGarmentRecordings)
+    for (const candidate of project.appearanceCandidates || []) {
+      try {
+        await createPreviewJob(
+          ownerId,
+          project.id,
+          {
+            lookId: candidate.lookIds[0],
+            mode: "recorded",
+            kind: "garment",
+            candidateId: candidate.id,
+            commandId: `example-${candidate.id}`,
+          },
+          true,
+        );
+      } catch (error) {
+        if (
+          !(error instanceof ApiError) ||
+          error.code !== "RECORDING_NOT_AVAILABLE"
+        )
+          throw error;
+      }
+    }
   return ownedProject(ownerId, project.id);
 }

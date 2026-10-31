@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 import type { BeautyRecipe } from "@/lib/types";
+import type { VerifiedRecordingAssociation } from "@/lib/server/recording-associations";
 import {
   BeautyRecipeSchema,
   MakeupEffectsSchema,
@@ -64,31 +65,44 @@ export function beautyProviderInputHash(
     .digest("hex");
 }
 export async function recordedBeautyPreviews(): Promise<BeautyRecording[]> {
-  try {
-    const parsed = BeautyRecordingManifestSchema.safeParse(
-      JSON.parse(
-        await readFile(
-          join(process.cwd(), "public/examples/recorded-beauty-previews.json"),
-          "utf8",
-        ),
-      ),
-    );
-    return parsed.success ? parsed.data.previews : [];
-  } catch {
-    return [];
-  }
+  const manifests = await Promise.all(
+    [
+      "recorded-beauty-previews.json",
+      "recorded-review-beauty-previews.json",
+    ].map(async (filename) => {
+      try {
+        return BeautyRecordingManifestSchema.parse(
+          JSON.parse(
+            await readFile(
+              join(process.cwd(), "public/examples", filename),
+              "utf8",
+            ),
+          ),
+        ).previews;
+      } catch {
+        return [];
+      }
+    }),
+  );
+  return manifests.flat();
 }
 export async function matchBeautyRecording(input: {
   lookId: string;
   performerId: string;
   sourceSha256: string;
   recipe: BeautyRecipe;
+  association?: VerifiedRecordingAssociation;
 }): Promise<BeautyRecording | null> {
   const inputHash = beautyProviderInputHash(input.sourceSha256, input.recipe);
   for (const item of await recordedBeautyPreviews()) {
+    const direct =
+      item.lookId === input.lookId && item.performerId === input.performerId;
+    const associated =
+      input.association &&
+      item.performerId === input.association.canonicalPerformerId &&
+      item.sourceImagePath === input.association.sourceImagePath;
     if (
-      item.lookId !== input.lookId ||
-      item.performerId !== input.performerId ||
+      !(direct || associated) ||
       item.sourceUploadSha256 !== input.sourceSha256 ||
       item.inputHash !== inputHash ||
       beautyProviderInputHash(item.sourceUploadSha256, item.recipe) !==

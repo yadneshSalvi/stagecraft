@@ -5,55 +5,63 @@ import sharp from "sharp";
 import { z } from "zod";
 import { ApiError } from "./errors";
 import { MAX_UPLOAD_BYTES, sha256Bytes } from "./images";
-import { fixtureImageUrls } from "./media-policy";
+import { baseFixtureImageUrls, reviewFixtureImageUrls } from "./media-policy";
 
 const sha = z.string().regex(/^[a-f0-9]{64}$/);
-export const FixtureTransportManifestSchema = z
-  .object({
-    version: z.literal(1),
-    normalization: z.literal("jpeg-q92-mozjpeg-v1"),
-    transports: z
-      .array(
-        z
-          .object({
-            sourcePath: z.string(),
-            profile: z.enum(["garment", "face"]),
-            sourceSha256: sha,
-            transportPath: z
-              .string()
-              .regex(/^\/examples\/transports\/[a-z0-9-]+\.jpg$/),
-            transportSha256: sha,
-            width: z.number().int().min(384).max(2048),
-            height: z.number().int().min(384).max(2048),
-          })
-          .strict(),
-      )
-      .length(fixtureImageUrls.size),
-  })
-  .strict()
-  .superRefine((manifest, context) => {
-    const seen = new Set<string>();
-    for (const item of manifest.transports) {
-      const expectedProfile = item.sourcePath.endsWith("-face.webp")
-        ? "face"
-        : "garment";
-      if (
-        !fixtureImageUrls.has(item.sourcePath) ||
-        item.profile !== expectedProfile ||
-        seen.has(item.sourcePath)
-      )
-        context.addIssue({
-          code: "custom",
-          message: "Fixture transport registration is invalid.",
-        });
-      if (item.profile === "face" && (item.width > 1600 || item.height > 1000))
-        context.addIssue({
-          code: "custom",
-          message: "Face transport dimensions are invalid.",
-        });
-      seen.add(item.sourcePath);
-    }
-  });
+const manifestFor = (sourceUrls: ReadonlySet<string>) =>
+  z
+    .object({
+      version: z.literal(1),
+      normalization: z.literal("jpeg-q92-mozjpeg-v1"),
+      transports: z
+        .array(
+          z
+            .object({
+              sourcePath: z.string(),
+              profile: z.enum(["garment", "face"]),
+              sourceSha256: sha,
+              transportPath: z
+                .string()
+                .regex(/^\/examples\/transports\/[a-z0-9-]+\.jpg$/),
+              transportSha256: sha,
+              width: z.number().int().min(384).max(2048),
+              height: z.number().int().min(384).max(2048),
+            })
+            .strict(),
+        )
+        .length(sourceUrls.size),
+    })
+    .strict()
+    .superRefine((manifest, context) => {
+      const seen = new Set<string>();
+      for (const item of manifest.transports) {
+        const expectedProfile = item.sourcePath.endsWith("-face.webp")
+          ? "face"
+          : "garment";
+        if (
+          !sourceUrls.has(item.sourcePath) ||
+          item.profile !== expectedProfile ||
+          seen.has(item.sourcePath)
+        )
+          context.addIssue({
+            code: "custom",
+            message: "Fixture transport registration is invalid.",
+          });
+        if (
+          item.profile === "face" &&
+          (item.width > 1600 || item.height > 1000)
+        )
+          context.addIssue({
+            code: "custom",
+            message: "Face transport dimensions are invalid.",
+          });
+        seen.add(item.sourcePath);
+      }
+    });
+export const FixtureTransportManifestSchema = manifestFor(baseFixtureImageUrls);
+export const ReviewFixtureTransportManifestSchema = manifestFor(
+  reviewFixtureImageUrls,
+);
 export type FixtureTransport = z.infer<
   typeof FixtureTransportManifestSchema
 >["transports"][number];
@@ -102,10 +110,21 @@ export async function readFixtureTransport(
   root = process.cwd(),
 ) {
   try {
-    const manifest = FixtureTransportManifestSchema.parse(
+    const review = reviewFixtureImageUrls.has(sourcePath);
+    const manifest = (
+      review
+        ? ReviewFixtureTransportManifestSchema
+        : FixtureTransportManifestSchema
+    ).parse(
       JSON.parse(
         await readFile(
-          join(root, "public/examples/fixture-transports.json"),
+          join(
+            root,
+            "public/examples",
+            review
+              ? "fixture-transports-review.json"
+              : "fixture-transports.json",
+          ),
           "utf8",
         ),
       ),

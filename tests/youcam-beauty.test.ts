@@ -121,9 +121,12 @@ describe("independent Makeup VTO detail transport", () => {
       message: expect.stringContaining("separate close-up"),
     });
   });
-  it("verifies both actual recordings and rejects a different face or effect recipe", async () => {
+  it("verifies all four recorded face/day states and rejects a different source or effect recipe", async () => {
     const records = await recordedBeautyPreviews();
-    expect(records).toHaveLength(2);
+    expect(records).toHaveLength(4);
+    expect(
+      [...new Set(records.map((item) => item.recipe.lipIntensity))].sort(),
+    ).toEqual([40, 65]);
     for (const item of records) {
       const source = await readFile(
         join(process.cwd(), "public", item.sourceImagePath),

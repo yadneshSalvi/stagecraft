@@ -319,6 +319,8 @@ export async function runCommand(
       "add_preview",
       "adopt_script",
       "add_beauty_preview",
+      "add_candidate_preview",
+      "add_detail_preview",
       "update_face_capture",
     ].includes(command.type)
   )
@@ -375,7 +377,7 @@ export async function runCommand(
         [projectId, command.performerId],
       );
       await client.query(
-        "UPDATE sc_jobs SET cancel_requested=true,state=CASE WHEN state='succeeded' THEN state ELSE 'cancelled' END,updated_at=now() WHERE project_id=$1 AND input->>'performerId'=$2 AND kind='beauty'",
+        "UPDATE sc_jobs SET cancel_requested=true,state=CASE WHEN state='succeeded' THEN state ELSE 'cancelled' END,updated_at=now() WHERE project_id=$1 AND input->>'performerId'=$2 AND kind IN ('beauty','hair_color','necklace')",
         [projectId, command.performerId],
       );
     }

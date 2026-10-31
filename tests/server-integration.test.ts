@@ -18,6 +18,8 @@ import {
   ownedJob,
   presentJob,
   interruptedJob,
+  failJob,
+  cancelJob,
 } from "@/lib/server/jobs";
 import {
   createUploadIntent,
@@ -27,7 +29,7 @@ import {
   finalizeUpload,
 } from "@/lib/server/assets";
 import { adoptScriptDraft } from "@/lib/server/script-extraction";
-import { previewInputHash } from "@/lib/domain";
+import { candidateInputHash } from "@/lib/domain";
 import {
   submitPreviewStep,
   prepareFilesStep,
@@ -54,6 +56,7 @@ vi.mock("@vercel/blob", () => ({
 vi.mock("@/lib/youcam", async (original) => ({
   ...(await original<typeof import("@/lib/youcam")>()),
   youcamConfigured: () => true,
+  getCreditBalance: vi.fn().mockResolvedValue(1000),
   registerFile: vi.fn(),
   uploadRegisteredFile: vi.fn(),
   submitClothesTask: vi.fn(),
@@ -88,6 +91,7 @@ describe.runIf(local)(
       vi.stubEnv("BLOB_READ_WRITE_TOKEN", "test-private-token");
       vi.stubEnv("YOUCAM_DAILY_JOB_LIMIT", "100");
       vi.stubEnv("YOUCAM_OWNER_DAILY_JOB_LIMIT", "4");
+      vi.stubEnv("YOUCAM_API_KEY", "test-server-integration-key");
       vi.stubEnv("GENERATION_PAUSED", "false");
       owner = `server-test-${randomUUID()}`;
       other = `server-test-${randomUUID()}`;
@@ -107,9 +111,99 @@ describe.runIf(local)(
       vi.unstubAllEnvs();
     });
 
+    it("releases pre-submission failures while preserving ambiguous spend", async () => {
+      const project = await createProject(owner, "example");
+      vi.stubEnv("YOUCAM_OWNER_DAILY_JOB_LIMIT", "1");
+      const first = await createPreviewJob(owner, project.id, {
+        lookId: "look-nora",
+        mode: "live",
+        commandId: randomUUID(),
+      });
+      await failJob(
+        first.id,
+        "upload_failed",
+        "The input upload failed before submission.",
+      );
+      expect(
+        (
+          await getPool().query(
+            "SELECT released FROM sc_quota_reservations WHERE id=$1",
+            [first.id],
+          )
+        ).rows[0].released,
+      ).toBe(true);
+      const second = await createPreviewJob(owner, project.id, {
+        lookId: "look-nora",
+        mode: "live",
+        commandId: randomUUID(),
+      });
+      await getPool().query(
+        "UPDATE sc_jobs SET submission_started_at=now(),state='ambiguous' WHERE id=$1",
+        [second.id],
+      );
+      await cancelJob(second.id);
+      expect(
+        (
+          await getPool().query(
+            "SELECT released FROM sc_quota_reservations WHERE id=$1",
+            [second.id],
+          )
+        ).rows[0].released,
+      ).toBe(false);
+      await getPool().query(
+        "UPDATE sc_jobs SET submission_started_at=NULL,provider_task_id='reconciled-task',state='failed' WHERE id=$1",
+        [second.id],
+      );
+      expect(
+        (
+          await getPool().query(
+            "SELECT released FROM sc_quota_reservations WHERE id=$1",
+            [second.id],
+          )
+        ).rows[0].released,
+      ).toBe(false);
+      await expect(
+        createPreviewJob(owner, project.id, {
+          lookId: "look-nora",
+          mode: "live",
+          commandId: randomUUID(),
+        }),
+      ).rejects.toMatchObject({ code: "DAILY_PREVIEW_LIMIT" });
+    }, 20000);
+
+    it("rests fresh previews above balance while recordings still work", async () => {
+      vi.stubEnv("YOUCAM_BALANCE_FLOOR", "1000000");
+      const project = await createProject(owner, "example");
+      await expect(
+        createPreviewJob(owner, project.id, {
+          lookId: "look-nora",
+          mode: "recorded",
+          commandId: randomUUID(),
+        }),
+      ).resolves.toMatchObject({ state: "succeeded" });
+      await expect(
+        createPreviewJob(owner, project.id, {
+          lookId: "look-nora",
+          mode: "live",
+          commandId: randomUUID(),
+        }),
+      ).rejects.toMatchObject({ code: "LIVE_PREVIEWS_RESTING" });
+      expect(
+        Number(
+          (
+            await getPool().query(
+              "SELECT count(*) AS n FROM sc_jobs WHERE project_id=$1 AND mode='live'",
+              [project.id],
+            )
+          ).rows[0].n,
+        ),
+      ).toBe(0);
+      expect(submitClothesTask).not.toHaveBeenCalled();
+    }, 20000);
+
     it("loads recorded results without approvals and isolates another browser", async () => {
       const project = await createProject(owner, "example");
-      expect(project.looks).toHaveLength(5);
+      expect(project.looks).toHaveLength(8);
       expect(
         project.looks.every(
           (look) =>
@@ -270,7 +364,7 @@ describe.runIf(local)(
       );
     }, 20000);
 
-    it("binds a charcoal recording to a new recipe without carrying approval", async () => {
+    it("binds a charcoal recording to an unapproved candidate while preserving baseline review", async () => {
       let project = await createProject(owner, "example");
       const initial = project.looks.find((look) => look.id === "look-nora")!;
       project = await runCommand(
@@ -286,35 +380,10 @@ describe.runIf(local)(
           rationale: "Appearance exercise only; physical fit remains unknown.",
         },
       );
-      project = await runCommand(
-        owner,
-        project.id,
-        project.revision,
-        "propose-repair",
-        {
-          type: "propose_change",
-          kind: "garment_unavailable",
-          subjectId: "unit-coat-oxblood",
-          replacementId: "unit-coat-charcoal",
-          seeded: true,
-        },
-      );
-      const proposal = project.proposals.at(-1)!;
-      project = await runCommand(
-        owner,
-        project.id,
-        project.revision,
-        "adopt-repair",
-        {
-          type: "adopt_repair",
-          proposalId: proposal.id,
-          optionId: proposal.options.find(
-            (option) => option.replacementUnitId === "unit-coat-charcoal",
-          )!.id,
-        },
-      );
+      const candidateId = "candidate-nora-charcoal";
       const job = await createPreviewJob(owner, project.id, {
         lookId: initial.id,
+        candidateId,
         mode: "recorded",
         commandId: "recorded-repair",
         expectedRevision: project.revision,
@@ -325,61 +394,60 @@ describe.runIf(local)(
       });
       project = await ownedProject(owner, project.id);
       const look = project.looks.find((item) => item.id === initial.id)!;
-      expect(look.previews.at(-1)).toMatchObject({
-        recipeRevision: look.revision,
-        inputHash: previewInputHash(project, look),
+      const candidate = project.appearanceCandidates!.find(
+        (item) => item.id === candidateId,
+      )!;
+      expect(candidate.previews.at(-1)).toMatchObject({
+        recipeRevision: 1,
+        candidateId,
+        inputHash: candidateInputHash(project, candidate),
         imageUrl: "/examples/previews/nora-charcoal.webp",
       });
+      expect(candidate.approvals).toHaveLength(0);
+      expect(look.unitIds).toEqual(["unit-coat-oxblood"]);
       expect(
-        look.approvals.every((approval) => approval.state !== "current"),
+        look.approvals.some((approval) => approval.state === "current"),
       ).toBe(true);
     }, 30000);
 
-    it("reuses an exact recast recording with the new performer and capture binding", async () => {
+    it("reuses an exact prospective recast recording without adopting or approving it", async () => {
       let project = await createProject(owner, "example");
       project = await runCommand(
         owner,
         project.id,
         project.revision,
-        "propose-recast",
+        "create-recast-study",
         {
-          type: "propose_change",
-          kind: "recast",
-          subjectId: "char-nora",
-          replacementId: "performer-celeste",
-          seeded: true,
+          type: "create_candidate",
+          lookId: "look-nora",
+          unitIds: ["unit-coat-oxblood"],
+          performerId: "performer-celeste",
         },
       );
-      const proposal = project.proposals.at(-1)!;
-      project = await runCommand(
-        owner,
-        project.id,
-        project.revision,
-        "adopt-recast",
-        {
-          type: "adopt_repair",
-          proposalId: proposal.id,
-          optionId: proposal.options.find(
-            (option) => option.replacementPerformerId === "performer-celeste",
-          )!.id,
-        },
-      );
+      const candidateId = project.appearanceCandidates!.at(-1)!.id;
       const job = await createPreviewJob(owner, project.id, {
         lookId: "look-nora",
+        candidateId,
         mode: "recorded",
         commandId: "recorded-recast",
       });
       expect(job.state).toBe("succeeded");
       project = await ownedProject(owner, project.id);
       const look = project.looks.find((item) => item.id === "look-nora")!;
-      expect(look.previews.at(-1)).toMatchObject({
+      const candidate = project.appearanceCandidates!.find(
+        (item) => item.id === candidateId,
+      )!;
+      expect(candidate.previews.at(-1)).toMatchObject({
         performerId: "performer-celeste",
-        recipeRevision: look.revision,
+        recipeRevision: 1,
+        candidateId,
         captureVersion: project.performers.find(
           (item) => item.id === "performer-celeste",
         )!.captureVersion,
         imageUrl: "/examples/previews/nora-celeste.webp",
       });
+      expect(look.performerId).toBe("performer-ada");
+      expect(candidate.approvals).toHaveLength(0);
       expect(look.approvals).toHaveLength(0);
     }, 30000);
 
@@ -505,11 +573,15 @@ describe.runIf(local)(
     it("does not refill a paid daily allowance after its project is deleted", async () => {
       vi.stubEnv("YOUCAM_OWNER_DAILY_JOB_LIMIT", "1");
       const project = await createProject(owner, "example");
-      await createPreviewJob(owner, project.id, {
+      const reserved = await createPreviewJob(owner, project.id, {
         lookId: "look-nora",
         mode: "live",
         commandId: "paid-intent",
       });
+      await getPool().query(
+        "UPDATE sc_jobs SET submission_started_at=now(),state='submitting' WHERE id=$1",
+        [reserved.id],
+      );
       await deleteProject(owner, project.id);
       await getPool().query(
         "DELETE FROM sc_projects WHERE id=$1 AND deleted_at IS NOT NULL",

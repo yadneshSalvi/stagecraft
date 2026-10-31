@@ -1,4 +1,5 @@
 import { RetryableError } from "workflow";
+import { readPreviewBudget } from "@/lib/server/preview-budget";
 import { del, put } from "@vercel/blob";
 import {
   registerFile,
@@ -7,6 +8,10 @@ import {
   getClothesTask,
   submitMakeupTask,
   getMakeupTask,
+  submitHairColorTask,
+  getHairColorTask,
+  submitNecklaceTask,
+  getNecklaceTask,
   downloadOutput,
   YouCamError,
   type RegisteredFile,
@@ -21,6 +26,7 @@ import {
   interruptedJob,
   completeLiveJob,
   type ProviderJob,
+  isGarmentJobInput,
 } from "@/lib/server/jobs";
 import {
   readInputImage,
@@ -70,7 +76,9 @@ export async function prepareFilesStep(jobId: string): Promise<boolean> {
   );
   try {
     const roles: ("source" | "garment")[] =
-      job.input.kind === "beauty" ? ["source"] : ["source", "garment"];
+      job.input.kind === "beauty" || job.input.kind === "hair_color"
+        ? ["source"]
+        : ["source", "garment"];
     for (const role of roles) {
       await getPool().query(
         "INSERT INTO sc_provider_files(job_id,role,state) VALUES($1,$2,'intent') ON CONFLICT DO NOTHING",
@@ -80,6 +88,7 @@ export async function prepareFilesStep(jobId: string): Promise<boolean> {
         state: string;
         file_id: string | null;
         upload_request: RegisteredFile["request"] | null;
+        registration_started_at?: Date | null;
       }>("SELECT * FROM sc_provider_files WHERE job_id=$1 AND role=$2", [
         jobId,
         role,
@@ -89,9 +98,11 @@ export async function prepareFilesStep(jobId: string): Promise<boolean> {
       const reference =
         role === "source"
           ? job.input.source
-          : job.input.kind !== "beauty"
+          : isGarmentJobInput(job.input)
             ? job.input.garment
-            : null;
+            : job.input.kind === "necklace"
+              ? job.input.reference
+              : null;
       if (!reference)
         throw new ApiError(
           422,
@@ -101,7 +112,7 @@ export async function prepareFilesStep(jobId: string): Promise<boolean> {
       const input = await readInputImage(
         job.owner_id,
         reference,
-        job.input.kind === "beauty" ? "face" : "garment",
+        role === "source" && !isGarmentJobInput(job.input) ? "face" : "garment",
       );
       const latest = await getInternalJob(jobId);
       if (
@@ -113,6 +124,14 @@ export async function prepareFilesStep(jobId: string): Promise<boolean> {
         return false;
       }
       if (!file.file_id || !file.upload_request) {
+        if (file.registration_started_at) {
+          await failJob(
+            jobId,
+            "file_registration_interrupted",
+            "The source-file registration could not be confirmed. No paid task was submitted; start a new preview attempt.",
+          );
+          return false;
+        }
         if (!(await takeProviderRequest()))
           throw new RetryableError("Provider request window is busy", {
             retryAfter: "1m",
@@ -207,13 +226,27 @@ export async function submitPreviewStep(jobId: string): Promise<boolean> {
       "SELECT role,file_id FROM sc_provider_files WHERE job_id=$1 AND state='uploaded'",
       [jobId],
     );
-    if (files.rows.length !== (job.input.kind === "beauty" ? 1 : 2))
+    if (
+      files.rows.length !==
+        (job.input.kind === "beauty" || job.input.kind === "hair_color"
+          ? 1
+          : 2) ||
+      !files.rows.some((file) => file.role === "source")
+    )
       return { kind: "missing" as const };
+    const budget = await readPreviewBudget(client);
+    if (budget.remaining < 0) {
+      await client.query(
+        "UPDATE sc_jobs SET state='failed',error_code='LIVE_PREVIEWS_RESTING',message=$2,updated_at=now() WHERE id=$1",
+        [jobId, budget.message],
+      );
+      return { kind: "resting" as const };
+    }
     await client.query(
       "UPDATE sc_jobs SET submission_started_at=now(),state='submitting',message=$2,updated_at=now() WHERE id=$1",
       [
         jobId,
-        job.input.kind === "beauty"
+        !isGarmentJobInput(job.input)
           ? "Sending one reserved Makeup VTO task to YouCam."
           : "Sending one reserved Clothes V4 task to YouCam.",
       ],
@@ -225,6 +258,25 @@ export async function submitPreviewStep(jobId: string): Promise<boolean> {
         sourceFileId: files.rows[0].file_id,
         recipe: job.input.recipe,
       };
+    if (job.input.kind === "hair_color")
+      return {
+        kind: "ready" as const,
+        operation: "hair_color" as const,
+        sourceFileId: files.rows.find((file) => file.role === "source")!
+          .file_id,
+        recipe: job.input.recipe,
+      };
+    if (job.input.kind === "necklace")
+      return {
+        kind: "ready" as const,
+        operation: "necklace" as const,
+        sourceFileId: files.rows.find((file) => file.role === "source")!
+          .file_id,
+        referenceFileId: files.rows.find((file) => file.role === "garment")!
+          .file_id,
+        recipe: job.input.recipe,
+      };
+    if (!isGarmentJobInput(job.input)) return { kind: "missing" as const };
     return {
       kind: "ready" as const,
       operation: "garment" as const,
@@ -235,7 +287,8 @@ export async function submitPreviewStep(jobId: string): Promise<boolean> {
     };
   });
   if (prepared.kind === "submitted") return true;
-  if (prepared.kind === "cancelled") return false;
+  if (prepared.kind === "cancelled" || prepared.kind === "resting")
+    return false;
   if (prepared.kind === "ambiguous") {
     await failJob(
       jobId,
@@ -260,7 +313,11 @@ export async function submitPreviewStep(jobId: string): Promise<boolean> {
             sourceFileId: prepared.sourceFileId,
             recipe: prepared.recipe,
           })
-        : await submitClothesTask(prepared);
+        : prepared.operation === "hair_color"
+          ? await submitHairColorTask(prepared)
+          : prepared.operation === "necklace"
+            ? await submitNecklaceTask(prepared)
+            : await submitClothesTask(prepared);
     const result = await getPool().query<ProviderJob>(
       "UPDATE sc_jobs SET provider_task_id=COALESCE(provider_task_id,$2),state=CASE WHEN cancel_requested THEN 'cancelled' ELSE 'polling' END,message='YouCam is rendering the selected preview. You can continue working.',updated_at=now() WHERE id=$1 RETURNING *",
       [jobId, task.taskId],
@@ -308,7 +365,11 @@ export async function pollPreviewStep(
     const task =
       job.input.kind === "beauty"
         ? await getMakeupTask(job.provider_task_id)
-        : await getClothesTask(job.provider_task_id);
+        : job.input.kind === "hair_color"
+          ? await getHairColorTask(job.provider_task_id)
+          : job.input.kind === "necklace"
+            ? await getNecklaceTask(job.provider_task_id)
+            : await getClothesTask(job.provider_task_id);
     if (task.state === "running") return "waiting";
     if (task.state === "error") {
       await failJob(jobId, task.code, task.message);
@@ -321,7 +382,7 @@ export async function pollPreviewStep(
     const photo = await normalizePhoto(
       await readLimited(await downloadOutput(task.outputUrl)),
       undefined,
-      job.input.kind === "beauty" ? "face" : "garment",
+      isGarmentJobInput(job.input) ? "garment" : "face",
     );
     const pathname = `${storagePrefix()}/results/${job.project_id}/${job.id}.jpg`;
     storedPath = pathname;

@@ -1,8 +1,10 @@
 import "server-only";
-import type { BeautyRecipe, GarmentCategory } from "@/lib/types";
+import type { BeautyRecipe, DetailRecipe, GarmentCategory } from "@/lib/types";
+import { hairColorPayload, necklacePayload } from "./details";
 import { clothesPayload } from "./recipes";
 import { makeupPayload } from "./beauty";
 import {
+  CreditBalanceResponseSchema,
   ErrorResponseSchema,
   FileResponseSchema,
   SubmitResponseSchema,
@@ -339,6 +341,43 @@ export async function submitMakeupTask(
   return { taskId: parsed.data.data.task_id };
 }
 
+export async function submitHairColorTask(
+  input: { sourceFileId: string; recipe: DetailRecipe },
+  options: YouCamOptions = {},
+) {
+  const body = hairColorPayload(input.sourceFileId, input.recipe);
+  const parsed = SubmitResponseSchema.safeParse(
+    await request("/s2s/v2.0/task/hair-color", "POST", body, options, true),
+  );
+  if (!parsed.success) throw uncertain();
+  return { taskId: parsed.data.data.task_id };
+}
+export async function submitNecklaceTask(
+  input: {
+    sourceFileId: string;
+    referenceFileId: string;
+    recipe: DetailRecipe;
+  },
+  options: YouCamOptions = {},
+) {
+  const body = necklacePayload(
+    input.sourceFileId,
+    input.referenceFileId,
+    input.recipe,
+  );
+  const parsed = SubmitResponseSchema.safeParse(
+    await request(
+      "/s2s/v2.0/task/2d-vto/necklace",
+      "POST",
+      body,
+      options,
+      true,
+    ),
+  );
+  if (!parsed.success) throw uncertain();
+  return { taskId: parsed.data.data.task_id };
+}
+
 const engineMessages: Record<string, string> = {
   error_pose: "The provider needs a clear, standing photograph of one person.",
   error_invalid_ref:
@@ -413,6 +452,25 @@ export async function getMakeupTask(
   taskId: string,
   options: YouCamOptions = {},
 ): Promise<ClothesTaskState> {
+  return getSingleImageDetailTask(taskId, "makeup-vto", options);
+}
+export async function getHairColorTask(
+  taskId: string,
+  options: YouCamOptions = {},
+): Promise<ClothesTaskState> {
+  return getSingleImageDetailTask(taskId, "hair-color", options);
+}
+export async function getNecklaceTask(
+  taskId: string,
+  options: YouCamOptions = {},
+): Promise<ClothesTaskState> {
+  return getSingleImageDetailTask(taskId, "2d-vto/necklace", options);
+}
+async function getSingleImageDetailTask(
+  taskId: string,
+  operation: "makeup-vto" | "hair-color" | "2d-vto/necklace",
+  options: YouCamOptions,
+): Promise<ClothesTaskState> {
   if (!taskId || taskId.length > 2048)
     throw new YouCamError(
       "invalid_input",
@@ -420,7 +478,7 @@ export async function getMakeupTask(
     );
   const parsed = MakeupTaskResponseSchema.safeParse(
     await request(
-      `/s2s/v2.0/task/makeup-vto/${encodeURIComponent(taskId)}`,
+      `/s2s/v2.0/task/${operation}/${encodeURIComponent(taskId)}`,
       "GET",
       undefined,
       options,
@@ -478,6 +536,25 @@ export async function downloadOutput(url: string, options: YouCamOptions = {}) {
 
 export async function readUnitInfo(options: YouCamOptions = {}) {
   return request("/s2s/v1.0/client/credit", "GET", undefined, options);
+}
+
+/** Read-only shared account balance. Expired pools cannot fund a new task. */
+export async function getCreditBalance(
+  options: YouCamOptions = {},
+): Promise<number> {
+  const parsed = CreditBalanceResponseSchema.safeParse(
+    await readUnitInfo(options),
+  );
+  if (!parsed.success)
+    throw new YouCamError(
+      "invalid_response",
+      "The shared preview balance could not be verified.",
+    );
+  return parsed.data.results.reduce(
+    (sum, pool) =>
+      sum + (pool.expiry == null || pool.expiry > Date.now() ? pool.amount : 0),
+    0,
+  );
 }
 
 export async function readFeatureCosts(
