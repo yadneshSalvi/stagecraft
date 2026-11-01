@@ -4,10 +4,11 @@ import type {
   RepairOption,
   RepairProposal,
 } from "../types";
-import { solveAllocation } from "./allocation";
+import { getAllocationDecisionSummary, solveAllocation } from "./allocation";
 import { findRecord } from "./errors";
 import {
   repairInputHash,
+  candidateScopeCurrent,
   continuityLookIds,
   getCurrentCandidateApproval,
   sameIds,
@@ -139,13 +140,6 @@ export function previewChange(
     request.kind === "garment_unavailable"
       ? getCreativeReferenceFlags(production, lookIds, [request.subjectId])
       : [];
-  const subjectName =
-    request.kind === "garment_unavailable"
-      ? findRecord(production.units, request.subjectId, "Physical unit").code
-      : (production.characters.find(
-          (character) => character.id === request.subjectId,
-        )?.name ??
-        findRecord(production.performers, request.subjectId, "Performer").name);
   const invalidatedDetailApprovalIds = unique(
     looks.flatMap((look) =>
       request.kind === "recast"
@@ -185,37 +179,10 @@ export function previewChange(
     invalidatedDetailApprovalIds,
     preservedDetailApprovalIds,
     creativeFlags,
-    explanation: [
-      `${subjectName} affects ${looks.length} look${looks.length === 1 ? "" : "s"}, ${sceneIds.length} scene${sceneIds.length === 1 ? "" : "s"} and ${occurrenceIds.length} scheduled occurrence${occurrenceIds.length === 1 ? "" : "s"}.`,
-      request.kind === "garment_unavailable"
-        ? "A replacement needs its own exact candidate output and current creative-intent approval. Adoption preserves that reviewed identity; dependent allocations and sourcing drafts still need review."
-        : "The replacement performer retains the character direction and story requirements. Actor-specific previews, appearance approvals and fitting evidence require fresh review.",
-      "Adoption creates a new production revision; frozen earlier snapshots and their evidence remain reproducible.",
-    ],
+    explanation: [],
     preserved: [
-      ...(preservedApprovalIds.length
-        ? [
-            `${unique(preservedApprovalIds).length} unrelated appearance approval${unique(preservedApprovalIds).length === 1 ? " remains" : "s remain"} intact.`,
-          ]
-        : []),
-      "Character direction, script source and story chronology remain intact.",
-      ...(preservedBeautyApprovalIds.length
-        ? [
-            `${preservedBeautyApprovalIds.length} independent beauty approval${preservedBeautyApprovalIds.length === 1 ? " remains" : "s remain"} intact. ${request.kind === "garment_unavailable" ? "A garment substitution does not alter the independent face-detail recipe." : "Makeup approvals for unrelated performers are preserved; the replacement performer needs their own face source, output and approval."}`,
-          ]
-        : []),
-      ...(preservedDetailApprovalIds.length
-        ? [
-            `${preservedDetailApprovalIds.length} independent hair-colour or necklace decisions remain intact.`,
-          ]
-        : []),
-      ...(request.kind === "recast"
-        ? [
-            "Item-and-date supplier reservations are preserved; a reservation does not establish fit for the replacement performer.",
-          ]
-        : [
-            "Historical renders remain available as labelled comparisons; availability does not rewrite their pixels.",
-          ]),
+      "Direction, script, chronology",
+      ...(request.kind === "recast" ? ["Supplier reservations"] : []),
     ],
   };
 }
@@ -245,16 +212,21 @@ export function matchingRepairCandidates(
       const performer = production.performers.find(
         (item) => item.id === performerId,
       );
-      const candidate = [...(production.appearanceCandidates ?? [])]
+      const matches = [...(production.appearanceCandidates ?? [])]
         .reverse()
-        .find(
+        .filter(
           (item) =>
             item.performerId === performerId &&
             item.captureVersion === performer?.captureVersion &&
+            candidateScopeCurrent(production, item) &&
             sameIds(item.lookIds, scope) &&
             sameIds(item.recipe.unitIds, unitIds) &&
             item.recipe.category === look.category,
         );
+      const candidate =
+        matches.find(
+          (item) => !!getCurrentCandidateApproval(production, item),
+        ) ?? matches[0];
       return candidate ? [candidate] : [];
     });
 }
@@ -377,8 +349,7 @@ export function simulateRepair(
         unit.fitting = {
           performerId: replacement.id,
           status: "not_measured",
-          evidence:
-            "Replacement performer requires a new fitting; previous performer evidence remains in the prior production snapshot.",
+          evidence: "New performer needs a fitting.",
           provenance: replacement.synthetic ? "synthetic" : "manual",
         };
         unit.version += 1;
@@ -425,6 +396,19 @@ export function evaluateRepairAlternative(
     now,
     fixedCandidateIds: appearanceCandidates.map((candidate) => candidate.id),
   });
+  const ownScope = new Set(
+    appearanceCandidates.flatMap((candidate) => candidate.lookIds),
+  );
+  const otherLookIds = getAllocationDecisionSummary(
+    scratch,
+    allocation,
+  ).missingLookIds.filter((id) => !ownScope.has(id));
+  const decisionsNeeded =
+    !requiresVisualApproval &&
+    allocation.status === "DECISIONS_NEEDED" &&
+    otherLookIds.length
+      ? { count: otherLookIds.length, lookIds: otherLookIds }
+      : undefined;
   const feasible =
     castingOnly ||
     (!requiresVisualApproval &&
@@ -450,6 +434,7 @@ export function evaluateRepairAlternative(
     castingOnly,
     requiresVisualApproval,
     feasible,
+    decisionsNeeded,
   };
 }
 
@@ -507,6 +492,7 @@ export function buildRepairProposal(
       castingOnly,
       requiresVisualApproval,
       feasible,
+      decisionsNeeded,
     } = evaluateRepairAlternative(
       production,
       request,
@@ -525,13 +511,15 @@ export function buildRepairProposal(
       candidateIds: appearanceCandidates.map((item) => item.id),
       findings: castingOnly ? [] : allocation.findings,
       feasible,
+      allocationStatus: castingOnly ? "FEASIBLE" : allocation.status,
+      ...(decisionsNeeded ? { decisionsNeeded } : {}),
       explanation: castingOnly
-        ? "Assigns this performer to an uncast character. No look or physical demand exists yet; create and approve the appearance before allocation."
-        : feasible
-          ? "This exact reviewed candidate satisfies the current managed allocation constraints. Adoption preserves its preview and approval identities; fitting and supplier evidence remain separate."
-          : requiresVisualApproval
-            ? "Review and approve the candidate's exact provider output, then refresh this impact proposal. Unapproved appearances cannot be assigned. Other physical findings remain visible."
-            : "The recorded constraints do not establish a feasible allocation. Review the specific findings; no artistic, timing or budget constraint was relaxed.",
+        ? "Casting only; no look yet."
+        : requiresVisualApproval
+          ? "Approve its preview, then refresh."
+          : decisionsNeeded
+            ? `${decisionsNeeded.count} other looks need decisions first.`
+            : "",
     };
   });
   return {

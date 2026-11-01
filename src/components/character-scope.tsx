@@ -10,14 +10,9 @@ export function CharacterScope() {
     <section className="character-scope">
       <div className="section-title">
         <div>
-          <p className="eyebrow">WHO NEEDS THE DEPARTMENT?</p>
-          <h2>Plan each character’s wardrobe scope.</h2>
+          <h2>Wardrobe scope</h2>
         </div>
       </div>
-      <p className="muted">
-        Mark own-clothes roles explicitly. They remain in the script and
-        schedule while managed-wardrobe checks exclude them.
-      </p>
       <div className="scope-rows">
         {project.characters.map((character) => (
           <div key={character.id}>
@@ -25,10 +20,10 @@ export function CharacterScope() {
               <strong>{character.name}</strong>
               <span>
                 {character.ownClothes
-                  ? "Own clothes · outside wardrobe allocation"
+                  ? "Own clothes"
                   : project.performers.find(
                       (performer) => performer.id === character.performerId,
-                    )?.name || "Assign a performer in Cast & sources"}
+                    )?.name || "No performer"}
               </span>
             </div>
             <Button

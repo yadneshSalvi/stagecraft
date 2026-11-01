@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   CalendarDays,
@@ -10,9 +11,6 @@ import {
   GitBranch,
   List,
   Minimize,
-  ShieldCheck,
-  Sparkles,
-  Users,
   X,
 } from "lucide-react";
 import {
@@ -20,12 +18,10 @@ import {
   getCurrentPreview,
   getReadiness,
 } from "@/lib/domain/selectors";
-import { day, time, revision } from "@/lib/format";
+import { day, time } from "@/lib/format";
 import { useProduction } from "./production-context";
 import { ChangeReview } from "./change-review";
 import { ContinuityWall } from "./continuity-wall";
-import { ProvenanceChip } from "./provenance-chip";
-import { ExampleDecisions } from "./example-decisions";
 import { LibraryDialog } from "./example-library";
 import { Button, PageHeading, Photo } from "./ui";
 
@@ -41,6 +37,12 @@ export function ProductionBoard({
   refreshImpactOnOpen?: boolean;
 }) {
   const { project } = useProduction();
+  const router = useRouter();
+  const [intent, setIntent] = useState({
+    initialUnitId,
+    initialCharacterId,
+    initialReplacementId,
+  });
   const [storyDay, setStoryDay] = useState<number | null>(null);
   const [list, setList] = useState(false);
   const [focus, setFocus] = useState(false);
@@ -61,37 +63,27 @@ export function ProductionBoard({
     (scene) => scene.id === nextCall?.sceneId,
   );
   const base = `/production/${project.id}`;
-  const cue =
-    project.units.find((unit) => unit.id === "unit-coat-oxblood") ||
-    project.units[0];
+  useEffect(() => {
+    if (!initialUnitId && !initialCharacterId && !refreshImpactOnOpen) return;
+    const params = new URLSearchParams(window.location.search);
+    for (const key of ["impact", "change", "recast", "performer"])
+      params.delete(key);
+    const query = params.toString();
+    router.replace(`${base}${query ? `?${query}` : ""}`, { scroll: false });
+  }, [base, initialUnitId, initialCharacterId, refreshImpactOnOpen, router]);
   if (!project.scenes.length && !project.characters.length)
     return (
       <>
-        <PageHeading
-          eyebrow="THE PRODUCTION / A BLANK PAGE"
-          title={project.title}
-        >
-          Every working book begins with a story.
-        </PageHeading>
+        <PageHeading title={project.title} />
         <div className="onboarding-composition">
           <div className="onboarding-script">
-            <span className="mono">PRODUCTION NO. 001</span>
-            <h2>
-              A new world.
-              <br />
-              Your first cue.
-            </h2>
-            <p>
-              Bring in a script you have permission to use. Review the scene
-              breakdown, then connect the cast and wardrobe.
-            </p>
             <Link href={`${base}/script`} className="button button-primary">
               <FileText size={17} />
               Import your script
               <ArrowRight size={16} />
             </Link>
             <Button variant="quiet" onClick={() => setLibrary(true)}>
-              Explore the example cast & wardrobe
+              Example cast & wardrobe
             </Button>
           </div>
           <div className="onboarding-steps">
@@ -100,26 +92,22 @@ export function ProductionBoard({
                 n: "01",
                 route: "script",
                 title: "Start with the script",
-                text: "Source-linked scene and costume cues, ready for your review.",
               },
               {
                 n: "02",
                 route: "looks",
                 title: "Bring in the cast",
-                text: "Private, permitted source photos for actor-specific previews.",
               },
               {
                 n: "03",
                 route: "wardrobe",
                 title: "Open the wardrobe",
-                text: "Exact physical units, measurements, and availability evidence.",
               },
             ].map((step) => (
               <Link key={step.n} href={`${base}/${step.route}`}>
                 <span>{step.n}</span>
                 <div>
                   <h3>{step.title}</h3>
-                  <p>{step.text}</p>
                 </div>
                 <ArrowRight size={19} />
               </Link>
@@ -142,7 +130,6 @@ export function ProductionBoard({
         </Button>
       )}
       <PageHeading
-        eyebrow="THE PRODUCTION / WORKING BOOK"
         title={project.title}
         action={
           <>
@@ -150,32 +137,24 @@ export function ProductionBoard({
               <FileText size={15} />
               The script
             </Link>
-            <Button variant="primary" onClick={() => setChange(true)}>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setIntent({
+                  initialUnitId: undefined,
+                  initialCharacterId: undefined,
+                  initialReplacementId: undefined,
+                });
+                setResumeImpact(false);
+                setChange(true);
+              }}
+            >
               <GitBranch size={16} />
               Review a change
             </Button>
           </>
         }
-      >
-        {project.subtitle}
-      </PageHeading>
-      <div className="production-meta">
-        <span>
-          <Users size={14} />
-          {project.characters.length} characters
-        </span>
-        <span>
-          <FileText size={14} />
-          {project.scenes.length} scenes
-        </span>
-        <span>{days.length} story days</span>
-        <span className="meta-divider" />
-        <span>
-          {ready.appearanceApproved} of {ready.looksTotal} looks visually
-          approved
-        </span>
-        {project.fixture && <ProvenanceChip kind="synthetic" />}
-      </div>
+      />
       <div className="board-layout">
         <div className="board-main">
           <div className="board-toolbar">
@@ -185,7 +164,7 @@ export function ProductionBoard({
                 aria-pressed={storyDay === null}
                 onClick={() => setStoryDay(null)}
               >
-                The whole story
+                All days
               </button>
               {days.map((day) => (
                 <button
@@ -303,26 +282,12 @@ export function ProductionBoard({
                         alt={`${character.name}, played by ${performer?.name || "unassigned performer"}. ${preview ? "YouCam generated garment preview" : "Source photograph"}`}
                         priority={index < 3}
                       />
-                      <span className="cast-image-kind">
-                        {preview
-                          ? preview.provenance === "recorded_provider"
-                            ? "RECORDED YOUCAM"
-                            : "YOUCAM PREVIEW"
-                          : performer?.synthetic
-                            ? "SYNTHETIC SOURCE"
-                            : "SOURCE IMAGE"}
-                      </span>
                       <span className="cast-open" aria-hidden="true">
                         <ArrowRight size={18} />
                       </span>
                     </div>
                     <div className="cast-caption">
-                      <span className="mono">
-                        0{index + 1} /{" "}
-                        {absent
-                          ? "OFF SCENE"
-                          : look?.title || "DIRECTION TO COME"}
-                      </span>
+                      {absent && <span className="muted">Off scene</span>}
                       <h2>{character.name}</h2>
                       <p>{performer?.name || "Add a performer"}</p>
                       <span
@@ -331,14 +296,12 @@ export function ProductionBoard({
                         {approval ? (
                           <>
                             <Check size={12} />
-                            Appearance approved
+                            Approved
                           </>
                         ) : (
                           <>
                             <span className="status-dot" />
-                            {preview
-                              ? "Awaiting your review"
-                              : "Preview needed"}
+                            {preview ? "To review" : "No preview"}
                           </>
                         )}
                       </span>
@@ -348,13 +311,6 @@ export function ProductionBoard({
               })}
             </div>
           )}
-          <div className="board-caption">
-            <span>
-              <Sparkles size={13} />
-              Independent actor previews, together in one board.
-            </span>
-            <span>Original sources stay inspectable.</span>
-          </div>
           <section className="call-track">
             <div>
               <CalendarDays size={18} />
@@ -380,9 +336,8 @@ export function ProductionBoard({
           </section>
         </div>
         <aside className="board-inspector">
-          <ExampleDecisions />
           <section className="inspector-next">
-            <p className="eyebrow">NEXT ON THE CALL SHEET</p>
+            <h3>Next call</h3>
             {nextCall ? (
               <>
                 <span className="next-date">
@@ -402,19 +357,16 @@ export function ProductionBoard({
               </>
             ) : (
               <>
-                <h3>The next call is yours.</h3>
+                <h3>No calls yet</h3>
                 <Link href={`${base}/schedule`}>
-                  Add an occurrence
+                  Add a call
                   <ArrowRight size={14} />
                 </Link>
               </>
             )}
           </section>
           <section className="inspector-section">
-            <p className="eyebrow">THE WORK BEFORE CURTAIN</p>
-            <h3>
-              {ready.ready ? "Evidence in place." : "A few details to settle."}
-            </h3>
+            <h3>Readiness</h3>
             <div className="readiness-list">
               <Link href={`${base}/looks`}>
                 <span
@@ -425,10 +377,9 @@ export function ProductionBoard({
                   }
                 />
                 <span>
-                  Appearance approvals
+                  Looks{" "}
                   <small>
-                    {ready.appearanceApproved} / {ready.looksTotal} current
-                    looks
+                    {ready.appearanceApproved}/{ready.looksTotal}
                   </small>
                 </span>
                 <ArrowRight size={14} />
@@ -445,20 +396,21 @@ export function ProductionBoard({
                     }
                   />
                   <span>
-                    Makeup detail approvals
+                    Makeup{" "}
                     <small>
-                      {ready.beautyApproved} / {ready.beautyTotal} configured
-                      details
+                      {ready.beautyApproved}/{ready.beautyTotal}
                     </small>
                   </span>
                   <ArrowRight size={14} />
                 </Link>
               )}
               <Link href={`${base}/wardrobe`}>
-                <span className="check-dot" />
+                <span
+                  className={`check-dot ${ready.pendingFittings === 0 ? "complete" : ""}`}
+                />
                 <span>
-                  Physical fitting
-                  <small>{ready.pendingFittings} evidence gaps</small>
+                  Fittings
+                  <small>{ready.pendingFittings} open</small>
                 </span>
                 <ArrowRight size={14} />
               </Link>
@@ -474,10 +426,9 @@ export function ProductionBoard({
                     }
                   />
                   <span>
-                    Hair & accessory approvals
+                    Hair & necklace{" "}
                     <small>
-                      {ready.detailsApproved || 0} / {ready.detailsTotal}{" "}
-                      configured details
+                      {ready.detailsApproved || 0}/{ready.detailsTotal}
                     </small>
                   </span>
                   <ArrowRight size={14} />
@@ -485,49 +436,21 @@ export function ProductionBoard({
               )}
 
               <Link href={`${base}/handoff`}>
-                <span className="check-dot" />
+                <span
+                  className={`check-dot ${ready.pendingSourcing === 0 ? "complete" : ""}`}
+                />
                 <span>
-                  Sourcing & crew
-                  <small>
-                    {ready.pendingSourcing} pending sourcing records
-                  </small>
+                  Sourcing
+                  <small>{ready.pendingSourcing} pending</small>
                 </span>
                 <ArrowRight size={14} />
               </Link>
             </div>
           </section>
-          {cue && (
-            <section className="motif-note">
-              <span className="eyebrow">A DETAIL THAT CARRIES THE STORY</span>
-              <Photo src={cue.imageUrl} alt={cue.name} />
-              <h3>{cue.name}</h3>
-              <span className="mono">{cue.code} · ONE PHYSICAL UNIT</span>
-              <p>
-                {project.fixture
-                  ? "From the arrival to the last bow. A recurring detail becomes a production dependency."
-                  : "This item connects creative choices to the calls that need it."}
-              </p>
-              <Button variant="quiet" onClick={() => setChange(true)}>
-                <GitBranch size={14} />
-                Explore a change
-                <ArrowRight size={14} />
-              </Button>
-            </section>
-          )}
-          <div className="inspector-proof">
-            <ShieldCheck size={18} />
-            <p>
-              Visual approval confirms an appearance. Physical fit and supplier
-              readiness need their own evidence.
-            </p>
-          </div>
         </aside>
       </div>
-      <section className="production-activity">
-        <div className="section-title">
-          <h2>In the working book</h2>
-          <span className="mono">{revision(project.revision)} · SAVED</span>
-        </div>
+      <details className="production-activity">
+        <summary>Recent changes</summary>
         {project.events.length ? (
           project.events
             .slice(-4)
@@ -536,24 +459,26 @@ export function ProductionBoard({
               <div className="activity-row" key={event.id}>
                 <span className="activity-dot" />
                 <p>{event.summary}</p>
-                <span className="mono">{revision(event.revision)}</span>
               </div>
             ))
         ) : (
-          <p className="muted">
-            Your first decision will appear here with its revision and author.
-          </p>
+          <p className="muted">No decisions yet.</p>
         )}
-      </section>
+      </details>
       <ChangeReview
         open={change}
         onClose={() => {
           setChange(false);
           setResumeImpact(false);
+          setIntent({
+            initialUnitId: undefined,
+            initialCharacterId: undefined,
+            initialReplacementId: undefined,
+          });
         }}
-        initialUnitId={initialUnitId}
-        initialCharacterId={initialCharacterId}
-        initialReplacementId={initialReplacementId}
+        initialUnitId={intent.initialUnitId}
+        initialCharacterId={intent.initialCharacterId}
+        initialReplacementId={intent.initialReplacementId}
         refreshImpactOnOpen={resumeImpact}
       />
     </div>

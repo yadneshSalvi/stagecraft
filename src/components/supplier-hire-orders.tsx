@@ -8,6 +8,7 @@ import {
   hireOrderFilename,
   supplierHireOrders,
 } from "@/lib/hire-orders";
+import { displayFixtureText } from "@/lib/presentation-copy";
 import { money, revision } from "@/lib/format";
 import { useProduction } from "./production-context";
 import { Button, EmptyState } from "./ui";
@@ -21,16 +22,10 @@ export function SupplierHireOrders() {
   const back = (
     <Link className="button" href={`/production/${project.id}/handoff`}>
       <ArrowLeft size={15} />
-      The handoff book
+      Handoff
     </Link>
   );
-  if (!order)
-    return (
-      <EmptyState title="Prepare a hire record first." action={back}>
-        Supplier exports use the exact units, date windows and quotes saved in
-        your sourcing book.
-      </EmptyState>
-    );
+  if (!order) return <EmptyState title="No hire records" action={back} />;
   function download() {
     const file = new Blob([hireOrderCsv(project, order.supplier)], {
       type: "text/csv;charset=utf-8",
@@ -78,25 +73,19 @@ export function SupplierHireOrders() {
         <header className={styles.header}>
           <div>
             <span className={styles.brand}>STAGECRAFT</span>
-            <p>WARDROBE / SUPPLIER HANDOFF</p>
           </div>
           <div>
-            <strong>WORKING HIRE ORDER</strong>
-            <span>Source {revision(project.revision)}</span>
+            <strong>Hire order</strong>
           </div>
         </header>
         <div className={styles.title}>
           <p>{project.title}</p>
-          <h1>{order.supplier}</h1>
+          <h1>{displayFixtureText(order.supplier, project.fixture)}</h1>
           <span>
             {order.requests.length} hire{" "}
             {order.requests.length === 1 ? "record" : "records"} ·{" "}
             {project.currency} · Times in {project.timeZone}
           </span>
-        </div>
-        <div className={styles.flow}>
-          Quote <span>→</span> Hire confirmation <span>→</span> Receipt{" "}
-          <span>→</span> Return
         </div>
         {order.requests.map((request, index) => (
           <section
@@ -110,7 +99,7 @@ export function SupplierHireOrders() {
               </h2>
               <span className={request.stale ? styles.stale : styles.status}>
                 {request.stale
-                  ? `${request.status} · needs renewed review`
+                  ? `${request.status} · re-review`
                   : request.status}
               </span>
             </div>
@@ -123,7 +112,6 @@ export function SupplierHireOrders() {
                     <span>
                       {unit?.name || "Unit no longer in working book"}
                     </span>
-                    <small>1 physical unit</small>
                   </li>
                 );
               })}
@@ -149,34 +137,28 @@ export function SupplierHireOrders() {
               </div>
             </dl>
             <div className={styles.evidence}>
-              <span>
-                {request.provenance === "synthetic"
-                  ? "Synthetic sample"
-                  : "Manually recorded"}
-              </span>
               <p>
                 {request.externalReference
                   ? `Reference: ${request.externalReference}`
                   : "Supplier reference pending"}
                 {request.operator ? ` · Recorded by ${request.operator}` : ""}
               </p>
-              {request.evidence && <p>{request.evidence}</p>}
-              {request.note && <p>{request.note}</p>}
+              {request.evidence && (
+                <p>{displayFixtureText(request.evidence, project.fixture)}</p>
+              )}
+              {request.note && (
+                <p>{displayFixtureText(request.note, project.fixture)}</p>
+              )}
             </div>
             <footer className={styles.recordFooter}>
-              <span>Record {request.id}</span>
               <span>
-                Updated {hireOrderDate(request.updatedAt, project.timeZone)} ·
-                source {revision(request.sourceRevision)}
+                Updated {hireOrderDate(request.updatedAt, project.timeZone)}
               </span>
             </footer>
           </section>
         ))}
         <footer className={styles.footer}>
-          Prepared from the saved production at {revision(project.revision)}.
-          Exporting does not send an order, make a payment, or confirm
-          availability. Status and evidence belong to each record; review any
-          flagged record before sharing.
+          Prepared from {revision(project.revision)}. Not sent to suppliers.
         </footer>
       </article>
     </div>

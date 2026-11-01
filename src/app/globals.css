@@ -685,20 +685,6 @@ td strong {
   margin-top: 16px;
   max-width: 460px;
 }
-.hero-footnote {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  margin-top: 42px;
-  font-size: 10px;
-  color: var(--muted);
-  line-height: 1.7;
-}
-.hero-footnote strong {
-  font-size: 11px;
-  color: var(--text);
-  font-weight: 400;
-}
 .youcam-mark {
   font-size: 33px;
   color: var(--brass);
@@ -715,28 +701,6 @@ td strong {
   gap: 10px;
   align-items: center;
   color: var(--muted);
-}
-.landing-intro {
-  padding: 95px 9vw 70px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10vw;
-  align-items: center;
-  border-top: 1px solid #ffffff0b;
-}
-.landing-intro h2 {
-  font-size: 45px;
-  margin-top: 20px;
-  line-height: 1.15;
-}
-.landing-intro h2 em {
-  color: var(--brass);
-}
-.landing-intro > p {
-  font-size: 15px;
-  line-height: 1.9;
-  color: var(--muted);
-  max-width: 520px;
 }
 .landing-audience {
   display: block;
@@ -1126,18 +1090,6 @@ td strong {
   margin: 0 auto;
   min-height: calc(100dvh - 120px);
 }
-.workspace-footer {
-  padding: 16px 32px;
-  border-top: 1px solid var(--line);
-  display: flex;
-  justify-content: space-between;
-  color: var(--dim);
-  font-size: 9px;
-  gap: 15px;
-}
-.workspace-footer a {
-  color: var(--muted);
-}
 .page-heading {
   display: flex;
   justify-content: space-between;
@@ -1348,22 +1300,6 @@ td strong {
 .cast-absent {
   opacity: 0.4;
 }
-.board-caption {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  color: var(--dim);
-  font-size: 8px;
-  padding: 14px 0 20px;
-}
-.board-caption > span {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.board-caption svg {
-  color: var(--brass);
-}
 .board-inspector {
   border-left: 1px solid var(--line);
   padding-left: 25px;
@@ -1490,21 +1426,6 @@ td strong {
   min-height: 30px;
   margin-top: 12px;
   clear: both;
-}
-.inspector-proof {
-  display: flex;
-  gap: 10px;
-  padding: 20px 0;
-  align-items: flex-start;
-  color: var(--dim);
-}
-.inspector-proof svg {
-  color: var(--brass);
-  margin-top: 3px;
-}
-.inspector-proof p {
-  font-size: 9px;
-  line-height: 1.7;
 }
 .continuity-section {
   margin-top: 16px;
@@ -2162,14 +2083,8 @@ td strong {
   .landing-cast-person > .photo {
     height: 290px;
   }
-  .landing-intro {
-    padding: 75px 8vw 60px;
-  }
   .landing-steps {
     padding: 65px 8vw;
-  }
-  .board-caption {
-    font-size: 7px;
   }
   .continuity-section .section-title .muted {
     display: none;
@@ -2196,11 +2111,6 @@ td strong {
   .motif-note {
     padding: 0;
     border-bottom: 0;
-  }
-  .inspector-proof {
-    grid-column: 1/-1;
-    border-top: 1px solid var(--line);
-    padding: 15px 0 0;
   }
   .cast-image-frame {
     height: 290px;
@@ -2240,12 +2150,6 @@ td strong {
   .hero-copy {
     padding: 85px 6vw;
     max-width: 650px;
-  }
-  .landing-intro {
-    gap: 6vw;
-  }
-  .landing-intro h2 {
-    font-size: 38px;
   }
   .landing-cast-person > .photo {
     height: 260px;
@@ -2351,23 +2255,9 @@ td strong {
     font-size: 12px;
     padding: 12px 14px;
   }
-  .hero-footnote {
-    margin-top: 35px;
-  }
   .hero-scroll {
     left: 26px;
     font-size: 7px;
-  }
-  .landing-intro {
-    padding: 60px 26px 45px;
-    grid-template-columns: 1fr;
-    gap: 28px;
-  }
-  .landing-intro h2 {
-    font-size: 42px;
-  }
-  .landing-intro > p {
-    font-size: 14px;
   }
   .landing-workbook {
     margin: 0 20px;
@@ -2544,17 +2434,6 @@ td strong {
   .workspace-content {
     padding: 25px 20px 35px;
   }
-  .workspace-footer {
-    padding: 15px 20px 85px;
-    font-size: 8px;
-    align-items: flex-start;
-  }
-  .workspace-footer > span {
-    max-width: 200px;
-  }
-  .workspace-footer > a {
-    white-space: nowrap;
-  }
   .page-heading {
     flex-wrap: wrap;
     gap: 15px;
@@ -2642,15 +2521,6 @@ td strong {
   .cast-open svg {
     width: 15px;
   }
-  .board-caption {
-    font-size: 8px;
-    line-height: 1.5;
-    display: block;
-    padding-top: 12px;
-  }
-  .board-caption > span:last-child {
-    display: none;
-  }
   .board-inspector {
     grid-template-columns: 1fr 1fr;
     gap: 22px;
@@ -2679,9 +2549,6 @@ td strong {
   }
   .inspector-section h3 {
     font-size: 23px;
-  }
-  .inspector-proof p {
-    font-size: 10px;
   }
   .continuity-section {
     margin-top: 18px;
@@ -2941,10 +2808,6 @@ td strong {
 .cast-caption h2 {
   font-size: 25px;
 }
-.board-caption {
-  font-size: 10px;
-  line-height: 1.7;
-}
 .continuity-table tbody th,
 .continuity-table tbody td,
 .continuity-look {
@@ -2987,9 +2850,6 @@ td strong {
 .motif-note > .button {
   font-size: 11px;
 }
-.inspector-proof p {
-  font-size: 11px;
-}
 .call-track > a {
   min-width: 87px;
 }
@@ -3012,9 +2872,6 @@ td strong {
   font-size: 11px;
 }
 .scene-list-board .mono {
-  font-size: 10px;
-}
-.workspace-footer {
   font-size: 10px;
 }
 .button {
@@ -3075,9 +2932,6 @@ td strong {
   .cast-caption p {
     font-size: 11px;
   }
-  .board-caption > span:last-child {
-    display: none;
-  }
 }
 @media (max-width: 760px) {
   .navigation-rail nav > a {
@@ -3092,10 +2946,6 @@ td strong {
   .navigation-rail nav > a > svg {
     width: 20px;
     height: 20px;
-  }
-  .workspace-footer {
-    padding-bottom: 90px;
-    font-size: 10px;
   }
   .workspace-content {
     overflow-x: clip;
@@ -3126,9 +2976,6 @@ td strong {
   }
   .cast-caption > .mono {
     font-size: 8px;
-  }
-  .board-caption {
-    font-size: 11px;
   }
   .save-state {
     font-size: 0;

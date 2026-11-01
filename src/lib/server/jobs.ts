@@ -967,8 +967,7 @@ export async function completeLiveJob(
         createdAt: new Date().toISOString(),
         inputHash: job.input_hash,
         estimatedUnits: job.estimated_units,
-        inspectionNotes:
-          "Actual independent YouCam detail from a permitted separate face capture. Inspect colour, object shape and facial boundaries before explicit approval.",
+        inspectionNotes: "Inspect colour, shape and edges.",
       };
       await addPreview(client, project, job, preview);
       return true;
@@ -988,8 +987,7 @@ export async function completeLiveJob(
         createdAt: new Date().toISOString(),
         inputHash: job.input_hash,
         estimatedUnits: job.estimated_units,
-        inspectionNotes:
-          "Actual YouCam Makeup VTO detail from a separate face capture. Both skin smoothing fields and lip morphology are set to zero; this is a payload setting, not a guarantee about texture or identity. Inspect lips, blush, facial features and texture before explicit beauty approval. This detail is not composited into the garment image and does not establish real makeup application or product matching.",
+        inspectionNotes: "Inspect lips, blush and texture.",
       };
       await addPreview(client, project, job, preview);
       return true;
@@ -1015,8 +1013,7 @@ export async function completeLiveJob(
       createdAt: new Date().toISOString(),
       inputHash: job.input_hash,
       estimatedUnits: job.estimated_units,
-      inspectionNotes:
-        "Actual YouCam Clothes V4 result. Inspect identity, pose, garment detail and continuity before approving. Hair and makeup notes, physical fit, measurements and supplier availability are not established by this garment preview.",
+      inspectionNotes: "Inspect identity, pose and garment detail.",
       ...(job.input.candidateId
         ? {
             candidateId: job.input.candidateId,

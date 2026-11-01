@@ -1,0 +1,106 @@
+.evidence-round3 {
+  padding-top: 48px;
+}
+.evidence-round3 > header {
+  padding-bottom: 32px;
+}
+.evidence-round3 > header h1 {
+  margin: 0 0 16px;
+  font-size: clamp(32px, 4vw, 48px);
+}
+.evidence-round3 .evidence-intro {
+  gap: 48px;
+  padding: 32px 0;
+}
+.evidence-round3 .evidence-intro h2 {
+  max-width: 440px;
+  font-size: 32px;
+  line-height: 1.2;
+  margin: 0 0 24px;
+}
+.evidence-round3 .evidence-intro p {
+  margin: 8px 0;
+}
+.evidence-reference-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+}
+.evidence-round3 .evidence-block {
+  padding: 32px 0;
+}
+.evidence-round3 .evidence-block h2 {
+  font-size: 28px;
+  margin: 0 0 24px;
+}
+.evidence-definitions {
+  margin: 0;
+  display: grid;
+  gap: 16px;
+}
+.evidence-definitions dt,
+.evidence-measurements dt {
+  font-weight: 500;
+}
+.evidence-definitions dd {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.evidence-notes {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.evidence-measurements {
+  margin: 0 0 24px;
+}
+.evidence-measurements > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.evidence-measurements dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.evidence-measurements a,
+.evidence-round3 .privacy-grid a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  text-underline-offset: 4px;
+}
+.evidence-round3 .privacy-grid {
+  gap: 32px;
+  margin-top: 0;
+}
+.evidence-round3 .privacy-grid h3 {
+  margin-bottom: 8px;
+}
+.evidence-round3 .privacy-grid a {
+  font-size: 13px;
+}
+@media (max-width: 720px) {
+  .evidence-round3 .evidence-intro,
+  .evidence-reference-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .evidence-round3 .evidence-intro {
+    gap: 24px;
+  }
+  .evidence-measurements > div {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

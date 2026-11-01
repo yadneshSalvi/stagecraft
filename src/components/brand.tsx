@@ -19,11 +19,7 @@ export function Brand({ compact = false }: { compact?: boolean }) {
           strokeWidth="1.5"
         />
       </svg>
-      {!compact && (
-        <span>
-          STAGECRAFT<span className="brand-tag">THE PRODUCTION WORKSPACE</span>
-        </span>
-      )}
+      {!compact && <span>STAGECRAFT</span>}
     </Link>
   );
 }

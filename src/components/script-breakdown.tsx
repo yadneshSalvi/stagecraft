@@ -18,6 +18,7 @@ import type {
   ScriptRevision,
 } from "@/lib/types";
 import { api } from "@/lib/client";
+import { displayFixtureText } from "@/lib/presentation-copy";
 import { useProduction } from "./production-context";
 import { CharacterScope } from "./character-scope";
 import {
@@ -129,16 +130,12 @@ export function ScriptBreakdown() {
   async function readFile(file?: File) {
     if (!file) return;
     if (file.size > 200_000) {
-      setError(
-        "Please use a plain text script under 200 KB and 60,000 characters.",
-      );
+      setError("Use plain text under 200 KB and 60,000 characters.");
       return;
     }
     const value = await file.text();
     if (value.length > 60_000) {
-      setError(
-        "This working book supports script extracts up to 60,000 characters. Import a bounded set of scenes.",
-      );
+      setError("Use plain text under 60,000 characters.");
       return;
     }
     setText(value);
@@ -151,8 +148,7 @@ export function ScriptBreakdown() {
         Back to production
       </Link>
       <PageHeading
-        eyebrow="THE SCRIPT / SOURCE-LINKED BREAKDOWN"
-        title="Begin with the words."
+        title="Script"
         action={
           <Button
             onClick={() => {
@@ -164,45 +160,30 @@ export function ScriptBreakdown() {
             {project.script ? "Import a revision" : "Import script"}
           </Button>
         }
-      >
-        Story facts stay linked to their source. Creative inferences stay open
-        for review.
-      </PageHeading>
+      />
       {!project.script ? (
         <EmptyState
-          title="Give the production its first words."
+          title="No script yet"
           action={
             <Button variant="primary" onClick={() => setImporting(true)}>
               <FileText size={17} />
-              Import a permitted script
+              Import script
             </Button>
           }
-        >
-          Paste a licensed script or upload a plain-text extract. Structured AI
-          will suggest scene boundaries, characters, and costume cues for your
-          review.
-        </EmptyState>
+        />
       ) : (
         <>
           <div className="script-meta">
-            <Badge
-              tone={
-                project.script.provenance === "synthetic" ? "brass" : "info"
-              }
-            >
-              {project.script.provenance === "synthetic"
-                ? "Original synthetic script"
-                : "AI-assisted extraction"}
-            </Badge>
-            <span>{project.script.label}</span>
+            <span>
+              {displayFixtureText(project.script.label, project.fixture)}
+            </span>
             <span className="mono">
-              {project.scenes.filter((s) => s.reviewed).length} /{" "}
-              {project.scenes.length} SCENES REVIEWED
+              {project.scenes.filter((s) => s.reviewed).length}/
+              {project.scenes.length} reviewed
             </span>
           </div>
           <div className="breakdown-layout">
             <nav className="scene-nav" aria-label="Script scenes">
-              <p className="eyebrow">SCENES</p>
               {project.scenes.map((s) => (
                 <button
                   className={s.id === scene?.id ? "selected" : ""}
@@ -216,10 +197,8 @@ export function ScriptBreakdown() {
                   <span>
                     {s.title}
                     <small>
-                      {s.storyDaySource === "unspecified"
-                        ? "PROPOSED DAY"
-                        : "STORY DAY"}{" "}
-                      {s.storyDay}
+                      Day {s.storyDay}
+                      {s.storyDaySource === "unspecified" ? "?" : ""}
                     </small>
                   </span>
                   {s.reviewed && <Check size={13} />}
@@ -233,16 +212,10 @@ export function ScriptBreakdown() {
             >
               <header>
                 <span className="mono">
-                  {project.script.label.toUpperCase()}
+                  {displayFixtureText(project.script.label, project.fixture)}
                 </span>
-                <span className="mono">SOURCE DOCUMENT</span>
               </header>
               <h2>{project.script.title}</h2>
-              <p className="script-author">
-                {project.script.provenance === "synthetic"
-                  ? "An original fictional script for the STAGECRAFT example"
-                  : "Imported with rights attestation"}
-              </p>
               <pre>
                 {highlight &&
                 highlight.start >= 0 &&
@@ -261,10 +234,6 @@ export function ScriptBreakdown() {
                   project.script.text
                 )}
               </pre>
-              <footer>
-                <span className="mono">SOURCE SHA256</span>
-                <code>{project.script.sha256.slice(0, 20)}…</code>
-              </footer>
             </section>
             {scene && (
               <SceneReview
@@ -302,20 +271,12 @@ export function ScriptBreakdown() {
           }
         }}
         wide
-        title={
-          draft ? "The script, ready for your review." : "Bring in the script."
-        }
-        description={
-          draft
-            ? "These are proposed boundaries and cues. Adopt the breakdown, then review and correct each scene against its source."
-            : "Paste a script you have permission to process. AI suggestions never become production approvals automatically."
-        }
+        title={draft ? "Review breakdown" : "Import script"}
       >
         {draft ? (
           <div className="draft-review">
             <div className="draft-summary">
               <div>
-                <span className="mono">PROPOSED BREAKDOWN</span>
                 <h3>{draft.script.title}</h3>
                 <p>
                   {draft.scenes.length} scenes · {draft.characters.length}{" "}
@@ -327,13 +288,10 @@ export function ScriptBreakdown() {
                   costume cues
                 </p>
               </div>
-              <Badge tone="warning">Unreviewed extraction</Badge>
             </div>
             {draft.notices.length > 0 && (
               <details className="draft-notices">
-                <summary>
-                  {draft.notices.length} extraction notes to inspect
-                </summary>
+                <summary>Notes ({draft.notices.length})</summary>
                 <ul>
                   {draft.notices.map((notice, index) => (
                     <li key={index}>{notice}</li>
@@ -345,25 +303,16 @@ export function ScriptBreakdown() {
               {draft.scenes.map((s) => (
                 <article key={s.id}>
                   <span className="mono">
-                    SC {s.number} ·{" "}
-                    {s.storyDaySource === "unspecified"
-                      ? "CHRONOLOGY UNKNOWN · PROPOSED DAY"
-                      : "PROPOSED DAY"}{" "}
-                    {s.storyDay}
+                    SC {s.number} · Day {s.storyDay}
+                    {s.storyDaySource === "unspecified" ? "?" : ""}
                   </span>
                   <h4>{s.title}</h4>
-                  {s.storyDaySource === "unspecified" && (
-                    <Notice tone="warning">
-                      The script does not establish this scene’s story day. This
-                      number is a provisional grouping for your review.
-                    </Notice>
-                  )}
                   <p>{s.heading}</p>
                   <ul>
                     {s.requirements.map((r) => (
                       <li key={r.id}>
                         <Badge tone={r.explicit ? "info" : "warning"}>
-                          {r.explicit ? "Explicit cue" : "Inference"}
+                          {r.explicit ? "Script" : "Inferred"}
                         </Badge>
                         {r.text}
                         <blockquote>
@@ -375,11 +324,6 @@ export function ScriptBreakdown() {
                 </article>
               ))}
             </div>
-            <Notice>
-              Existing reviewed scene titles and cue corrections are preserved
-              by stable scene mapping. Any unresolved mapping or invalid source
-              span blocks adoption.
-            </Notice>
             <div className="modal-actions">
               <Button onClick={() => setDraft(null)} disabled={adopting}>
                 Revise input
@@ -389,7 +333,7 @@ export function ScriptBreakdown() {
                 busy={adopting}
                 onClick={() => void adopt()}
               >
-                Adopt as unreviewed breakdown
+                Adopt breakdown
                 <ArrowRight size={16} />
               </Button>
             </div>
@@ -414,7 +358,7 @@ export function ScriptBreakdown() {
                 />
               </Field>
             </div>
-            <Field label="Upload plain text or Fountain (optional)">
+            <Field label="Plain text or Fountain (optional)">
               <input
                 type="file"
                 accept=".txt,.fountain,text/plain"
@@ -423,7 +367,7 @@ export function ScriptBreakdown() {
             </Field>
             <Field
               label="Script text"
-              hint={`${text.length.toLocaleString()} / 60,000 characters. Scene headings and character names help preserve source links.`}
+              hint={`${text.length.toLocaleString()} / 60,000`}
             >
               <textarea
                 className="script-import-text"
@@ -444,14 +388,8 @@ export function ScriptBreakdown() {
                 checked={rights}
                 onChange={(event) => setRights(event.target.checked)}
               />
-              I have permission to use and process this script with the
-              application’s AI providers.
+              I have the rights to process this script with AI.
             </label>
-            <Notice>
-              Story days are inferred where not explicit. They do not create
-              shoot dates. The script is treated as data, never as instructions
-              to the application.
-            </Notice>
             <div className="modal-actions">
               <Button
                 type="button"
@@ -467,9 +405,7 @@ export function ScriptBreakdown() {
                 disabled={!rights || text.length < 50}
               >
                 <Sparkles size={16} />
-                {extracting
-                  ? "Reading scenes and source cues…"
-                  : "Prepare a breakdown"}
+                {extracting ? "Reading…" : "Prepare a breakdown"}
               </Button>
             </div>
           </form>
@@ -504,7 +440,7 @@ function SceneReview({
   return (
     <section className="scene-review">
       <div className="section-title">
-        <span className="eyebrow">SCENE {scene.number} / REVIEW</span>
+        <h2>Scene {scene.number}</h2>
         <Badge tone={scene.reviewed ? "success" : "warning"}>
           {scene.reviewed ? "Reviewed" : "Needs review"}
         </Badge>
@@ -529,10 +465,7 @@ function SceneReview({
           />
         </Field>
         {scene.storyDaySource === "unspecified" && (
-          <Notice tone="warning" title="Story chronology is unknown.">
-            The script does not establish a story day here. Review the proposed
-            number against your continuity decisions before saving this scene.
-          </Notice>
+          <Notice tone="warning">Story day not in the script</Notice>
         )}
         <Field
           label={
@@ -540,7 +473,6 @@ function SceneReview({
               ? "Proposed story day"
               : "Story day"
           }
-          hint="Fictional chronology. Scheduling is managed separately."
         >
           <input
             type="number"
@@ -552,7 +484,7 @@ function SceneReview({
           />
         </Field>
         <div className="scene-cues">
-          <h3>Costume & appearance cues</h3>
+          <h3>Costume cues</h3>
           {requirements.map((requirement, index) => (
             <article
               className={requirement.explicit ? "cue-explicit" : "cue-inferred"}
@@ -560,7 +492,7 @@ function SceneReview({
             >
               <div>
                 <Badge tone={requirement.explicit ? "info" : "warning"}>
-                  {requirement.explicit ? "In the script" : "AI inference"}
+                  {requirement.explicit ? "Script" : "Inferred"}
                 </Badge>
                 <span>
                   {
@@ -601,20 +533,12 @@ function SceneReview({
               </button>
             </article>
           ))}
-          {!requirements.length && (
-            <p className="muted">
-              No explicit appearance cues were extracted for this scene.
-            </p>
-          )}
+          {!requirements.length && <p className="muted">No cues.</p>}
         </div>
         <Button variant="primary" type="submit" busy={busy}>
           <Check size={16} />
-          Confirm this scene & its cues
+          Confirm scene
         </Button>
-        <p className="fine-print">
-          Confirmation records your reviewed title, chronology, and every cue
-          shown above. It does not approve a rendered look.
-        </p>
       </form>
     </section>
   );

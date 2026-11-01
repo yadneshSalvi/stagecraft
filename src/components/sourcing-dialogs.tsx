@@ -7,6 +7,7 @@ import { dateTime, day, money, revision } from "@/lib/format";
 import { fromLocalDateTime, toLocalDateTime } from "@/lib/datetime";
 import { useProduction } from "./production-context";
 import { suggestedSourcingWindow } from "@/lib/sourcing-window";
+import { displayFixtureText } from "@/lib/presentation-copy";
 import { Badge, Button, Field, Modal, Notice, Photo } from "./ui";
 
 export function NewSourcingDialog(props: {
@@ -66,11 +67,10 @@ function NewSourcingSession({
       onClose={() => {
         if (!busy) onClose();
       }}
-      title="Prepare a sourcing request"
-      description="A local draft for exact units and dates. No message is sent to a supplier automatically."
+      title="Sourcing request"
     >
       <form className="form-stack" onSubmit={create}>
-        <Field label="Recorded supplier / custodian">
+        <Field label="Supplier">
           <select
             value={supplier}
             onChange={(e) => {
@@ -88,7 +88,7 @@ function NewSourcingSession({
           </select>
         </Field>
         <fieldset className="unit-choice">
-          <legend>Physical units requested</legend>
+          <legend>Units</legend>
           {project.units
             .filter((u) => u.supplier === supplier)
             .map((unit) => (
@@ -133,10 +133,6 @@ function NewSourcingSession({
         </div>
         {planned && (
           <div className="sourcing-window-hint">
-            <p className="muted">
-              The suggested window includes recorded preparation and allocated
-              use. Add pickup or transport time with the custodian.
-            </p>
             <Button
               type="button"
               variant="quiet"
@@ -145,24 +141,19 @@ function NewSourcingSession({
                 setTo(toLocalDateTime(planned.to, project.timeZone));
               }}
             >
-              Use current planned window
+              Use planned window
             </Button>
           </div>
         )}
-        <Field label="Pickup, return, measurement, and preparation notes">
+        <Field label="Notes">
           <textarea
             required
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={2000}
-            placeholder="Record the handoff location, exact date window, and what the custodian must verify."
+            placeholder="Pickup point, dates, what to check"
           />
         </Field>
-        <Notice tone={project.fixture ? "warning" : "info"}>
-          {project.fixture
-            ? "This fictional production creates a synthetic sourcing exercise. Its status cannot become a real supplier outcome."
-            : "When a supplier responds, record the named operator, response evidence, and external reference. A request is not a reservation."}
-        </Notice>
         {error && <Notice tone="danger">{error}</Notice>}
         <div className="modal-actions">
           <Button type="button" onClick={onClose}>
@@ -174,7 +165,7 @@ function NewSourcingSession({
             busy={busy}
             disabled={!units.length}
           >
-            Create request draft
+            Create draft
             <ArrowRight size={15} />
           </Button>
         </div>
@@ -198,12 +189,12 @@ const nextStates: Record<
 };
 const labels: Record<SourcingRequest["status"], string> = {
   draft: "Draft",
-  requested: "Request sent / recorded externally",
-  held: "Supplier hold",
-  confirmed: "Supplier confirmed reservation",
-  declined: "Supplier declined",
-  received: "Physical receipt",
-  returned: "Physical return",
+  requested: "Requested",
+  held: "Held",
+  confirmed: "Confirmed",
+  declined: "Declined",
+  received: "Received",
+  returned: "Returned",
   cancelled: "Cancelled",
 };
 export function SourcingDialog({
@@ -253,7 +244,7 @@ export function SourcingDialog({
       }),
       `Quote: ${money(request.quoteCents, project.currency)}`,
       `Quote valid through: ${request.quoteValidUntil}`,
-      `Notes: ${request.note}`,
+      `Notes: ${displayFixtureText(request.note, project.fixture)}`,
       `Operator: ${request.operator || "Not recorded"}`,
       `Evidence: ${request.evidence || "No response recorded"}`,
       `External reference: ${request.externalReference || "None"}`,
@@ -277,21 +268,14 @@ export function SourcingDialog({
         if (!busy) onClose();
       }}
       wide
-      title={request.supplier}
-      description="An inspectable commercial record, with explicit response and custody evidence."
+      title={displayFixtureText(request.supplier, project.fixture)}
     >
       <div className="source-record">
         <section className="source-paper">
           <header>
-            <span className="mono">SOURCING REQUEST</span>
-            <span className="mono">{revision(request.sourceRevision)}</span>
+            <span className="mono">Sourcing request</span>
           </header>
           <h3>{project.title}</h3>
-          <p className="source-paper-label">
-            {request.provenance === "synthetic"
-              ? "SYNTHETIC EXERCISE / NO SUPPLIER TRANSACTION"
-              : "MANUALLY RECORDED SUPPLIER WORKFLOW"}
-          </p>
           <div className="source-paper-window">
             <span>
               {day(request.from, project.timeZone)} —{" "}
@@ -304,6 +288,7 @@ export function SourcingDialog({
             return (
               <div className="source-paper-unit" key={id}>
                 <Photo
+                  natural
                   src={unit?.imageUrl}
                   alt={unit?.name || "Source garment"}
                 />
@@ -311,30 +296,28 @@ export function SourcingDialog({
                   <span className="mono">{unit?.code}</span>
                   <h4>{unit?.name}</h4>
                   <p>{unit?.location}</p>
-                  <small>Quantity 1 · one physical unit</small>
                 </div>
               </div>
             );
           })}
           <div className="source-paper-notes">
-            <strong>Pickup / preparation / return</strong>
-            <p>{request.note}</p>
+            <strong>Notes</strong>
+            <p>{displayFixtureText(request.note, project.fixture)}</p>
           </div>
           <footer>
             Quote valid through {day(request.quoteValidUntil, project.timeZone)}
-            <br />A local request is not a live reservation.
           </footer>
         </section>
         <div className="source-response">
           <div className="section-title">
-            <h3>The recorded response</h3>
+            <h3>Response</h3>
             <Badge tone={request.stale ? "danger" : "brass"}>
               {request.stale ? "Scope stale" : request.status}
             </Badge>
           </div>
           {request.evidence && (
             <div className="response-evidence">
-              <p>{request.evidence}</p>
+              <p>{displayFixtureText(request.evidence, project.fixture)}</p>
               <span>
                 {request.operator} ·{" "}
                 {dateTime(request.updatedAt, project.timeZone)}
@@ -344,13 +327,12 @@ export function SourcingDialog({
           )}
           {request.stale && (
             <Notice tone="warning">
-              The production changed. Prepare a new request against the current
-              units and dates before recording a hold or confirmation.
+              Production changed. Prepare a new request.
             </Notice>
           )}
           {nextStates[request.status].length > 0 ? (
             <form className="form-stack" onSubmit={save}>
-              <Field label="Next recorded stage">
+              <Field label="Next stage">
                 <select
                   value={status}
                   onChange={(e) =>
@@ -364,7 +346,7 @@ export function SourcingDialog({
                   ))}
                 </select>
               </Field>
-              <Field label="Operator name / role">
+              <Field label="Operator">
                 <input
                   required
                   minLength={2}
@@ -373,7 +355,7 @@ export function SourcingDialog({
                   maxLength={100}
                 />
               </Field>
-              <Field label="Response or custody evidence">
+              <Field label="Evidence">
                 <textarea
                   value={evidence}
                   onChange={(e) => setEvidence(e.target.value)}
@@ -382,12 +364,12 @@ export function SourcingDialog({
                   maxLength={2500}
                   placeholder={
                     request.provenance === "synthetic"
-                      ? "Clearly describe this synthetic rehearsal of the workflow. No real supplier confirmation or receipt has occurred."
-                      : "Record the actual response, date, named source, and supporting evidence."
+                      ? "What happened"
+                      : "Response, date, source"
                   }
                 />
               </Field>
-              <Field label="External reference / evidence reference">
+              <Field label="Reference">
                 <input
                   value={reference}
                   onChange={(e) => setReference(e.target.value)}
@@ -395,7 +377,7 @@ export function SourcingDialog({
                   maxLength={180}
                 />
               </Field>
-              <Field label="Provenance">
+              <Field label="Source">
                 <select
                   value={provenance}
                   disabled={request.provenance === "synthetic"}
@@ -403,27 +385,22 @@ export function SourcingDialog({
                     setProvenance(e.target.value as "synthetic" | "manual")
                   }
                 >
-                  <option value="synthetic">Synthetic test response</option>
-                  <option value="manual">
-                    Actual response recorded by operator
-                  </option>
+                  <option value="synthetic">Example</option>
+                  <option value="manual">Real response</option>
                 </select>
               </Field>
               {error && <Notice tone="danger">{error}</Notice>}
               <Button variant="primary" busy={busy} type="submit">
-                Record this stage
+                Save stage
                 <ArrowRight size={15} />
               </Button>
             </form>
           ) : (
-            <Notice>
-              This record is closed. Its response and custody history remain in
-              the production revisions.
-            </Notice>
+            <Notice>Closed.</Notice>
           )}
           <Button onClick={download}>
             <Download size={15} />
-            Download request record
+            Download
           </Button>
         </div>
       </div>
@@ -457,8 +434,7 @@ export function CreatePackDialog({
       onClose={() => {
         if (!busy) onClose();
       }}
-      title="Freeze a clear crew handoff"
-      description="The pack retains its exact source revision and export time. Changed dependencies make it visibly superseded."
+      title="New crew pack"
     >
       <form className="form-stack" onSubmit={create}>
         <Field label="Pack title">
@@ -470,7 +446,7 @@ export function CreatePackDialog({
           />
         </Field>
         <fieldset className="scene-choice">
-          <legend>Scheduled calls included</legend>
+          <legend>Calls</legend>
           {project.occurrences.map((occurrence) => (
             <label className="checkbox-field" key={occurrence.id}>
               <input
@@ -495,9 +471,7 @@ export function CreatePackDialog({
           ))}
         </fieldset>
         <Notice tone="warning">
-          Missing appearance approvals, allocations, fitting, or supplier
-          evidence produces a clearly marked working pack. It cannot be
-          presented as a ready production handoff.
+          Missing evidence marks this a working pack.
         </Notice>
         {error && <Notice tone="danger">{error}</Notice>}
         <div className="modal-actions">
@@ -511,7 +485,7 @@ export function CreatePackDialog({
             disabled={!ids.length}
           >
             <FilePlus2 size={16} />
-            Create frozen pack
+            Create pack
           </Button>
         </div>
       </form>

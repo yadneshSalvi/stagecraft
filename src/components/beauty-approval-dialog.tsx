@@ -6,7 +6,7 @@ import {
   getCurrentBeautyApproval,
   getCurrentBeautyPreview,
 } from "@/lib/domain/selectors";
-import { revision } from "@/lib/format";
+import { displayApproval } from "@/lib/presentation-copy";
 import { appearanceIntentHash } from "@/lib/domain/lineage";
 import { ApprovalOutput } from "./approval-output";
 import { useProduction } from "./production-context";
@@ -30,6 +30,7 @@ export function BeautyApprovalDialog({
   const [rationale, setRationale] = useState("");
   const preview = getCurrentBeautyPreview(look);
   const approval = getCurrentBeautyApproval(look);
+  const decision = approval ? displayApproval(approval) : null;
   const performer = project.performers.find(
     (person) => person.id === look.performerId,
   );
@@ -57,12 +58,8 @@ export function BeautyApprovalDialog({
       onClose={() => {
         if (!busy) onClose();
       }}
-      title={
-        approval
-          ? "The recorded makeup approval"
-          : "Approve this exact makeup detail"
-      }
-      description={`${performer?.name} · Makeup ${revision(look.beauty?.revision || 1)} · face capture ${preview?.faceCaptureVersion || "pending"}`}
+      title={approval ? "Makeup approval" : "Approve makeup"}
+      description={performer?.name}
     >
       <ApprovalOutput
         imageUrl={
@@ -75,56 +72,44 @@ export function BeautyApprovalDialog({
       />
       {approval ? (
         <div className="form-stack">
-          <Notice tone="success" title={`Approved by ${approval.approvedBy}`}>
-            {approval.rationale}
+          <Notice tone="success" title={decision?.approvedBy}>
+            {decision?.rationale}
           </Notice>
-          <p className="muted">
-            This decision applies only to the exact face capture, makeup recipe
-            and output. Costume approval and physical application remain
-            separate.
-          </p>
-          <Button onClick={onClose}>Close makeup approval</Button>
+          <Button onClick={onClose}>Close</Button>
         </div>
       ) : (
         <form className="form-stack" onSubmit={approve}>
-          <Notice tone="warning">
-            Approves this makeup appearance only; physical application is
-            checked separately.
-          </Notice>
-          <Field label="Makeup reviewer name or role">
+          <Field label="Reviewer">
             <input
+              aria-label="Makeup reviewer name or role"
               value={author}
               onChange={(event) => setAuthor(event.target.value)}
               required
               minLength={2}
               maxLength={100}
-              placeholder="e.g. Morgan · Makeup designer"
+              placeholder="Morgan · Makeup designer"
             />
           </Field>
-          <Field
-            label="What did you approve in the makeup detail?"
-            hint="Record placement, colour and any limits to carry into a practical application."
-          >
+          <Field label="Note">
             <textarea
+              aria-label="What did you approve in the makeup detail?"
               value={rationale}
               onChange={(event) => setRationale(event.target.value)}
               required
               minLength={5}
               maxLength={1200}
-              placeholder="The muted berry supports the character. Check lip edges, placement and texture against the source…"
+              placeholder="Muted berry works; check lip edges"
             />
           </Field>
           {changed && (
             <Notice tone="warning">
-              A different output or creative intent is now current. Close this
-              dialog and inspect the current makeup before approving. Your
-              written notes remain here.
+              The preview changed. Re-inspect before approving.
             </Notice>
           )}
           {error && <Notice tone="danger">{error}</Notice>}
           <div className="modal-actions">
             <Button type="button" onClick={onClose}>
-              Keep inspecting
+              Cancel
             </Button>
             <Button
               type="submit"
@@ -132,7 +117,7 @@ export function BeautyApprovalDialog({
               busy={busy}
               disabled={changed}
             >
-              Record makeup approval
+              Approve
               <Check size={15} />
             </Button>
           </div>

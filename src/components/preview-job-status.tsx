@@ -5,10 +5,10 @@ import { Button, Notice } from "./ui";
 
 const stages = [
   { state: "queued", label: "Queued" },
-  { state: "preparing", label: "Preparing sources" },
-  { state: "submitting", label: "Submitting to YouCam" },
-  { state: "polling", label: "Generating appearance" },
-  { state: "storing", label: "Saving private result" },
+  { state: "preparing", label: "Preparing" },
+  { state: "submitting", label: "Sending" },
+  { state: "polling", label: "Generating" },
+  { state: "storing", label: "Saving" },
 ];
 
 export function PreviewJobStatus({
@@ -35,8 +35,7 @@ export function PreviewJobStatus({
       {(intent || recordedIntent) && !(working || recordedWorking) && (
         <div className="saved-request-recovery">
           <Notice tone="warning">
-            {recoveryMessage ||
-              "A request is saved in this browser. Check its status before sending it again."}
+            {recoveryMessage || "A request is pending. Check its status."}
           </Notice>
           <Button
             busy={working || recordedWorking}
@@ -47,7 +46,7 @@ export function PreviewJobStatus({
           </Button>
           {intent && recordedIntent && (
             <Button onClick={() => void recover("recorded")}>
-              Check recorded request status
+              Check saved request
             </Button>
           )}
           {notFound && (
@@ -59,10 +58,7 @@ export function PreviewJobStatus({
       )}
       {state.recordedJob?.state === "succeeded" &&
         job?.id !== state.recordedJob.id && (
-          <Notice tone="success">
-            A matching recorded result was attached. The fresh attempt keeps its
-            own status below.
-          </Notice>
+          <Notice tone="success">Saved result attached.</Notice>
         )}
       {job && (
         <div className={`job-progress job-${job.state}`} aria-live="polite">
@@ -74,7 +70,15 @@ export function PreviewJobStatus({
             ) : (
               <Clock3 size={16} />
             )}
-            <strong>{job.message || job.state.replaceAll("_", " ")}</strong>
+            <strong>
+              {job.state === "succeeded"
+                ? "Preview ready"
+                : job.state === "cancelled"
+                  ? "Cancelled"
+                  : pending
+                    ? stages[current]?.label || "Working…"
+                    : job.message || job.state.replaceAll("_", " ")}
+            </strong>
           </div>
           {pending && (
             <ol>
@@ -92,20 +96,14 @@ export function PreviewJobStatus({
             </ol>
           )}
           {job.state === "ambiguous" && (
-            <p>
-              YouCam may have received this attempt. It will not be submitted
-              again automatically. Recorded results remain available.
-            </p>
+            <p>Status unclear; not resubmitted automatically.</p>
           )}
           {job.state === "failed" && (
-            <p>
-              This attempt remains in the history. Review the source and recipe
-              before deliberately starting another.
-            </p>
+            <p>Attempt failed. Check source and recipe.</p>
           )}
           {pending && (
             <>
-              <p>You can leave this page; the saved job continues.</p>
+              <p>Safe to leave this page.</p>
               <div className="job-controls">
                 <Button
                   variant="quiet"
@@ -124,10 +122,6 @@ export function PreviewJobStatus({
                   Cancel attempt
                 </Button>
               </div>
-              <small>
-                Cancelling prevents adoption; it cannot reverse a provider
-                charge.
-              </small>
             </>
           )}
         </div>

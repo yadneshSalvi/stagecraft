@@ -243,8 +243,7 @@ export function applyDetailCommand(
         recipe,
         previews: [],
         approvals: [],
-        reviewReason:
-          "Independent detail configured; an actual matching provider output and explicit decision are required.",
+        reviewReason: "Detail needs a preview and approval.",
       };
       look.details.push(detail);
     } else if (canonicalJson(detail.recipe) !== canonicalJson(recipe)) {
@@ -255,13 +254,12 @@ export function applyDetailCommand(
           approval.state = "stale";
           approval.reason = "This independent detail recipe changed.";
         }
-      detail.reviewReason =
-        "This detail recipe changed; review its own new output. Garment and other face-detail approvals remain separate.";
+      detail.reviewReason = "Recipe changed; review a new detail preview.";
     }
     for (const pack of production.packs)
       if (pack.snapshot.looks.some((item) => item.id === look.id))
         pack.state = "superseded";
-    return `Saved the independent ${recipe.kind === "hair_color" ? "hair colour" : "necklace"} recipe; garment and makeup decisions were preserved.`;
+    return `Saved ${recipe.kind === "hair_color" ? "hair colour" : "necklace"} recipe.`;
   }
   const detail = look.details?.find((item) => item.kind === command.kind);
   requireFact(
@@ -320,8 +318,7 @@ export function applyDetailCommand(
       "A source image or illustration cannot be attached as actual provider detail output.",
     );
     detail.previews.push(structuredClone(preview));
-    detail.reviewReason =
-      "Inspect this exact independent detail and record its own approval.";
+    detail.reviewReason = "Review this detail preview.";
   } else {
     const selected = findRecord(
       detail.previews,
@@ -373,6 +370,6 @@ export function applyDetailCommand(
     if (pack.snapshot.looks.some((item) => item.id === look.id))
       pack.state = "superseded";
   return command.type === "add_detail_preview"
-    ? "Attached actual independent detail evidence; no approval was inferred."
-    : "Recorded the exact independent detail decision; physical hair, wig and jewellery checks remain separate.";
+    ? `New ${detail.kind === "hair_color" ? "hair colour" : "necklace"} preview.`
+    : `Approved ${detail.kind === "hair_color" ? "hair colour" : "necklace"}.`;
 }

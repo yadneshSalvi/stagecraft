@@ -38,7 +38,7 @@ export function createBlankProduction(
       {
         id: "detail-brass-pendant",
         librarySourceId: "detail-brass-pendant",
-        name: "Small brass pendant · synthetic reference",
+        name: "Small brass pendant",
         imageUrl: "/assets/accessories/brass-pendant.webp",
         assetId: null,
         synthetic: true,
@@ -337,7 +337,7 @@ export function createExampleProduction(
   });
   production.script = {
     id: "script-last-light-v2",
-    label: "Synthetic draft 2 · day variants",
+    label: "Draft 2",
     title: "THE LAST LIGHT",
     text: scriptText,
     sha256: sha256(scriptText),
@@ -348,28 +348,27 @@ export function createExampleProduction(
   };
   const unitDefaults = {
     assetId: null,
-    supplier: "Seabright Wardrobe · synthetic supplier",
+    supplier: "Seabright Wardrobe",
     ownership: "rental" as const,
     location: "Seaside Theatre",
-    condition: "Synthetic catalogue record; physical condition not inspected.",
+    condition: "Not inspected.",
     status: "available" as const,
     measurements: { chestCm: null, waistCm: null, lengthCm: null },
     fitting: {
       performerId: null,
       status: "not_measured" as const,
-      evidence: "Synthetic fixture; no physical fitting has occurred.",
+      evidence: "Not fitted yet.",
       provenance: "synthetic" as const,
     },
     availability: {
       from: `${dayAfter(8)}T00:00:00.000Z`,
       to: `${dayAfter(12)}T23:59:00.000Z`,
-      source: "Synthetic planning window; supplier confirmation required.",
+      source: "Planning window; supplier to confirm.",
       checkedAt: now,
       confirmed: false,
       provenance: "synthetic" as const,
     },
-    priceSource:
-      "Synthetic GBP quote for the full production window; charged once per physical unit.",
+    priceSource: "Quote for the production window.",
     priceValidUntil: `${dayAfter(8)}T23:59:00.000Z`,
     substitutionFamily: null,
     approvedSubstituteIds: [],
@@ -567,7 +566,7 @@ export function createExampleProduction(
       preparationEvidence: "estimate",
       previews: [],
       approvals: [],
-      note: "Synthetic design and preparation estimate. Garment previews, separate makeup detail and physical evidence carry their own provenance.",
+      note: "",
       reviewReason: null,
     };
   });
@@ -581,8 +580,7 @@ export function createExampleProduction(
     },
     previews: [],
     approvals: [],
-    reviewReason:
-      "Separate beauty recipe configured. A genuine face-detail provider result and exact beauty approval are still required.",
+    reviewReason: "Makeup needs a preview and approval.",
   };
   const nora = production.looks.find((look) => look.id === "look-nora")!;
   nora.continuityGroupId = "continuity-nora-coat";
@@ -622,7 +620,7 @@ export function createExampleProduction(
     {
       id: "detail-brass-pendant",
       librarySourceId: "detail-brass-pendant",
-      name: "Small brass pendant · synthetic reference",
+      name: "Small brass pendant",
       imageUrl: "/assets/accessories/brass-pendant.webp",
       assetId: null,
       synthetic: true,
@@ -640,8 +638,7 @@ export function createExampleProduction(
         },
         previews: [],
         approvals: [],
-        reviewReason:
-          "Independent necklace reference configured. No rendered detail, physical jewellery fit or approval is implied.",
+        reviewReason: "Necklace needs a preview and approval.",
       },
     ];
   for (const look of [rehearsal, mae])
@@ -655,8 +652,7 @@ export function createExampleProduction(
         },
         previews: [],
         approvals: [],
-        reviewReason:
-          "Independent hair-colour direction configured. Colour output does not establish a wig, hair length or hairstyle.",
+        reviewReason: "Hair colour needs a preview and approval.",
       },
     ];
   for (const scene of production.scenes)
@@ -710,7 +706,7 @@ export function createExampleProduction(
       evidence: "estimate",
       crewResource: "Wardrobe team A",
       crewCapacity: 1,
-      note: "Synthetic estimate: ivory blouse to midnight dress and copper digital-wig direction on the same shoot day. Record the actual dressing duration separately.",
+      note: "Ivory blouse → midnight dress, same day.",
     },
     {
       id: "transition-julian-finale",
@@ -721,7 +717,7 @@ export function createExampleProduction(
       evidence: "estimate",
       crewResource: "Wardrobe team A",
       crewCapacity: 1,
-      note: "Synthetic estimate: olive jacket to rust jacket on the same shoot day; physical change duration is not observed.",
+      note: "Olive → rust jacket, same day.",
     },
   ];
   production.sourcing = [
@@ -741,7 +737,7 @@ export function createExampleProduction(
       externalReference: null,
       updatedAt: now,
       stale: false,
-      note: "Synthetic sourcing draft. No request, supplier confirmation or physical receipt has occurred.",
+      note: "Collect from store; return after the shoot.",
     },
   ];
   production.events = [
@@ -751,8 +747,7 @@ export function createExampleProduction(
       actor: "STAGECRAFT example",
       at: now,
       revision: 1,
-      summary:
-        "Created an explicitly synthetic film production. Portraits are source images; no approvals or provider previews are seeded.",
+      summary: "Created the example production.",
       provenance: "synthetic",
     },
   ];

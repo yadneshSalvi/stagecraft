@@ -1,18 +1,9 @@
 "use client";
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  CheckCheck,
-  Plus,
-  RotateCcw,
-  Sparkles,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCheck, Sparkles } from "lucide-react";
 import type { AppearanceCandidate, Look, PhysicalUnit } from "@/lib/types";
 import {
-  candidateIntentHash,
   getCurrentCandidateApproval,
   getCurrentCandidatePreview,
 } from "@/lib/domain/lineage";
@@ -25,8 +16,13 @@ import {
   PreviewAvailability,
   freshPreviewAvailable,
 } from "./preview-availability";
-import { ProvenanceChip } from "./provenance-chip";
-import { Badge, Button, Field, Modal, Notice, Photo } from "./ui";
+import { CandidateApproval } from "./candidate-approval";
+import { ImageComparison } from "./image-comparison";
+import {
+  displayApproval,
+  displayInspectionNotes,
+} from "@/lib/presentation-copy";
+import { Badge, Button, Field, Notice, Photo } from "./ui";
 
 export function CandidateStudio({
   look,
@@ -107,9 +103,7 @@ export function CandidateStudio({
         );
         await refresh();
       } catch {
-        setError(
-          "The alternative is prepared. No matching recording was attached; use its preview controls to attach an output.",
-        );
+        setError("No saved preview for this unit.");
       }
     } finally {
       setPreparing(null);
@@ -124,13 +118,7 @@ export function CandidateStudio({
       )}
       <header className="candidate-heading">
         <div>
-          <p className="eyebrow">{character?.name} / WARDROBE ALTERNATIVES</p>
-          <h1>What else carries the story?</h1>
-          <p>
-            Compare {performer?.name || "the performer"} in each exact garment.
-            Your approval makes an option available to the allocator across its
-            continuity scenes.
-          </p>
+          <h2>{character?.name} · Alternatives</h2>
         </div>
         <Badge>
           {
@@ -138,35 +126,29 @@ export function CandidateStudio({
               getCurrentCandidateApproval(project, candidate),
             ).length
           }{" "}
-          approved choices
+          approved
         </Badge>
       </header>
       <div className="candidate-direction">
-        <span className="eyebrow">CURRENT CREATIVE INTENT</span>
-        <p>
-          {character?.direction.text ||
-            "Set the character’s visual direction in the costume recipe."}
-        </p>
-        <small>
-          A change to this direction requires a new decision. Unchanged provider
-          images stay reusable.
-        </small>
+        <h3>Direction</h3>
+        <p>{character?.direction.text || "No direction yet"}</p>
       </div>
       {performer?.id !== look.performerId && (
-        <Notice title={`Recast study · ${performer?.name}`}>
-          These are proposed appearances for {character?.name}. The casting
-          changes only when you adopt the reviewed recast impact.
-        </Notice>
+        <Notice>{`Recast study · ${performer?.name}`}</Notice>
       )}
       <div className="candidate-grid">
         {chosenUnits.map((unit) => {
-          const candidate = [...candidates]
+          const matches = [...candidates]
             .reverse()
-            .find(
+            .filter(
               (item) =>
                 item.recipe.unitIds.length === 1 &&
                 item.recipe.unitIds[0] === unit.id,
             );
+          const candidate =
+            matches.find((item) =>
+              getCurrentCandidateApproval(project, item),
+            ) || matches[0];
           return candidate ? (
             <CandidateCard
               key={candidate.id}
@@ -184,21 +166,13 @@ export function CandidateStudio({
                   src={unit.imageUrl}
                   alt={`${unit.name}, garment reference awaiting a performer preview`}
                 />
-                <span className="candidate-reference-label">
-                  GARMENT REFERENCE
-                </span>
               </div>
               <div className="candidate-card-body">
                 <span className="mono">
                   {unit.code} · {money(unit.priceCents, project.currency)}
                 </span>
                 <h2>{unit.name}</h2>
-                <p>
-                  Prepare this exact physical reference for{" "}
-                  {performer?.name || "the assigned performer"}.
-                </p>
                 <Button
-                  variant="primary"
                   busy={preparing === unit.id}
                   disabled={!!preparing || busy || !performer?.consent.granted}
                   onClick={() => void prepare(unit.id)}
@@ -211,18 +185,15 @@ export function CandidateStudio({
         })}
       </div>
       {!chosenUnits.length && (
-        <Notice>
-          Add another physical unit in the same garment category to compare a
-          replacement.
-        </Notice>
+        <Notice>No other units in this category. Add a unit to compare.</Notice>
       )}
       <div className="candidate-add">
-        <Field label="Compare another wardrobe unit">
+        <Field label="Another unit">
           <select
             value={extraUnit}
             onChange={(event) => setExtraUnit(event.target.value)}
           >
-            <option value="">Choose a physical unit</option>
+            <option value="">Choose a unit</option>
             {available.map((unit) => (
               <option key={unit.id} value={unit.id}>
                 {unit.code} · {unit.name}
@@ -230,10 +201,6 @@ export function CandidateStudio({
             ))}
           </select>
         </Field>
-        <span>
-          <Plus size={15} /> A unit label or substitute list does not grant
-          approval.
-        </span>
       </div>
     </section>
   );
@@ -248,65 +215,40 @@ function CandidateCard({
   candidate: AppearanceCandidate;
   unit: PhysicalUnit;
 }) {
-  const { project, config, send, busy, error, clearError } = useProduction();
+  const { project, config, send, busy } = useProduction();
   const preview = getCurrentCandidatePreview(project, candidate);
   const approval = getCurrentCandidateApproval(project, candidate);
   const performer = project.performers.find(
     (item) => item.id === candidate.performerId,
   );
-  const character = project.characters.find(
-    (item) => item.id === look.characterId,
-  );
-  const [open, setOpen] = useState(false);
-  const [author, setAuthor] = useState("");
-  const [rationale, setRationale] = useState("");
-  const [target, setTarget] = useState<{
-    previewId: string;
-    intent: string;
-  } | null>(null);
   const [compare, setCompare] = useState(false);
   const onSuccess = useCallback(() => {}, []);
   const state = usePreviewJob(look.id, "garment", onSuccess, candidate.id);
   const adopted = look.activeCandidateId === candidate.id;
-  const changed =
-    !!target &&
-    (target.previewId !== preview?.id ||
-      target.intent !== candidateIntentHash(project, candidate));
-  async function approve(event: React.FormEvent) {
-    event.preventDefault();
-    if (!preview || changed) return;
-    if (
-      await send({
-        type: "approve_candidate",
-        candidateId: candidate.id,
-        previewId: preview.id,
-        approvedBy: author.trim(),
-        rationale: rationale.trim(),
-      })
-    )
-      setOpen(false);
-  }
   return (
     <article
       className={`candidate-card ${approval ? "candidate-approved" : ""}`}
     >
       <div className={`candidate-image ${compare ? "candidate-compare" : ""}`}>
-        {compare && (
+        {compare && preview && performer?.imageUrl ? (
+          <ImageComparison
+            sourceUrl={performer.imageUrl}
+            previewUrl={preview.imageUrl}
+            sourceAlt={`${performer.name}, original body source`}
+            previewAlt={`${performer.name} in ${unit.name}, actual YouCam alternative`}
+          />
+        ) : (
           <Photo
-            src={performer?.imageUrl}
-            alt={`${performer?.name}, original body source`}
-            original
+            natural
+            src={preview?.imageUrl || unit.imageUrl}
+            alt={
+              preview
+                ? `${performer?.name} in ${unit.name}, actual YouCam alternative`
+                : `${unit.name}, garment reference; preview needed`
+            }
+            original={!!preview}
           />
         )}
-        <Photo
-          src={preview?.imageUrl || unit.imageUrl}
-          alt={
-            preview
-              ? `${performer?.name} in ${unit.name}, actual YouCam alternative`
-              : `${unit.name}, garment reference; preview needed`
-          }
-          original={!!preview}
-        />
         {!compare && (
           <span className="candidate-garment-inset">
             <Photo
@@ -316,9 +258,6 @@ function CandidateCard({
             />
           </span>
         )}
-        <span className="candidate-reference-label">
-          {preview ? "PERFORMER + EXACT GARMENT" : "GARMENT REFERENCE"}
-        </span>
       </div>
       <div className="candidate-card-body">
         <div className="candidate-card-top">
@@ -328,11 +267,11 @@ function CandidateCard({
           <Badge tone={approval ? "success" : "warning"}>
             {adopted
               ? approval
-                ? "Adopted · approved"
-                : "Adopted · review needed"
+                ? "In use"
+                : "In use · to review"
               : approval
-                ? "Admissible choice"
-                : "Approval needed"}
+                ? "Approved"
+                : "To review"}
           </Badge>
         </div>
         <h2>{unit.name}</h2>
@@ -344,17 +283,9 @@ function CandidateCard({
             .filter(Boolean)
             .map((number) => `SC ${number}`)
             .join(" / ")}{" "}
-          · one coherent garment choice
         </p>
         {preview && (
-          <div className="provenance-row">
-            <ProvenanceChip
-              kind={
-                preview.provenance === "recorded_provider"
-                  ? "recorded"
-                  : "fresh"
-              }
-            />
+          <div className="candidate-comparison-control">
             <button
               className="inline-action"
               onClick={() => setCompare(!compare)}
@@ -365,39 +296,21 @@ function CandidateCard({
         )}
         {preview?.inspectionNotes && (
           <details className="candidate-observations">
-            <summary>Inspect this output</summary>
-            <p>{preview.inspectionNotes}</p>
+            <summary>Notes</summary>
+            <p>{displayInspectionNotes(preview.inspectionNotes)}</p>
           </details>
         )}
         {approval && (
           <p className="candidate-decision">
             <CheckCheck size={15} />
             <span>
-              {approval.approvedBy}
-              <small>{approval.rationale}</small>
+              {displayApproval(approval).approvedBy}
+              <small>{displayApproval(approval).rationale}</small>
             </span>
           </p>
         )}
         <div className="candidate-actions">
-          <Button
-            variant={approval ? "default" : "primary"}
-            disabled={!preview || busy}
-            onClick={() => {
-              clearError();
-              setTarget(
-                preview
-                  ? {
-                      previewId: preview.id,
-                      intent: candidateIntentHash(project, candidate),
-                    }
-                  : null,
-              );
-              setOpen(true);
-            }}
-          >
-            <Check size={15} />
-            {approval ? "Review this decision" : "Approve this alternative"}
-          </Button>
+          <CandidateApproval candidate={candidate} />
           {approval &&
             !adopted &&
             candidate.performerId === look.performerId && (
@@ -415,15 +328,13 @@ function CandidateCard({
             )}
         </div>
         <details className="candidate-generation" open={!preview}>
-          <summary>
-            {preview ? "Preview controls" : "Attach an exact preview"}
-          </summary>
+          <summary>{preview ? "Preview" : "Get preview"}</summary>
           <Button
             busy={state.recordedWorking || state.recordedPending}
             disabled={!!state.recordedIntent}
             onClick={() => void state.generate("recorded")}
           >
-            Use matching recorded alternative
+            Use saved preview
           </Button>
           <Button
             busy={state.pending || state.working}
@@ -431,104 +342,12 @@ function CandidateCard({
             onClick={() => void state.generate("live")}
           >
             <Sparkles size={14} />
-            Generate fresh alternative · 2 units
+            Generate · 2 units
           </Button>
           <PreviewAvailability config={config} />
           <PreviewJobStatus state={state} />
         </details>
       </div>
-      <Modal
-        open={open}
-        onClose={() => {
-          if (!busy) setOpen(false);
-        }}
-        title={
-          approval
-            ? "This exact alternative is approved."
-            : "Approve this exact alternative"
-        }
-        description={`${performer?.name} · ${unit.code} · ${candidate.sceneIds.length} scenes`}
-      >
-        {approval ? (
-          <div className="form-stack">
-            <Notice tone="success" title={approval.approvedBy}>
-              {approval.rationale}
-            </Notice>
-            <p>
-              Revoking this decision immediately removes this candidate from
-              allocation choices, including after it has been adopted.
-            </p>
-            {error && <Notice tone="danger">{error}</Notice>}
-            <div className="modal-actions">
-              <Button onClick={() => setOpen(false)}>Keep approval</Button>
-              <Button
-                variant="danger"
-                busy={busy}
-                onClick={async () => {
-                  if (
-                    await send({
-                      type: "revoke_candidate_approval",
-                      candidateId: candidate.id,
-                      approvalId: approval.id,
-                    })
-                  )
-                    setOpen(false);
-                }}
-              >
-                <RotateCcw size={14} />
-                Revoke this decision
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <form className="form-stack" onSubmit={approve}>
-            <p>
-              <strong>Creative intent:</strong> {character?.direction.text}
-            </p>
-            <p className="muted">
-              Approves appearance only; fit is checked at fitting.
-            </p>
-            <Field label="Alternative reviewer name or role">
-              <input
-                value={author}
-                onChange={(event) => setAuthor(event.target.value)}
-                minLength={2}
-                maxLength={100}
-                required
-              />
-            </Field>
-            <Field label="Why does this alternative carry the character?">
-              <textarea
-                value={rationale}
-                onChange={(event) => setRationale(event.target.value)}
-                minLength={5}
-                maxLength={1200}
-                required
-              />
-            </Field>
-            {changed && (
-              <Notice tone="warning">
-                The output or creative intent changed. Close this dialog and
-                inspect the current evidence before approving.
-              </Notice>
-            )}
-            {error && <Notice tone="danger">{error}</Notice>}
-            <div className="modal-actions">
-              <Button type="button" onClick={() => setOpen(false)}>
-                Keep comparing
-              </Button>
-              <Button
-                variant="primary"
-                type="submit"
-                busy={busy}
-                disabled={changed}
-              >
-                Record alternative approval <Check size={15} />
-              </Button>
-            </div>
-          </form>
-        )}
-      </Modal>
     </article>
   );
 }

@@ -22,26 +22,26 @@ test("private upload persists, invalidates its actor, rejects another browser an
       .getByRole("button", { name: "Cast & sources", exact: true })
       .click();
     const dialog = page.getByRole("dialog", {
-      name: "The people behind the characters",
+      name: "Cast & sources",
     });
     await expect(dialog).toBeVisible();
     await dialog
-      .getByLabel("Replace source photograph")
+      .getByLabel("Replace photo")
       .setInputFiles(path.resolve("public/assets/cast/ada.webp"));
     await expect(
-      dialog.getByRole("button", { name: "Save private source", exact: true }),
+      dialog.getByRole("button", { name: "Save photo", exact: true }),
     ).toBeDisabled();
     await dialog
-      .getByRole("checkbox", { name: /permission and image rights/ })
+      .getByRole("checkbox", {
+        name: /I have the rights to use this image with YouCam/,
+      })
       .check();
     await dialog
-      .getByRole("button", { name: "Save private source", exact: true })
+      .getByRole("button", { name: "Save photo", exact: true })
       .click();
-    await expect(
-      dialog.getByText(
-        "Source saved. Existing actor-specific evidence was reviewed for invalidation.",
-      ),
-    ).toBeVisible({ timeout: 90_000 });
+    await expect(dialog.getByText("Photo saved.")).toBeVisible({
+      timeout: 90_000,
+    });
     const response = await page.request.get(`/api/projects/${production.id}`);
     const updated: Production = (await response.json()).project;
     const ada = updated.performers.find((p) => p.id === "performer-ada")!;
@@ -78,9 +78,7 @@ test("private upload persists, invalidates its actor, rejects another browser an
     await dialog
       .getByRole("button", { name: "Withdraw permission", exact: true })
       .click();
-    await expect(
-      dialog.getByText(/Consent withdrawn\. New derivations are blocked/),
-    ).toBeVisible();
+    await expect(dialog.getByText(/Permission withdrawn\./)).toBeVisible();
     const withdrawn = await page.request.get(`/api/projects/${production.id}`);
     expect(
       (await withdrawn.json()).project.performers.find(

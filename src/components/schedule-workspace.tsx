@@ -59,8 +59,7 @@ export function ScheduleWorkspace() {
     <>
       <div className="schedule-heading">
         <PageHeading
-          eyebrow="THE CALL SHEET / PHYSICAL COMMITMENTS"
-          title="A place. A time. A real garment."
+          title="Schedule"
           action={
             <>
               {project.scenes.some(
@@ -78,16 +77,8 @@ export function ScheduleWorkspace() {
                 <Plus size={15} />
                 Add a call
               </Button>
-              {decisions.looksTotal > 0 && decisions.approvedLooks === 0 && (
-                <>
-                  <Link className="button" href={reviewHref}>
-                    Review looks
-                  </Link>
-                  <ExampleDecisions compact onRecorded={afterDecisions} />
-                </>
-              )}
               <Button
-                variant="primary"
+                variant={result ? "default" : "primary"}
                 busy={busy}
                 onClick={async () => {
                   if (await send({ type: "solve_allocation" }))
@@ -95,23 +86,29 @@ export function ScheduleWorkspace() {
                 }}
               >
                 <ShieldCheck size={16} />
-                Check the allocation
+                Check allocation
               </Button>
             </>
           }
-        >
-          Story chronology and production order are separate. Physical units can
-          only be in one place at a time.
-        </PageHeading>
+        />
       </div>
-      {decisions.looksTotal > 0 && decisions.approvedLooks === 0 && (
-        <p className="schedule-approval-nudge">
-          {decisions.looksTotal} scheduled look
-          {decisions.looksTotal === 1 ? " needs" : "s need"} an approved
-          appearance before allocation.
-          {project.fixture &&
-            " Review each output, or explicitly record the example decisions to rehearse the allocation."}
-        </p>
+      {result && (
+        <AllocationReview
+          result={result}
+          focusRequest={focusResult}
+          onDecisionsRecorded={afterDecisions}
+        />
+      )}
+      {!result && decisions.missingLookIds.length > 0 && (
+        <div className="schedule-approval-nudge">
+          <span>
+            {decisions.missingLookIds.length} looks need approval first.
+          </span>
+          <Link className="button" href={reviewHref}>
+            Review looks
+          </Link>
+          <ExampleDecisions compact onRecorded={afterDecisions} />
+        </div>
       )}
       {drafting && <ScheduleDraft onClose={() => setDrafting(false)} />}
       <div className="schedule-controls">
@@ -138,37 +135,33 @@ export function ScheduleWorkspace() {
         </div>
         <span>
           <Clock3 size={13} />
-          All times in {project.timeZone}
+          {project.timeZone}
         </span>
         <span className="mono">
-          HARD BUDGET {money(project.budgetCents, project.currency)}
+          Budget {money(project.budgetCents, project.currency)}
         </span>
       </div>
       {mode === "live_performance" && (
         <Notice tone="warning">
-          Live changes require performer-specific timing and crew capacity.
-          Unknown duration remains unverified.{" "}
+          Add change times between calls.{" "}
           <button
             className="inline-action"
             onClick={() => setTransitionOpen(true)}
           >
-            Add a change transition →
+            Add transition →
           </button>
         </Notice>
       )}
       {!occurrences.length ? (
         <EmptyState
-          title="Give the story a call time."
+          title="No calls yet"
           action={
             <Button variant="primary" onClick={() => setEdit("new")}>
               <CalendarDays size={16} />
-              Schedule the first call
+              Add a call
             </Button>
           }
-        >
-          Choose a reviewed scene, production date, time window, and location. A
-          story day never automatically becomes a shoot date.
-        </EmptyState>
+        />
       ) : (
         <div className="schedule-layout">
           <section className="call-sheet">
@@ -177,9 +170,6 @@ export function ScheduleWorkspace() {
                 <header>
                   <CalendarDays size={16} />
                   <h2>{date}</h2>
-                  <span className="mono">
-                    {mode === "film" ? "SHOOTING ORDER" : "RUN OF SHOW"}
-                  </span>
                 </header>
                 {occurrences
                   .filter((o) => day(o.start, project.timeZone) === date)
@@ -211,15 +201,13 @@ export function ScheduleWorkspace() {
                         <div className="call-detail">
                           <div className="call-topline">
                             <span className="mono">
-                              SC {scene?.number || "UNMAPPED"} · STORY DAY{" "}
+                              SC {scene?.number || "UNMAPPED"} · Day{" "}
                               {scene?.storyDay || "?"}
                             </span>
                             <Badge
                               tone={blocked?.length ? "danger" : "neutral"}
                             >
-                              {blocked?.length
-                                ? "Resource conflict"
-                                : occurrence.kind}
+                              {blocked?.length ? "Conflict" : occurrence.kind}
                             </Badge>
                           </div>
                           <h3>{scene?.title || occurrence.label}</h3>
@@ -266,27 +254,18 @@ export function ScheduleWorkspace() {
             ))}
           </section>
           <aside className="allocation-summary">
-            <p className="eyebrow">RESOURCE CHECK</p>
-            <h2>
-              A plan the wardrobe
-              <br />
-              can support.
-            </h2>
-            <p>
-              Check exact units against overlap, availability windows, hard
-              budget, preparation, and performer transitions.
-            </p>
+            <h2>Allocation</h2>
             <div className="allocation-metrics">
               <div>
-                <span>Scheduled calls</span>
+                <span>Calls</span>
                 <strong>{project.occurrences.length}</strong>
               </div>
               <div>
-                <span>Physical units in inventory</span>
+                <span>Units</span>
                 <strong>{project.units.length}</strong>
               </div>
               <div>
-                <span>Current allocations</span>
+                <span>Allocated</span>
                 <strong>
                   {
                     project.allocations.filter((a) => a.state === "allocated")
@@ -295,27 +274,17 @@ export function ScheduleWorkspace() {
                 </strong>
               </div>
             </div>
-            <Notice>
-              Review pending availability and fitting records in Wardrobe.
-            </Notice>
             <Link href={`/production/${project.id}/wardrobe`}>
-              Review physical unit evidence
+              Wardrobe
               <ArrowRight size={14} />
             </Link>
           </aside>
         </div>
       )}
-      {result && (
-        <AllocationReview
-          result={result}
-          focusRequest={focusResult}
-          onDecisionsRecorded={afterDecisions}
-        />
-      )}
       {(mode === "live_performance" || project.transitions.length > 0) && (
         <section className="transition-section">
           <div className="section-title">
-            <h2>Performer change transitions</h2>
+            <h2>Change transitions</h2>
             <Button onClick={() => setTransitionOpen(true)}>
               <Plus size={14} />
               Add transition

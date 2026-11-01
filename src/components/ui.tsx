@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
   type ButtonHTMLAttributes,
+  type CSSProperties,
 } from "react";
 import {
   ArrowRight,
@@ -62,6 +63,9 @@ export function Photo({
   priority = false,
   fit = "contain",
   original = false,
+  natural = false,
+  aspectRatio = 2 / 3,
+  onDimensions,
   sizes = "(max-width: 700px) 90vw, (max-width: 1200px) 45vw, 32vw",
 }: {
   src?: string | null;
@@ -70,11 +74,27 @@ export function Photo({
   priority?: boolean;
   fit?: "cover" | "contain";
   original?: boolean;
+  natural?: boolean;
+  aspectRatio?: number;
+  onDimensions?: (dimensions: { width: number; height: number }) => void;
   sizes?: string;
 }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const [dimensions, setDimensions] = useState<{
+    src: string;
+    ratio: number;
+  } | null>(null);
+  const ratio =
+    dimensions && dimensions.src === src ? dimensions.ratio : aspectRatio;
   return (
-    <div className={`photo ${className}`}>
+    <div
+      className={`photo ${natural ? "photo-natural" : ""} ${className}`}
+      style={
+        natural
+          ? ({ aspectRatio: ratio, "--photo-ratio": ratio } as CSSProperties)
+          : undefined
+      }
+    >
       {src && failedSrc !== src ? (
         <Image
           src={src}
@@ -85,6 +105,14 @@ export function Photo({
           unoptimized={original || src.startsWith("/api/")}
           loading={priority ? "eager" : "lazy"}
           onError={() => setFailedSrc(src)}
+          onLoad={(event) => {
+            const { naturalWidth: width, naturalHeight: height } =
+              event.currentTarget;
+            if (width && height) {
+              if (natural) setDimensions({ src, ratio: width / height });
+              onDimensions?.({ width, height });
+            }
+          }}
         />
       ) : (
         <div className="photo-empty">
@@ -102,6 +130,7 @@ export function Modal({
   description,
   children,
   wide = false,
+  footer,
 }: {
   open: boolean;
   onClose: () => void;
@@ -109,6 +138,7 @@ export function Modal({
   description?: string;
   children: ReactNode;
   wide?: boolean;
+  footer?: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -123,20 +153,22 @@ export function Modal({
     } else if (dialog.open) {
       dialog.close();
       previousFocus.current?.focus();
-      document.body.classList.remove("dialog-open");
+      if (!document.querySelector("dialog[open]"))
+        document.body.classList.remove("dialog-open");
     }
     return () => {
-      document.body.classList.remove("dialog-open");
       if (dialog.open) {
         dialog.close();
         previousFocus.current?.focus();
       }
+      if (!document.querySelector("dialog[open]"))
+        document.body.classList.remove("dialog-open");
     };
   }, [open]);
   return (
     <dialog
       ref={ref}
-      className={`modal ${wide ? "modal-wide" : ""}`}
+      className={`modal ${wide ? "modal-wide" : ""} ${footer ? "modal-fixed-actions" : ""}`}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();
@@ -157,7 +189,6 @@ export function Modal({
     >
       <div className="modal-heading">
         <div>
-          <p className="eyebrow">STAGECRAFT / WORKING BOOK</p>
           <h2 id={titleId}>{title}</h2>
           {description && <p className="muted">{description}</p>}
         </div>
@@ -169,7 +200,14 @@ export function Modal({
           <X size={20} />
         </button>
       </div>
-      {children}
+      {footer ? (
+        <>
+          <div className="modal-scroll">{children}</div>
+          <div className="modal-actions">{footer}</div>
+        </>
+      ) : (
+        children
+      )}
     </dialog>
   );
 }
@@ -201,7 +239,7 @@ export function EmptyState({
   action,
 }: {
   title: string;
-  children: ReactNode;
+  children?: ReactNode;
   action?: ReactNode;
 }) {
   return (
@@ -210,7 +248,7 @@ export function EmptyState({
         ✳
       </span>
       <h2>{title}</h2>
-      <p>{children}</p>
+      {children && <p>{children}</p>}
       {action}
     </div>
   );
@@ -238,7 +276,7 @@ export function PageHeading({
   children,
   action,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   children?: ReactNode;
   action?: ReactNode;
@@ -246,7 +284,7 @@ export function PageHeading({
   return (
     <div className="page-heading">
       <div>
-        <p className="eyebrow">{eyebrow}</p>
+        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
         <h1>{title}</h1>
         {children && <p className="page-deck">{children}</p>}
       </div>

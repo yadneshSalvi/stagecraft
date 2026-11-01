@@ -94,7 +94,7 @@ export function CastManager({
         setCharacterName("");
       }
       if (file && performerId) {
-        setMessage("Uploading and validating the private source…");
+        setMessage("Uploading…");
         const result = await uploadImage(
           file,
           current.id,
@@ -104,13 +104,8 @@ export function CastManager({
         setProject(result.project);
         setFile(null);
         setConsent(false);
-        setMessage(
-          "Source saved. Existing actor-specific evidence was reviewed for invalidation.",
-        );
-      } else
-        setMessage(
-          "Performer added. A permitted source is needed before generation.",
-        );
+        setMessage("Photo saved.");
+      } else setMessage("Performer added.");
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -129,9 +124,7 @@ export function CastManager({
     });
     if (next) {
       setWithdraw(false);
-      setMessage(
-        "Consent withdrawn. New derivations are blocked and dependent actor evidence is no longer current.",
-      );
+      setMessage("Permission withdrawn.");
     }
   }
   function close() {
@@ -143,16 +136,10 @@ export function CastManager({
     }
   }
   return (
-    <Modal
-      open={open}
-      onClose={close}
-      wide
-      title="The people behind the characters"
-      description="Keep performer identity, story roles, and source permissions clear."
-    >
+    <Modal open={open} onClose={close} wide title="Cast & sources">
       <div className="cast-manager">
         <aside>
-          <p className="eyebrow">PERFORMERS</p>
+          <h3>Performers</h3>
           {project.performers.map((performer) => (
             <button
               key={performer.id}
@@ -168,15 +155,8 @@ export function CastManager({
                 setWithdraw(false);
               }}
             >
-              <Photo src={performer.imageUrl} alt="" />
-              <span>
-                {performer.name}
-                <small>
-                  {performer.synthetic
-                    ? "Synthetic adult"
-                    : "Private performer"}
-                </small>
-              </span>
+              <Photo natural src={performer.imageUrl} alt="" />
+              <span>{performer.name}</span>
             </button>
           ))}
           <Button
@@ -196,7 +176,7 @@ export function CastManager({
             <>
               <div className="section-title">
                 <h3>
-                  <UserRound size={16} /> A new performer
+                  <UserRound size={16} /> New performer
                 </h3>
               </div>
               <div className="field-grid">
@@ -217,7 +197,7 @@ export function CastManager({
                   />
                 </Field>
               </div>
-              <Field label="Create a character for this performer (optional)">
+              <Field label="Character (optional)">
                 <input
                   value={characterName}
                   onChange={(event) => setCharacterName(event.target.value)}
@@ -231,14 +211,14 @@ export function CastManager({
                   checked={synthetic}
                   onChange={(event) => setSynthetic(event.target.checked)}
                 />
-                This is a synthetic adult reference, rather than a real
-                performer.
+                Synthetic reference
               </label>
             </>
           ) : (
             <>
               <div className="cast-source-summary">
                 <Photo
+                  natural
                   src={selected?.imageUrl}
                   alt={`${selected?.name}, source image`}
                 />
@@ -247,36 +227,26 @@ export function CastManager({
                   <p>
                     {castFor.length
                       ? castFor.map((c) => c.name).join(" / ")
-                      : "Available for casting"}
+                      : "Uncast"}
                   </p>
                   <Badge
                     tone={selected?.consent.granted ? "success" : "warning"}
                   >
                     {selected?.consent.granted
-                      ? "Source permission recorded"
+                      ? "Permitted"
                       : "Permission needed"}
                   </Badge>
-                  <small>Capture version {selected?.captureVersion}</small>
-                  {selected?.synthetic && (
-                    <small>Synthetic adult · no real participant</small>
-                  )}
                 </div>
               </div>
               {selected && <InitialCasting performerId={selected.id} />}
               <Notice>
-                A replacement source creates new actor evidence. Previous
-                previews remain historical; they do not inherit the new source’s
-                approval.
+                A new photo resets this performer’s costume approvals.
               </Notice>
             </>
           )}
           <Field
-            label={
-              adding
-                ? "Source photograph (optional for now)"
-                : "Replace source photograph"
-            }
-            hint="Adult, single person; straight-on full body, clear face and limbs, neutral pose. JPEG, PNG, or WebP up to 10 MB."
+            label={adding ? "Photo (optional)" : "Replace photo"}
+            hint="One adult, full body, front-facing · ≤10 MB"
           >
             <input
               type="file"
@@ -295,16 +265,10 @@ export function CastManager({
                 checked={consent}
                 onChange={(event) => setConsent(event.target.checked)}
               />
-              I have permission and image rights for this adult source,
-              including processing by YouCam for private production previews.
+              I have the rights to use this image with YouCam.
             </label>
           )}
-          <Notice>
-            Uploads are private to this browser-owned production and expire
-            after 30 days. Provider processing has a separate retention policy;
-            withdrawal blocks future derivations. Delete the production to
-            request removal of its private application media.
-          </Notice>
+          <Notice>Private to this browser. Deleted after 30 days.</Notice>
           {message && <Notice tone="success">{message}</Notice>}
           {error && <Notice tone="danger">{error}</Notice>}
           <Button
@@ -314,15 +278,12 @@ export function CastManager({
             disabled={(!adding && !file) || (!!file && !consent)}
           >
             <Upload size={16} />
-            {adding ? "Add performer & source" : "Save private source"}
+            {adding ? "Add performer" : "Save photo"}
           </Button>
           {!adding && selected?.consent.granted && (
             <details className="consent-withdraw">
               <summary>Withdraw source permission</summary>
-              <p>
-                This blocks new previews and invalidates actor-specific
-                evidence. Historical events remain traceable.
-              </p>
+              <p>Blocks new previews; clears this performer’s approvals.</p>
               <label className="checkbox-field">
                 <input
                   type="checkbox"
@@ -415,9 +376,7 @@ export function NewLookDialog({
           await requestPreview(result, look.id, "recorded");
           await refresh();
         } catch {
-          setError(
-            "The look is saved. A matching recording could not be attached; its preview controls remain available in the studio.",
-          );
+          setError("Look saved. No saved preview matched.");
         } finally {
           setAttaching(false);
         }
@@ -434,8 +393,7 @@ export function NewLookDialog({
       onClose={() => {
         if (!busy && !attaching) onClose();
       }}
-      title="A look for a story state"
-      description="Choose exact references. You can refine makeup, hair, and continuity notes in the studio."
+      title="New look"
     >
       <form className="form-stack" onSubmit={create}>
         <Field label="Look title">
@@ -466,7 +424,7 @@ export function NewLookDialog({
             ))}
           </select>
         </Field>
-        <Field label="Physical garment unit">
+        <Field label="Garment unit">
           <select
             value={unitId}
             onChange={(event) => setUnitId(event.target.value)}
@@ -489,7 +447,7 @@ export function NewLookDialog({
           />
         )}
         <fieldset className="scene-choice">
-          <legend>Appears in these scenes</legend>
+          <legend>Scenes</legend>
           {project.scenes
             .filter((scene) => scene.characterIds.includes(characterId))
             .map((scene) => (
@@ -521,23 +479,15 @@ export function NewLookDialog({
               </label>
             ))}
           {!project.scenes.length && (
-            <p className="muted">
-              Import and review a script to establish scenes first.
-            </p>
+            <p className="muted">Import a script first.</p>
           )}
         </fieldset>
         {(!project.characters.length || !project.units.length) && (
-          <Notice tone="warning">
-            Add a character and performer in Cast & sources, and a physical unit
-            in Wardrobe, before creating this look.
-          </Notice>
+          <Notice tone="warning">Add cast and a wardrobe unit first.</Notice>
         )}
         {character &&
           !project.performers.some((p) => p.id === character.performerId) && (
-            <Notice tone="warning">
-              Assign a performer through the production’s recast review before
-              creating this look.
-            </Notice>
+            <Notice tone="warning">Assign a performer first.</Notice>
           )}
         {error && <Notice tone="danger">{error}</Notice>}
         <div className="modal-actions">
@@ -556,9 +506,7 @@ export function NewLookDialog({
               !project.performers.some((p) => p.id === character?.performerId)
             }
           >
-            {recordedLibrary.loading
-              ? "Checking recorded options"
-              : "Create look"}
+            {recordedLibrary.loading ? "Checking…" : "Create look"}
             <ArrowRight size={15} />
           </Button>
         </div>

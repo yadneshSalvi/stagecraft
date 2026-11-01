@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { displayFixtureText } from "@/lib/presentation-copy";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import {
@@ -10,12 +11,12 @@ import {
   Package,
   Plus,
   ReceiptText,
-  Truck,
 } from "lucide-react";
 import type { SourcingRequest } from "@/lib/types";
-import { day, money, revision } from "@/lib/format";
+import { day, money } from "@/lib/format";
 import { useProduction } from "./production-context";
 import { Badge, Button, EmptyState, PageHeading } from "./ui";
+import "./round3-wardrobe-handoff.css";
 import {
   NewSourcingDialog,
   SourcingDialog,
@@ -49,10 +50,9 @@ export function HandoffWorkspace() {
           ? "info"
           : "warning";
   return (
-    <>
+    <div className="r3-handoff">
       <PageHeading
-        eyebrow="THE HANDOFF / FROM INTENT TO PREPARATION"
-        title="Make the next call a clear one."
+        title="Handoff"
         action={
           <>
             <Button onClick={() => setNewRequest(true)}>
@@ -65,36 +65,32 @@ export function HandoffWorkspace() {
             </Button>
           </>
         }
-      >
-        A request, a supplier confirmation, and a physical receipt are different
-        moments. Record each one.
-      </PageHeading>
+      />
       <div className="handoff-track">
         <div>
           <ClipboardList size={18} />
           <span>
-            Requested / held<strong>{counts.requested}</strong>
+            Requested<strong>{counts.requested}</strong>
           </span>
         </div>
         <ArrowRight size={16} />
         <div>
           <ReceiptText size={18} />
           <span>
-            Confirmed reservations<strong>{counts.confirmed}</strong>
+            Confirmed<strong>{counts.confirmed}</strong>
           </span>
         </div>
         <ArrowRight size={16} />
         <div>
           <Package size={18} />
           <span>
-            Physically received<strong>{counts.received}</strong>
+            Received<strong>{counts.received}</strong>
           </span>
         </div>
-        <p>Local records carry their own evidence and provenance.</p>
       </div>
       <section className="sourcing-section">
         <div className="section-title">
-          <h2>The sourcing book</h2>
+          <h2>Sourcing</h2>
           {project.sourcing.length > 0 && (
             <Link
               className="button"
@@ -114,14 +110,11 @@ export function HandoffWorkspace() {
                 onClick={() => setRequestId(request.id)}
               >
                 <div className="sourcing-doc-head">
-                  <span className="mono">
-                    SOURCING / {revision(request.sourceRevision)}
-                  </span>
                   <Badge tone={tone(request)}>
-                    {request.stale ? "Needs renewed review" : request.status}
+                    {request.stale ? "Needs re-review" : request.status}
                   </Badge>
                 </div>
-                <h3>{request.supplier}</h3>
+                <h3>{displayFixtureText(request.supplier, project.fixture)}</h3>
                 <div className="sourcing-units">
                   {request.unitIds.map((id) => {
                     const unit = project.units.find((u) => u.id === id);
@@ -140,13 +133,11 @@ export function HandoffWorkspace() {
                   </span>
                   <strong>{money(request.quoteCents, project.currency)}</strong>
                 </div>
-                <p className="sourcing-provenance">
-                  {request.provenance === "synthetic"
-                    ? "Synthetic exercise · no supplier transaction"
-                    : `Manual record${request.operator ? ` · ${request.operator}` : ""}`}
-                </p>
+                {request.provenance !== "synthetic" && request.operator && (
+                  <p className="sourcing-operator">{request.operator}</p>
+                )}
                 <span className="document-action">
-                  Open the record
+                  Open
                   <ArrowRight size={15} />
                 </span>
               </button>
@@ -154,29 +145,19 @@ export function HandoffWorkspace() {
           </div>
         ) : (
           <EmptyState
-            title="From a selected garment to an obtainable one."
+            title="No sourcing requests"
             action={
               <Button onClick={() => setNewRequest(true)}>
                 <Plus size={15} />
                 Prepare the first request
               </Button>
             }
-          >
-            Create a request using exact unit IDs and date windows. Record a
-            real response with its source, or label a rehearsal as synthetic.
-          </EmptyState>
+          />
         )}
       </section>
       <section className="packs-section">
         <div className="section-title">
-          <div>
-            <p className="eyebrow">FROZEN AT A KNOWN REVISION</p>
-            <h2>The crew’s working pages</h2>
-          </div>
-          <Button onClick={() => setNewPack(true)}>
-            <BookOpen size={15} />
-            Create crew pack
-          </Button>
+          <h2>Crew packs</h2>
         </div>
         {project.packs.length ? (
           <div className="pack-list">
@@ -188,7 +169,6 @@ export function HandoffWorkspace() {
               >
                 <div className="pack-paper-icon">
                   <BookOpen size={24} />
-                  <span className="mono">{revision(pack.sourceRevision)}</span>
                 </div>
                 <div>
                   <div className="inline-badges">
@@ -196,23 +176,26 @@ export function HandoffWorkspace() {
                       tone={
                         pack.state === "superseded"
                           ? "danger"
-                          : pack.warnings.length
+                          : pack.warnings.filter((warning) =>
+                                displayFixtureText(warning, project.fixture),
+                              ).length
                             ? "warning"
                             : "success"
                       }
                     >
                       {pack.state === "superseded"
                         ? "Superseded"
-                        : pack.warnings.length
-                          ? "Working pack · evidence pending"
-                          : "Current pack"}
+                        : pack.warnings.filter((warning) =>
+                              displayFixtureText(warning, project.fixture),
+                            ).length
+                          ? "Evidence pending"
+                          : "Current"}
                     </Badge>
                   </div>
-                  <h3>{pack.title}</h3>
+                  <h3>{pack.title.replace(/^Working pack · /, "")}</h3>
                   <p>
-                    {pack.occurrenceIds.length} scheduled calls · Created{" "}
-                    {day(pack.generatedAt, project.timeZone)} · Source{" "}
-                    {revision(pack.sourceRevision)}
+                    {pack.occurrenceIds.length} calls ·{" "}
+                    {day(pack.generatedAt, project.timeZone)}
                   </p>
                 </div>
                 <ArrowRight size={19} />
@@ -223,23 +206,11 @@ export function HandoffWorkspace() {
           <div className="pack-empty">
             <BookOpen size={30} />
             <div>
-              <h3>A clear page for every call.</h3>
-              <p>
-                Freeze the approved look, exact unit references, preparation
-                notes, and outstanding evidence into a mobile and printable crew
-                pack.
-              </p>
+              <h3>No crew packs</h3>
             </div>
           </div>
         )}
       </section>
-      <div className="handoff-note">
-        <Truck size={20} />
-        <p>
-          Receipt and return have their own events. A source request never
-          becomes a physical outcome just because it was prepared here.
-        </p>
-      </div>
       <NewSourcingDialog
         open={newRequest}
         onClose={() => setNewRequest(false)}
@@ -249,6 +220,6 @@ export function HandoffWorkspace() {
         <SourcingDialog request={selected} onClose={() => setRequestId(null)} />
       )}
       <CreatePackDialog open={newPack} onClose={() => setNewPack(false)} />
-    </>
+    </div>
   );
 }

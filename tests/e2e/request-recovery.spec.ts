@@ -12,11 +12,11 @@ async function example(page: Page): Promise<Production> {
 }
 const recordedButton = (page: Page) =>
   page.getByRole("button", {
-    name: "Use matching recorded result",
+    name: "Use saved result",
     exact: true,
   });
 const freshButton = (page: Page) =>
-  page.getByRole("button", { name: "Generate a fresh preview", exact: true });
+  page.getByRole("button", { name: "Generate preview", exact: true });
 const statusButton = (page: Page) =>
   page.getByRole("button", { name: "Check saved request status", exact: true });
 const intentKey = (id: string) => `stagecraft-job:${id}:look-nora:intent`;

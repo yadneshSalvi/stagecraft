@@ -46,8 +46,7 @@ export function useRecordedLibrary({
           setResponse({
             key,
             catalog: null,
-            error:
-              "The working book changed during the check. Check these references again.",
+            error: "Production changed. Check again.",
           });
           return;
         }
@@ -58,8 +57,7 @@ export function useRecordedLibrary({
           setResponse({
             key,
             catalog: null,
-            error:
-              "Recorded pairing could not be checked. Your selected references are unchanged.",
+            error: "Couldn't check saved previews.",
           });
       });
     return () => {
@@ -124,7 +122,7 @@ export function RecordedPairGuide({
   if (loading)
     return (
       <p className="pair-check-status" role="status">
-        Checking available recorded pairings…
+        Checking saved previews…
       </p>
     );
   if (error)
@@ -132,7 +130,7 @@ export function RecordedPairGuide({
       <div className="recorded-pair-guide pair-unchecked">
         <p>{error}</p>
         <Button type="button" variant="quiet" onClick={retry}>
-          <RefreshCcw size={14} /> Check recorded pairings
+          <RefreshCcw size={14} /> Retry
         </Button>
       </div>
     );
@@ -140,11 +138,7 @@ export function RecordedPairGuide({
   if (selection.ready)
     return (
       <div className="recorded-pair-guide pair-ready" role="status">
-        <Badge tone="success">Ready preview</Badge>
-        <p>
-          A verified recording matches these sources. Reuse costs no fresh
-          units; review the result before allocation.
-        </p>
+        <Badge tone="success">Saved preview ready</Badge>
       </div>
     );
   const samePerformer = selection.suggestions.filter(
@@ -165,16 +159,15 @@ export function RecordedPairGuide({
             ? "Source permission needed"
             : selection.reason === "source_unavailable"
               ? "Source unavailable"
-              : "No recording for this pairing"}
+              : "No preview for this pair"}
         </strong>
       </div>
-      <p>{selection.message}</p>
       {suggestions.length > 0 && (
         <>
           <p className="pair-suggestion-intro">
             {samePerformer.length
-              ? "Keep this performer and choose one of these recorded garments."
-              : "These library pairs have recordings. Using one requires choosing its named performer explicitly."}
+              ? "Garments with saved previews"
+              : "Library pairs with saved previews"}
           </p>
           <div className="pair-suggestions">
             {suggestions.map((suggestion) => {
@@ -187,14 +180,12 @@ export function RecordedPairGuide({
               return (
                 <article key={`${suggestion.performerId}:${suggestion.unitId}`}>
                   <Photo
+                    natural
                     src={suggestion.previewImageUrl}
                     alt={`Recorded YouCam pairing: ${performer?.name}, ${unit?.name}`}
                     sizes="72px"
                   />
                   <div>
-                    <span className="mono">
-                      RECORDED YOUCAM · 0 FRESH UNITS
-                    </span>
                     <strong>
                       {unit?.code} · {unit?.name}
                     </strong>
@@ -217,7 +208,7 @@ export function RecordedPairGuide({
                         disabled={disabled || busy}
                         onClick={() => onOpenLibrary(suggestion.performerId)}
                       >
-                        Review this library pair <ArrowRight size={13} />
+                        Open in library <ArrowRight size={13} />
                       </Button>
                     ) : null}
                   </div>

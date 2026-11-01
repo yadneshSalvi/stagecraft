@@ -4,7 +4,7 @@ import {
   getCurrentBeautyApproval,
   getCurrentBeautyPreview,
 } from "@/lib/domain/selectors";
-import { revision } from "@/lib/format";
+import { displayApproval } from "@/lib/presentation-copy";
 import { Badge, Photo } from "./ui";
 
 export function CrewBeautyEvidence({
@@ -14,13 +14,7 @@ export function CrewBeautyEvidence({
   look: Look;
   currentPerformer?: Performer;
 }) {
-  if (!look.beauty)
-    return (
-      <p className="crew-beauty-unrendered">
-        Makeup is text direction only; no rendered makeup detail is part of this
-        frozen look.
-      </p>
-    );
+  if (!look.beauty) return null;
   const preview = getCurrentBeautyPreview(look);
   const approval = getCurrentBeautyApproval(look);
   const permitted = currentPerformer?.faceCapture?.consent.granted;
@@ -31,37 +25,35 @@ export function CrewBeautyEvidence({
     >
       <figure>
         <Photo
+          natural
           priority
           src={permitted ? preview?.imageUrl : null}
           alt={`${look.title}: separate generated makeup detail`}
         />
         <figcaption>
           {!permitted
-            ? "FACE PERMISSION WITHDRAWN"
+            ? "Permission withdrawn"
             : preview
-              ? `${preview.provenance === "recorded_provider" ? "RECORDED " : ""}YOUCAM MAKEUP`
-              : "MAKEUP PREVIEW NEEDED"}
+              ? "Makeup"
+              : "No makeup preview"}
         </figcaption>
       </figure>
       <div>
         <div className="crew-beauty-title">
-          <span className="mono">
-            MAKEUP {revision(look.beauty.revision)}
-            {preview ? ` · FACE ${preview.faceCaptureVersion}` : ""}
-          </span>
           <Badge tone={approval && permitted ? "success" : "warning"}>
             {!permitted
               ? "Permission missing"
               : approval
-                ? "Makeup approved"
-                : "Makeup not approved"}
+                ? "Approved"
+                : "Not approved"}
           </Badge>
         </div>
-        <p>
-          {approval
-            ? `Approval at source revision: ${approval.approvedBy} · ${approval.rationale}`
-            : "The makeup detail needs its own exact-output approval."}
-        </p>
+        {approval && (
+          <p>
+            {displayApproval(approval).approvedBy} ·{" "}
+            {displayApproval(approval).rationale}
+          </p>
+        )}
         <div className="crew-palette">
           <span>
             <i style={{ background: look.beauty.recipe.lipColor }} />
@@ -74,10 +66,7 @@ export function CrewBeautyEvidence({
             {look.beauty.recipe.blushIntensity}%
           </span>
         </div>
-        <small>
-          Matte lip and blush. Smoothing and reshaping set to zero. Provider
-          intensity is not a physical product amount.
-        </small>
+        <small>Matte lip and blush.</small>
       </div>
     </section>
   );

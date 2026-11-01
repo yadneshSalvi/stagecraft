@@ -4,7 +4,6 @@ import { Check, Plus, Shirt, Users } from "lucide-react";
 import type { Production } from "@/lib/types";
 import { money } from "@/lib/format";
 import { useProduction } from "./production-context";
-import { ProvenanceChip } from "./provenance-chip";
 import { Badge, Button, Field, Modal, Notice, Photo, Skeleton } from "./ui";
 import { InitialCasting } from "./initial-casting";
 import { useRecordedLibrary } from "./recorded-pair-guide";
@@ -78,18 +77,8 @@ export function ExampleLibrary({
     )?.libraryPerformerId ||
     catalog.performers[0]?.id ||
     "";
-  const activePerformer = catalog.performers.find(
-    (item) => item.id === selectedPerformerId,
-  );
   return (
     <div className="example-library">
-      <div className="library-intro">
-        <ProvenanceChip kind="synthetic" />
-        <p>
-          Choose a recorded pairing to review an actual output without using
-          fresh units. Add its references to your own script.
-        </p>
-      </div>
       {kind === "wardrobe" && (
         <div className="library-pair-filter">
           <Field label="Preview with performer">
@@ -100,27 +89,17 @@ export function ExampleLibrary({
               {catalog.performers.map((performer) => (
                 <option key={performer.id} value={performer.id}>
                   {performer.name}
-                  {catalog.project?.performerBindings.some(
-                    (binding) => binding.libraryPerformerId === performer.id,
-                  )
-                    ? " · in your cast library"
-                    : " · example source"}
                 </option>
               ))}
             </select>
           </Field>
-          <p>
-            Ready preview badges apply to{" "}
-            {activePerformer?.name || "this exact performer source"}. Other
-            pairings may need a fresh render.
-          </p>
         </div>
       )}
       {kind === "cast" && lastAdded && (
         <div className="library-casting">
           <strong>
-            {project.performers.find((item) => item.id === lastAdded)?.name} is
-            in the cast library.
+            {project.performers.find((item) => item.id === lastAdded)?.name}{" "}
+            added
           </strong>
           <InitialCasting performerId={lastAdded} />
         </div>
@@ -143,32 +122,29 @@ export function ExampleLibrary({
           return (
             <article className="library-card" key={item.id}>
               <Photo
+                natural
                 src={item.imageUrl}
                 alt={`${item.name}, synthetic library reference`}
                 sizes="(max-width: 700px) 40vw, 180px"
               />
               <div>
-                <span className="mono">
-                  {"code" in item
-                    ? `${item.code} · ${money(item.priceCents, project.currency)}`
-                    : "FICTIONAL ADULT"}
-                </span>
+                {"code" in item && (
+                  <span className="mono">
+                    {item.code} · {money(item.priceCents, project.currency)}
+                  </span>
+                )}
                 <h3>{item.name}</h3>
                 {readyPairs.length > 0 && (
                   <Badge tone="success">
                     {kind === "cast"
-                      ? `${new Set(readyPairs.map((pair) => pair.unitId)).size} ready garments`
-                      : "Ready preview"}
+                      ? `${new Set(readyPairs.map((pair) => pair.unitId)).size} previews ready`
+                      : "Preview ready"}
                   </Badge>
                 )}
                 {count > 0 && (
                   <small>
                     <Check size={12} />
-                    {count}{" "}
-                    {kind === "cast"
-                      ? "cast reference"
-                      : "physical unit record"}
-                    {count === 1 ? "" : "s"} added
+                    Added{count > 1 ? ` ×${count}` : ""}
                   </small>
                 )}
                 <Button
@@ -245,8 +221,7 @@ function LibraryDialogSession({
         if (!busy) onClose();
       }}
       wide
-      title="A small company. A considered wardrobe."
-      description="Add labelled example references without replacing your script or existing work."
+      title="Example library"
     >
       <div
         className="segmented library-tabs"
@@ -258,7 +233,7 @@ function LibraryDialogSession({
           aria-pressed={kind === "cast"}
         >
           <Users size={15} />
-          Cast sources
+          Cast
         </button>
         <button
           onClick={() => setKind("wardrobe")}
@@ -266,7 +241,7 @@ function LibraryDialogSession({
           aria-pressed={kind === "wardrobe"}
         >
           <Shirt size={15} />
-          Garment references
+          Wardrobe
         </button>
       </div>
       <ExampleLibrary
@@ -276,7 +251,7 @@ function LibraryDialogSession({
       />
       <div className="modal-actions">
         <Button onClick={onClose} disabled={busy}>
-          Return to production
+          Done
         </Button>
       </div>
     </Modal>

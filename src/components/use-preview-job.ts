@@ -109,9 +109,7 @@ export function usePreviewJob(
           await refresh();
           onSuccessRef.current();
         } catch {
-          setError(
-            "The result is saved. Reload the production to display its latest revision.",
-          );
+          setError("Result saved. Reload the production to see it.");
         }
       }
     },
@@ -173,7 +171,7 @@ export function usePreviewJob(
           setError(
             cause instanceof Error
               ? cause.message
-              : "The saved preview status could not be loaded. Check its status to reconnect.",
+              : "Couldn't load preview status. Check again.",
           );
       } finally {
         polling = false;
@@ -194,7 +192,7 @@ export function usePreviewJob(
         return;
       if (previous && !retry) {
         setRecoveryMessage(
-          "Check the saved request’s status before sending it again. Recorded results remain available separately.",
+          "Check the saved request's status before sending it again.",
         );
         return;
       }
@@ -227,13 +225,11 @@ export function usePreviewJob(
           if (cause.status === 409) await refresh().catch(() => {});
           setError(
             cause.status === 409
-              ? "The working book changed. The latest revision is loaded; review the inputs before trying again."
+              ? "Production changed. Review the loaded inputs before trying again."
               : cause.message,
           );
         } else {
-          setRecoveryMessage(
-            "The browser did not receive a confirmed result. Check the saved request’s status; this does not start another provider task.",
-          );
+          setRecoveryMessage("Result unconfirmed. Check saved request status.");
         }
       } finally {
         locks.current[mode] = false;
@@ -268,14 +264,14 @@ export function usePreviewJob(
       else {
         setNotFound(mode);
         setRecoveryMessage(
-          "No saved job is visible for this request yet. Check again, or retry this same request identifier. A recorded result can still be used independently.",
+          "Request not found. Check again or retry the same request.",
         );
       }
     } catch (cause) {
       setError(
         cause instanceof Error
           ? cause.message
-          : "Status could not be checked. The original request is still saved.",
+          : "Couldn't check status. Your request is saved.",
       );
     } finally {
       locks.current[mode] = false;

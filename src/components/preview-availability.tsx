@@ -14,8 +14,10 @@ export function PreviewAvailability({ config }: { config: AppConfig | null }) {
   if (freshPreviewAvailable(config)) return null;
   return (
     <Notice>
-      {config?.freshPreviewAvailability?.message ||
-        "Fresh previews are resting. Recorded results and existing approvals still work."}
+      {config?.generationPaused ||
+      config?.freshPreviewAvailability?.reason === "budget_floor"
+        ? "Fresh previews paused today."
+        : "Fresh previews unavailable."}
     </Notice>
   );
 }

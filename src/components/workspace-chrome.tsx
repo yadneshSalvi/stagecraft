@@ -19,8 +19,9 @@ import {
 } from "lucide-react";
 import { useProduction } from "./production-context";
 import { Brand } from "./brand";
-import { Badge, Button, Field, Modal, Notice } from "./ui";
-import { revision } from "@/lib/format";
+import { Button, Field, Modal, Notice } from "./ui";
+import { getReadiness } from "@/lib/domain/selectors";
+import { ExampleDecisions } from "./example-decisions";
 import { deleteProject } from "@/lib/client";
 
 export function WorkspaceChrome({ children }: { children: ReactNode }) {
@@ -96,47 +97,36 @@ export function WorkspaceChrome({ children }: { children: ReactNode }) {
             <Settings2 size={20} />
             <span>Settings</span>
           </button>
-          <Link href="/evidence" aria-label="Evidence and help">
+          <Link href="/evidence" aria-label="Evidence & limits">
             <CircleHelp size={20} />
           </Link>
-          <span
-            className="rail-monogram"
-            title="Your private browser workspace"
-          >
-            YOU
-          </span>
         </div>
       </aside>
       <div className="workspace-body">
         <header className="workspace-topbar">
           <Link className="production-switcher" href="/productions">
             <span className="production-icon">S</span>
-            <span>
-              {project.title}
-              <small>
-                {project.mode === "film"
-                  ? "FILM PRODUCTION"
-                  : "LIVE PERFORMANCE"}
-              </small>
-            </span>
+            <span>{project.title}</span>
             <ChevronDown size={14} />
           </Link>
           <div className="topbar-state">
-            <Badge tone="brass">{revision(project.revision)}</Badge>
+            {project.fixture &&
+              pathname === base &&
+              getReadiness(project).appearanceApproved === 0 && (
+                <ExampleDecisions compact />
+              )}
             <span className="save-state" role="status">
               {busy ? (
                 <>
-                  <LoaderCircle size={13} className="spin" /> Saving revision
+                  <LoaderCircle size={13} className="spin" /> Saving…
                 </>
               ) : (
                 <>
-                  <Check size={13} /> All changes saved
+                  <Check size={13} /> Saved
                 </>
               )}
             </span>
-            {project.fixture && (
-              <span className="sample-pill">EXAMPLE PRODUCTION</span>
-            )}
+            {project.fixture && <span className="sample-pill">Example</span>}
           </div>
         </header>
         <main id="main-content" className="workspace-content">
@@ -154,24 +144,13 @@ export function WorkspaceChrome({ children }: { children: ReactNode }) {
           )}
           {children}
         </main>
-        <footer className="workspace-footer">
-          <span>
-            {project.fixture
-              ? "A fictional production · Synthetic cast and inventory"
-              : "Private production · Access belongs to this browser"}
-          </span>
-          <Link href="/evidence">
-            Evidence &amp; limits <span aria-hidden="true">↗</span>
-          </Link>
-        </footer>
       </div>
       <Modal
         open={settings}
         onClose={() => {
           if (!busy && !deleting) setSettings(false);
         }}
-        title="The production desk"
-        description="Manage this working book, export its records, or remove your private data."
+        title="Settings"
       >
         <form onSubmit={saveSettings} className="form-stack">
           <Field label="Production title">
@@ -182,10 +161,7 @@ export function WorkspaceChrome({ children }: { children: ReactNode }) {
               maxLength={120}
             />
           </Field>
-          <Field
-            label={`Hard wardrobe budget (${project.currency})`}
-            hint="A repair or allocation must stay within this recorded budget."
-          >
+          <Field label={`Wardrobe budget (${project.currency})`}>
             <input
               type="number"
               min="0"
@@ -206,11 +182,7 @@ export function WorkspaceChrome({ children }: { children: ReactNode }) {
           </div>
         </form>
         <div className="settings-data">
-          <h3>Your production data</h3>
-          <p className="muted">
-            Export contains the working book and its evidence references.
-            Original private media remains protected by this browser’s access.
-          </p>
+          <h3>Data</h3>
           <a
             className="button"
             href={`/api/projects/${project.id}/export`}
@@ -219,12 +191,15 @@ export function WorkspaceChrome({ children }: { children: ReactNode }) {
             <Download size={16} />
             Export production JSON
           </a>
+          {project.fixture && <ExampleDecisions />}
+          <Link className="settings-evidence" href="/evidence">
+            Evidence &amp; limits ↗
+          </Link>
           <details>
             <summary>Delete this production</summary>
             <p>
-              Delete the production, private uploads, and generated media. This
-              action cannot be undone. Type <strong>{project.title}</strong> to
-              enable deletion.
+              Cannot be undone. Type <strong>{project.title}</strong> to
+              confirm.
             </p>
             <input
               aria-label="Confirm production title to delete"
@@ -238,7 +213,7 @@ export function WorkspaceChrome({ children }: { children: ReactNode }) {
               onClick={() => void erase()}
             >
               <Trash2 size={16} />
-              Delete production and private data
+              Delete production
             </Button>
           </details>
         </div>

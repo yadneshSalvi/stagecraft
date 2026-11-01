@@ -52,12 +52,8 @@ function presentDraft(row: DraftRow): ScriptDraft {
     characters: row.draft?.characters || [],
     notices:
       row.status === "failed"
-        ? [
-            "The script could not be extracted. Your source draft is retained and the production is unchanged. Submit a new request to try again.",
-          ]
-        : row.draft?.notices || [
-            "Extracting source-linked suggestions. The production has not changed.",
-          ],
+        ? ["Couldn't read the script. Your source draft is saved."]
+        : row.draft?.notices || ["Reading the script…"],
     grounding: row.draft?.grounding,
   };
 }
@@ -306,9 +302,7 @@ export async function createScriptDraft(
       script,
       scenes: [],
       characters: [],
-      notices: [
-        "Extracting source-linked suggestions. No production state or approvals have changed.",
-      ],
+      notices: ["Reading the script…"],
     };
     const result = await client.query<DraftRow>(
       "INSERT INTO sc_script_drafts(id,project_id,owner_id,command_id,base_revision,input_hash,status,draft) VALUES($1,$2,$3,$4,$5,$6,'extracting',$7) RETURNING *",
@@ -331,12 +325,7 @@ export async function createScriptDraft(
     const draft = {
       script: { ...reservation.row.draft!.script!, model },
       ...compiled,
-      notices: [
-        ...compiled.notices,
-        "AI suggestions require source review. No appearance, fitting, supplier, or allocation decision has been approved.",
-        "Scene chronology without explicit evidence starts at story day 1 and remains unreviewed.",
-        "Adoption merges existing reviewed scene edits; removed scheduled scenes require an explicit resolution.",
-      ],
+      notices: compiled.notices,
     };
     await getPool().query(
       "UPDATE sc_script_drafts SET status='review',draft=$2 WHERE id=$1 AND status='extracting'",

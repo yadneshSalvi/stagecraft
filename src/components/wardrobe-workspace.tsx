@@ -1,18 +1,14 @@
 "use client";
 import { useState } from "react";
-import {
-  ArrowUpRight,
-  Plus,
-  Search,
-  Shirt,
-  SlidersHorizontal,
-} from "lucide-react";
+import { ArrowUpRight, Plus, Search } from "lucide-react";
+import { displayFixtureText } from "@/lib/presentation-copy";
 import { money, day } from "@/lib/format";
 import { useProduction } from "./production-context";
 import { Badge, Button, EmptyState, PageHeading, Photo } from "./ui";
 import { UnitDialog, AddUnitDialog } from "./wardrobe-dialogs";
 import { ChangeReview } from "./change-review";
 import { LibraryDialog } from "./example-library";
+import "./round3-wardrobe-handoff.css";
 
 export function WardrobeWorkspace() {
   const { project } = useProduction();
@@ -24,7 +20,7 @@ export function WardrobeWorkspace() {
   const [changeId, setChangeId] = useState<string | null>(null);
   const units = project.units.filter(
     (unit) =>
-      `${unit.name} ${unit.code} ${unit.supplier} ${unit.material}`
+      `${unit.name} ${unit.code} ${displayFixtureText(unit.supplier, project.fixture)} ${unit.material}`
         .toLowerCase()
         .includes(search.toLowerCase()) &&
       (filter === "all" ||
@@ -34,25 +30,19 @@ export function WardrobeWorkspace() {
   );
   const selectedUnit = project.units.find((u) => u.id === selected);
   return (
-    <>
+    <div className="r3-wardrobe">
       <PageHeading
-        eyebrow="THE WARDROBE / A PHOTOGRAPHIC LEDGER"
-        title="Beautiful things. Real commitments."
+        title="Wardrobe"
         action={
           <>
-            <Button onClick={() => setLibrary(true)}>
-              Example garment library
-            </Button>
+            <Button onClick={() => setLibrary(true)}>Example library</Button>
             <Button variant="primary" onClick={() => setAdding(true)}>
               <Plus size={16} />
-              Add a physical unit
+              Add unit
             </Button>
           </>
         }
-      >
-        Every row is one garment you can locate, measure, allocate, and account
-        for.
-      </PageHeading>
+      />
       <LibraryDialog
         open={library}
         onClose={() => setLibrary(false)}
@@ -65,7 +55,7 @@ export function WardrobeWorkspace() {
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Find a unit, fabric, or supplier…"
+            placeholder="Search units…"
           />
         </label>
         <div className="segmented" aria-label="Wardrobe filter">
@@ -85,21 +75,10 @@ export function WardrobeWorkspace() {
             </button>
           ))}
         </div>
-        <span className="mono">{units.length} PHYSICAL UNITS</span>
+        <span className="mono">{units.length} units</span>
       </div>
       {!project.units.length ? (
-        <EmptyState
-          title="Open the costume room."
-          action={
-            <Button variant="primary" onClick={() => setAdding(true)}>
-              <Shirt size={16} />
-              Add the first physical unit
-            </Button>
-          }
-        >
-          A style is a design. A physical unit is the exact garment the crew
-          will collect. Add each item with its own identifier and evidence.
-        </EmptyState>
+        <EmptyState title="No units yet" />
       ) : !units.length ? (
         <EmptyState
           title="No unit matches that search."
@@ -113,15 +92,13 @@ export function WardrobeWorkspace() {
               Clear filters
             </Button>
           }
-        >
-          Try a unit code, garment name, fabric, or supplier.
-        </EmptyState>
+        />
       ) : (
         <div className="wardrobe-ledger">
           <div className="ledger-head">
-            <span>PHYSICAL UNIT</span>
-            <span>EVIDENCE & LOCATION</span>
-            <span>COMMITMENT</span>
+            <span>Unit</span>
+            <span>Location</span>
+            <span>Use</span>
             <span />
           </div>
           {units.map((unit) => {
@@ -136,7 +113,7 @@ export function WardrobeWorkspace() {
                 onClick={() => setSelected(unit.id)}
               >
                 <div className="ledger-unit">
-                  <Photo src={unit.imageUrl} alt={unit.name} />
+                  <Photo natural src={unit.imageUrl} alt={unit.name} />
                   <div>
                     <span className="mono">
                       {unit.code}{" "}
@@ -148,57 +125,40 @@ export function WardrobeWorkspace() {
                     <p>
                       {unit.material} · {unit.color}
                     </p>
-                    <div className="inline-badges">
-                      <Badge
-                        tone={
-                          unit.status === "available" ? "neutral" : "danger"
-                        }
-                      >
-                        {unit.status === "available"
-                          ? "In inventory"
-                          : unit.status}
-                      </Badge>
-                      {unit.availability.provenance === "synthetic" && (
-                        <Badge tone="brass">Synthetic stock</Badge>
-                      )}
-                    </div>
+                    {unit.status !== "available" && (
+                      <Badge tone="danger">Unavailable</Badge>
+                    )}
                   </div>
                 </div>
                 <div className="ledger-evidence">
                   <strong>{unit.location}</strong>
-                  <span>{unit.supplier}</span>
+                  <span>
+                    {displayFixtureText(unit.supplier, project.fixture)}
+                  </span>
                   <p>
-                    {unit.availability.confirmed
-                      ? "Availability evidence recorded"
-                      : "Availability to confirm"}
+                    {unit.availability.confirmed ? "Confirmed" : "Unconfirmed"}
                     <small>
-                      Checked{" "}
                       {day(unit.availability.checkedAt, project.timeZone)}
                     </small>
                   </p>
                   <span className="fit-state">
                     {
                       {
-                        not_measured: "Not measured / not fitted",
-                        provisional: "Provisionally compatible",
-                        scheduled: "Fitting scheduled",
-                        confirmed: "Fitting evidence recorded",
-                        alteration: "Alteration required",
+                        not_measured: "Not fitted",
+                        provisional: "Provisional",
+                        scheduled: "Fitting booked",
+                        confirmed: "Fitted",
+                        alteration: "Needs alteration",
                       }[unit.fitting.status]
                     }
                   </span>
                 </div>
                 <div className="ledger-commitment">
                   <strong>{money(unit.priceCents, project.currency)}</strong>
-                  <span>
-                    {unit.ownership === "rental"
-                      ? "recorded hire quote"
-                      : "owned stock value"}
-                  </span>
                   <p>
                     {scenes.length
-                      ? `${scenes.length} scene${scenes.length === 1 ? "" : "s"} depend on this unit`
-                      : "Not yet in a look"}
+                      ? `${scenes.length} scene${scenes.length === 1 ? "" : "s"}`
+                      : "Unused"}
                   </p>
                   <small>
                     {looks
@@ -218,16 +178,6 @@ export function WardrobeWorkspace() {
           })}
         </div>
       )}
-      <div className="wardrobe-footnote">
-        <SlidersHorizontal size={17} />
-        <div>
-          <strong>Every physical unit keeps its own evidence.</strong>
-          <p>
-            Open a unit to inspect dated availability, measurements, condition
-            and performer-specific fitting records.
-          </p>
-        </div>
-      </div>
       {selectedUnit && (
         <UnitDialog
           unit={selectedUnit}
@@ -247,6 +197,6 @@ export function WardrobeWorkspace() {
           initialUnitId={changeId}
         />
       )}
-    </>
+    </div>
   );
 }

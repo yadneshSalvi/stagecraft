@@ -95,14 +95,12 @@ test("concurrent revision shows an in-dialog error, preserves approval notes, an
       .getByRole("button", { name: "Approve appearance", exact: true })
       .click();
     const dialog = page.getByRole("dialog", {
-      name: "Approve this exact appearance",
+      name: "Approve appearance",
     });
-    await dialog
-      .getByLabel("Reviewer name or role")
-      .fill("Synthetic concurrency review");
+    await dialog.getByLabel("Reviewer").fill("Synthetic concurrency review");
     const rationale =
       "Appearance reviewed for the synthetic scenario. No physical fitting is claimed.";
-    await dialog.getByLabel("What did you approve?").fill(rationale);
+    await dialog.getByLabel("Note").fill(rationale);
     const concurrent = await page.request.post(
       `/api/projects/${project.id}/commands`,
       {
@@ -117,21 +115,15 @@ test("concurrent revision shows an in-dialog error, preserves approval notes, an
       },
     );
     expect(concurrent.status()).toBe(200);
-    await dialog
-      .getByRole("button", { name: "Record appearance approval", exact: true })
-      .click();
+    await dialog.getByRole("button", { name: "Approve", exact: true }).click();
     await expect(dialog.getByRole("alert")).toContainText(
       "The working book changed while this page was open",
     );
-    await expect(dialog.getByLabel("What did you approve?")).toHaveValue(
-      rationale,
-    );
-    await expect(dialog.getByLabel("Reviewer name or role")).toHaveValue(
+    await expect(dialog.getByLabel("Note")).toHaveValue(rationale);
+    await expect(dialog.getByLabel("Reviewer")).toHaveValue(
       "Synthetic concurrency review",
     );
-    await dialog
-      .getByRole("button", { name: "Record appearance approval", exact: true })
-      .click();
+    await dialog.getByRole("button", { name: "Approve", exact: true }).click();
     await expect(dialog).not.toBeVisible();
     const current: Production = (
       await (await page.request.get(`/api/projects/${project.id}`)).json()

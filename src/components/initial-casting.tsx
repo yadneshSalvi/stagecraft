@@ -35,9 +35,7 @@ export function InitialCasting({ performerId }: { performerId: string }) {
           option.replacementPerformerId === performerId && option.feasible,
       );
       if (!proposal || !option)
-        throw new Error(
-          "This character could not be assigned under the current production facts. Review the casting proposal on the production board.",
-        );
+        throw new Error("Review the casting proposal on the production board.");
       const result = await commandProject(proposed.project, {
         type: "adopt_repair",
         proposalId: proposal.id,
@@ -59,7 +57,7 @@ export function InitialCasting({ performerId }: { performerId: string }) {
   if (!available.length) return null;
   return (
     <section className="initial-casting">
-      <Field label="Assign this performer to an uncast character">
+      <Field label="Cast as">
         <select
           value={characterId}
           onChange={(event) => setSelected(event.target.value)}
@@ -77,13 +75,9 @@ export function InitialCasting({ performerId }: { performerId: string }) {
         disabled={busy}
         onClick={() => void assign()}
       >
-        Record initial casting
+        Cast
         <ArrowRight size={14} />
       </Button>
-      <p>
-        Creates the first casting decision. No existing actor evidence is
-        transferred. Later recasts use the production’s impact review.
-      </p>
     </section>
   );
 }

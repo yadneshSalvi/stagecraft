@@ -2,18 +2,18 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  ArrowRight,
-  Plus,
-  FolderOpen,
-  LockKeyhole,
-  MoveUpRight,
-} from "lucide-react";
+import { ArrowRight, Plus, FolderOpen, MoveUpRight } from "lucide-react";
 import { createProject, listProjects, type ProjectSummary } from "@/lib/client";
-import { dateTime, revision } from "@/lib/format";
+import { dateTime } from "@/lib/format";
 import { Button, Field, Modal, Notice, Photo } from "./ui";
 
-export function ProductionEntry({ compact = false }: { compact?: boolean }) {
+export function ProductionEntry({
+  compact = false,
+  exampleOnly = false,
+}: {
+  compact?: boolean;
+  exampleOnly?: boolean;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState<"example" | "blank" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,26 +44,23 @@ export function ProductionEntry({ compact = false }: { compact?: boolean }) {
           disabled={!!busy}
           onClick={() => start("example")}
         >
-          {compact ? "Open example production" : "Step inside the production"}
+          Open example
           <ArrowRight size={17} />
         </Button>
-        <Button
-          variant="quiet"
-          disabled={!!busy}
-          onClick={() => {
-            setOpen(true);
-            setError(null);
-          }}
-        >
-          Start your own
-          <Plus size={16} />
-        </Button>
+        {!exampleOnly && (
+          <Button
+            variant="quiet"
+            disabled={!!busy}
+            onClick={() => {
+              setOpen(true);
+              setError(null);
+            }}
+          >
+            Start your own
+            <Plus size={16} />
+          </Button>
+        )}
       </div>
-      {!compact && (
-        <p className="entry-note">
-          <LockKeyhole size={12} /> Your private copy. No sign-up required.
-        </p>
-      )}
       {error && !open && <Notice tone="danger">{error}</Notice>}
       <Modal
         open={open}
@@ -71,7 +68,6 @@ export function ProductionEntry({ compact = false }: { compact?: boolean }) {
           if (!busy) setOpen(false);
         }}
         title="A new production"
-        description="Start with your script, your cast, and a wardrobe you can account for."
       >
         <form
           onSubmit={(event) => {
@@ -84,17 +80,13 @@ export function ProductionEntry({ compact = false }: { compact?: boolean }) {
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="A working title is enough"
+              placeholder="Working title"
               required
               maxLength={120}
               autoFocus
             />
           </Field>
-          <Notice>
-            Your workspace belongs to this browser. Keep this browser’s cookies
-            to return to it. You can export or delete your production at any
-            time.
-          </Notice>
+          <Notice>Saved privately in this browser.</Notice>
           {error && <Notice tone="danger">{error}</Notice>}
           <div className="modal-actions">
             <Button
@@ -139,7 +131,7 @@ export function ProjectList() {
   if (!loaded)
     return (
       <p className="muted" role="status">
-        Opening your working books…
+        Opening productions…
       </p>
     );
   if (!projects.length)
@@ -147,11 +139,7 @@ export function ProjectList() {
       <div className="new-production-note">
         <FolderOpen size={22} />
         <div>
-          <h2>Your next story starts here.</h2>
-          <p>
-            Your saved productions will appear in this browser. Open the example
-            to explore a complete working book, or begin with a blank page.
-          </p>
+          <h2>No productions yet</h2>
         </div>
       </div>
     );
@@ -169,10 +157,7 @@ export function ProjectList() {
             fit="cover"
           />
           <div>
-            <p className="eyebrow">
-              {project.fixture ? "EXAMPLE PRODUCTION" : "YOUR PRODUCTION"} /{" "}
-              {revision(project.revision)}
-            </p>
+            {project.fixture && <span className="sample-pill">Example</span>}
             <h2>{project.title}</h2>
             <p>
               {project.characterCount} characters · {project.sceneCount} scenes

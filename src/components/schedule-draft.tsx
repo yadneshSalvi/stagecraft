@@ -39,18 +39,14 @@ export function ScheduleDraft({ onClose }: { onClose: () => void }) {
       onClose={() => {
         if (!busy) onClose();
       }}
-      title="Give the script a first call sheet."
-      description="Choose the production date. Missing scene calls will follow script order; existing edited calls stay in place."
+      title="Draft calls"
     >
       <form className="form-stack" onSubmit={draft}>
         <p>
           <CalendarDays size={16} /> {missing.length} unscheduled scenes ·{" "}
           {project.timeZone}
         </p>
-        <Field
-          label="First production call"
-          hint={`Date and time in ${project.timeZone}; independent of story days.`}
-        >
+        <Field label="First production call">
           <input
             type="datetime-local"
             value={start}
@@ -89,10 +85,6 @@ export function ScheduleDraft({ onClose }: { onClose: () => void }) {
             placeholder="e.g. Main stage"
           />
         </Field>
-        <p className="muted">
-          These are editable planning durations. Review travel, preparation and
-          changes before adopting an allocation.
-        </p>
         {error && <Notice tone="danger">{error}</Notice>}
         <div className="modal-actions">
           <Button type="button" onClick={onClose}>

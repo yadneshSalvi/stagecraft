@@ -1,0 +1,314 @@
+{
+  "sourceCommit": "4424b8fb58908c13c88201a5a0b9e5cba682ae18",
+  "applicationCommit": "8310862fb13be94f3748916963293fa41e45b215",
+  "environment": "canonical production before Round 3",
+  "capture": "Codex in-app browser at requested CSS viewports. Larger captures were repainted with an explicit compositor visible size; some STAGECRAFT full-page viewport crops omit the 15px scrollbar. No resizing or UI edits.",
+  "screenshots": [
+    {
+      "file": "before/allocation-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/allocation-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/alternatives-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/alternatives-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/approval-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/approval-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/board-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/board-1440x900.png",
+      "width": 1425,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/change-entry-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/change-entry-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/change-impact-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/change-impact-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/crew-pack-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/crew-pack-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/evidence-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/evidence-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/handoff-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/handoff-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/landing-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/landing-1440x900.png",
+      "width": 1425,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/looks-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/looks-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/makeup-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/makeup-1440x900.png",
+      "width": 1425,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/necklace-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/necklace-1440x900.png",
+      "width": 1425,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/repair-blocker-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/repair-blocker-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/schedule-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/schedule-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/script-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/script-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "before/wardrobe-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      }
+    },
+    {
+      "file": "before/wardrobe-1440x900.png",
+      "width": 1425,
+      "height": 900,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    }
+  ]
+}

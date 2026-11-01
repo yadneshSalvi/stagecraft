@@ -89,7 +89,7 @@ NODE_OPTIONS=--conditions=react-server pnpm exec tsx scripts/record-previews.ts
 
 Its explicit `--confirm-live` mode is a seven-task, 14-estimated-unit plan, with atomically written pre-submission state and task-ID recovery in ignored `artifacts/private/recorded-previews/`. Never rerun it as a casual test: fresh submissions require shared-budget authorization. Existing successful tasks are not resubmitted, ambiguous tasks remain stopped, and an unreadable ledger is never reset automatically. Current artwork must match the persisted input hashes. Publishing preserves reviewed public inspection notes when input and output hashes match. No further sample regeneration is required for setup or judging.
 
-Use the shipped recordings for routine rehearsals. They are actual provider outputs over synthetic source artwork, with visible inspection caveats, and carry no automatic operator approvals, supplier confirmations or physical results.
+Use the shipped recordings for routine rehearsals. They are actual provider outputs over synthetic source artwork. Inspection notes retain visible differences. They carry no automatic operator approvals, supplier confirmations or physical results. One Example marker identifies fixture productions; Evidence & limits holds the provenance definitions, and public manifests retain hashes and input lineage. Do not reintroduce per-image or per-record provenance chips.
 
 Public fixture loading uses thirteen frozen JPEG transports in `public/examples/transports/`, registered by exact source path, raw hash, body/face profile and original recorded upload hash in `fixture-transports.json`. Both live and recorded jobs use the verified bytes; private uploads do not use this registry. Preserve these files when deploying. A missing/corrupt transport or changed source fails closed. The offline command `NODE_OPTIONS=--conditions=react-server pnpm exec tsx scripts/freeze-fixture-transports.ts` can reproduce them only on a runtime whose output exactly matches the existing recording hashes. It makes no network calls and refuses publication when those hashes differ; never update recording hashes merely to accommodate a different encoder.
 
@@ -116,3 +116,13 @@ The existing fresh-job preflight normally refreshes the balance before enqueue t
 Ambiguous submissions and orphaned charged reservations are not released merely because 24 hours have elapsed. A lost provider response can leave no task identity to check, and project erasure can remove the job while retaining its spend ledger. A bounded reconciliation process would need retained provider evidence and a verified terminal state. The application retains the conservative reservation policy rather than inferring non-spend from age.
 
 Long-script scene chunking is also deferred. It requires deterministic merging of cross-chunk character/scene identities, original offsets and duplicate quotations, plus a changed request budget. The supported path remains one bounded document of at most 60,000 characters with a 32,000-token output cap and reviewable partial grounding. The published full-act attempts retain both their successful and unsuccessful grounding proportions.
+
+## Round-three presentation and repair behavior
+
+Round-three copy rules supersede the original repeated-disclosure policy. Keep functional errors, consent, accessible names, unit codes, prices, scene numbers and dates. Example approvals remain explicitly attributed in stored records. Presentation helpers shorten only known app-authored legacy fixture text; they do not rewrite historical revisions or user-entered decisions.
+
+A repair whose exact candidate is approved can still need decisions for other scheduled looks. That is an amber decision requirement, with the count and affected look IDs, rather than an empty constraint conflict. Recording example decisions triggers an explicit fresh proposal. Physical infeasibility remains separate. The consumed return URL is replaced so reload does not repeat the mutation.
+
+The named creative-direction acknowledgement is scoped to the exact current references and direction. It is separate from appearance approval and becomes inapplicable when those dependencies change. Matching repair candidates prefer an approved exact twin over a newer unapproved duplicate.
+
+No new provider recordings or schema migrations are required for the STAGECRAFT round-three release. Production acceptance and its exact deployed commit are recorded in the round-three evidence after verification.

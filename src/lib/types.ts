@@ -93,6 +93,7 @@ export interface Character {
   description: string;
   performerId: string;
   ownClothes?: boolean;
+  directionAcknowledgements?: DirectionReferenceAcknowledgement[];
   direction: {
     revision: number;
     text: string;
@@ -100,6 +101,23 @@ export interface Character {
     essential: string[];
     approvedBy: string | null;
   };
+}
+export interface DirectionReferenceReview {
+  characterId: string;
+  unitId: string;
+  lookIds: string[];
+  references: string[];
+  directionRevision: number;
+  directionHash: string;
+  sourceRevision: number;
+  referenceHash: string;
+}
+export interface DirectionReferenceAcknowledgement extends DirectionReferenceReview {
+  id: string;
+  acknowledgedRevision: number;
+  acknowledgedBy: string;
+  rationale: string;
+  acknowledgedAt: string;
 }
 export interface Preview {
   id: string;
@@ -528,6 +546,8 @@ export interface RepairOption {
   requiresVisualApproval: boolean;
   findings: AllocationFinding[];
   feasible: boolean;
+  allocationStatus?: AllocationResult["status"];
+  decisionsNeeded?: { count: number; lookIds: string[] };
   explanation: string;
   candidateId?: string;
   candidateIds?: string[];
@@ -672,6 +692,15 @@ export type ProductionCommand =
       text: string;
       essential: string[];
       palette?: string[];
+    }
+  | {
+      type: "acknowledge_direction_reference";
+      characterId: string;
+      unitId: string;
+      sourceRevision: number;
+      referenceHash: string;
+      acknowledgedBy: string;
+      rationale: string;
     }
   | {
       type: "update_production";

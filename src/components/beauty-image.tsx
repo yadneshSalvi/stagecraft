@@ -1,9 +1,8 @@
 "use client";
 import { ArrowRight, ScanFace } from "lucide-react";
 import type { BeautyPreview, Performer } from "@/lib/types";
-import { provenanceLabel } from "@/lib/format";
 import { Button, Photo } from "./ui";
-import { ProvenanceChip } from "./provenance-chip";
+import { ImageComparison } from "./image-comparison";
 
 export type BeautyView = "preview" | "source" | "compare";
 export function BeautyImage({
@@ -33,14 +32,14 @@ export function BeautyImage({
             disabled={!preview}
             onClick={() => setView("preview")}
           >
-            Makeup preview
+            Preview
           </button>
           <button
             aria-pressed={view === "source"}
             className={view === "source" ? "active" : ""}
             onClick={() => setView("source")}
           >
-            Face source
+            Source
           </button>
           <button
             aria-pressed={view === "compare"}
@@ -48,32 +47,25 @@ export function BeautyImage({
             disabled={!preview}
             onClick={() => setView("compare")}
           >
-            Compare makeup
+            Compare
           </button>
         </div>
-        <span className="mono">FACE / SEPARATE DETAIL</span>
       </div>
       {source ? (
-        <div
-          className={`look-image-stage beauty-image-stage ${view === "compare" ? "comparison-stage" : ""}`}
-        >
-          {view === "compare" && (
-            <figure>
-              <Photo
-                original
-                src={source}
-                alt={`Original face source of ${performer?.name}`}
-              />
-              <figcaption>
-                {face?.synthetic
-                  ? "SYNTHETIC FACE SOURCE"
-                  : "PERMITTED FACE SOURCE"}
-              </figcaption>
-            </figure>
-          )}
-          <figure>
+        <div className="face-image-stage">
+          {view === "compare" && preview ? (
+            <ImageComparison
+              sourceUrl={source}
+              previewUrl={preview.imageUrl}
+              sourceAlt={`${performer?.name}, original face source`}
+              previewAlt={`${characterName}, actual YouCam Makeup VTO result`}
+              aspectRatio={4 / 5}
+            />
+          ) : (
             <Photo
               original
+              natural
+              aspectRatio={4 / 5}
               priority
               src={view === "source" ? source : preview?.imageUrl || source}
               alt={
@@ -82,48 +74,18 @@ export function BeautyImage({
                   : `${characterName}, ${preview ? "actual YouCam Makeup VTO result" : "face source awaiting makeup preview"}`
               }
             />
-            <figcaption>
-              {view === "source"
-                ? face?.synthetic
-                  ? "SYNTHETIC FACE SOURCE"
-                  : "PERMITTED FACE SOURCE"
-                : preview
-                  ? `${provenanceLabel(preview.provenance).toUpperCase()} / MAKEUP`
-                  : "FACE SOURCE · DETAIL NEEDED"}
-            </figcaption>
-          </figure>
+          )}
         </div>
       ) : (
         <div className="beauty-source-empty">
           <ScanFace size={42} />
-          <h2>The face deserves its own frame.</h2>
-          <p>
-            Add an independently permitted face source to inspect the makeup at
-            useful detail.
-          </p>
+          <h2>Face source needed</h2>
           <Button variant="primary" onClick={onSource}>
-            Add a separate face source
+            Add face source
             <ArrowRight size={15} />
           </Button>
         </div>
       )}
-      <div className="look-image-footer">
-        <div className="provenance-row">
-          {source && (
-            <ProvenanceChip kind={face?.synthetic ? "synthetic" : "photo"} />
-          )}
-          {preview && view !== "source" && (
-            <ProvenanceChip
-              kind={
-                preview.provenance === "recorded_provider"
-                  ? "recorded"
-                  : "fresh"
-              }
-            />
-          )}
-        </div>
-        <span>Independent makeup evidence.</span>
-      </div>
     </>
   );
 }

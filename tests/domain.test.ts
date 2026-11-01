@@ -833,10 +833,11 @@ describe("commercial evidence and frozen crew documents", () => {
     });
     const pack = withPack.packs[0];
     expect(pack.title).toMatch(/^Working pack/);
+    expect(pack.warnings.join(" ")).toMatch(/not approved/);
+    expect(pack.warnings.join(" ")).not.toMatch(/Synthetic production/);
     expect(pack.warnings.join(" ")).toMatch(
-      /no exact current appearance approval/,
+      /supplier unconfirmed|cover every required physical unit/,
     );
-    expect(pack.warnings.join(" ")).toMatch(/Synthetic production/);
     expect(pack.sourceRevision).toBe(withPack.revision);
     expect(pack.snapshot).toMatchObject({
       currency: "GBP",
@@ -937,7 +938,7 @@ describe("commercial evidence and frozen crew documents", () => {
       ),
     ).toBe(true);
     expect(getReadiness(production).ready).toBe(false);
-    expect(getReadiness(production).nextAction).toMatch(/quote needs checking/);
+    expect(getReadiness(production).nextAction).toMatch(/quote expired/);
     expect(JSON.stringify(production)).toBe(json);
   });
 });

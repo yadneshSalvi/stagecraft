@@ -315,9 +315,7 @@ describe("reviewed appearance candidates and admissibility", () => {
       enabled: false,
     });
     expect(getCurrentApproval(nora(off), off)).toBeUndefined();
-    expect(off.events.at(-1)?.summary).toMatch(
-      /Removed 1 explicit sample decisions/,
-    );
+    expect(off.events.at(-1)?.summary).toMatch(/Removed 1 example approvals/);
   });
   it("reapproves existing pixels after direction edits without rendering or transferring the old decision", () => {
     let p = candidate(approveManaged(example()));
@@ -545,8 +543,7 @@ describe("sample decisions, custom planning and serialized compatibility", () =>
     expect(
       p.looks.every(
         (look) =>
-          getCurrentApproval(look, p)?.approvedBy ===
-          "Example reviewer (sample decision)",
+          getCurrentApproval(look, p)?.approvedBy === "Example reviewer",
       ),
     ).toBe(true);
     expect(
@@ -750,7 +747,7 @@ describe("sample decisions, custom planning and serialized compatibility", () =>
       {
         id: "detail-brass-pendant",
         librarySourceId: "detail-brass-pendant",
-        name: "Small brass pendant · synthetic reference",
+        name: "Small brass pendant",
         imageUrl: "/assets/accessories/brass-pendant.webp",
         assetId: null,
         synthetic: true,
@@ -1079,8 +1076,6 @@ describe("independent hair and necklace lineage", () => {
         (item) => item.id === "performer-ada",
       )?.faceCapture?.imageUrl,
     ).toBeNull();
-    expect(pack.warnings.join(" ")).toMatch(
-      /necklace.*no exact current approval/,
-    );
+    expect(pack.warnings.join(" ")).toMatch(/necklace not approved/);
   });
 });

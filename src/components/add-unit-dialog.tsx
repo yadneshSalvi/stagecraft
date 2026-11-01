@@ -64,7 +64,7 @@ export function AddUnitDialog({
         fitting: {
           performerId: null,
           status: "not_measured",
-          evidence: "No physical fitting has been recorded.",
+          evidence: "Not fitted yet.",
           provenance: project.fixture ? "synthetic" : "manual",
         },
         availability: {
@@ -113,12 +113,11 @@ export function AddUnitDialog({
         if (!saving && !busy) onClose();
       }}
       wide
-      title="One garment. One accountable unit."
-      description="Record what is known. Measurements, supplier confirmation, and fitting can remain explicitly unresolved."
+      title="Add unit"
     >
       <form className="form-stack" onSubmit={create}>
         <div className="field-grid">
-          <Field label="Physical unit identifier">
+          <Field label="Unit code">
             <input
               required
               value={code}
@@ -138,7 +137,7 @@ export function AddUnitDialog({
           </Field>
         </div>
         <div className="field-grid">
-          <Field label="Garment category">
+          <Field label="Category">
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as GarmentCategory)}
@@ -157,13 +156,13 @@ export function AddUnitDialog({
                 setOwnership(e.target.value as PhysicalUnit["ownership"])
               }
             >
-              <option value="owned">Owned by the production</option>
-              <option value="rental">Rental / supplier stock</option>
+              <option value="owned">Owned</option>
+              <option value="rental">Rental</option>
             </select>
           </Field>
         </div>
         <div className="field-grid">
-          <Field label="Custodian or supplier">
+          <Field label="Supplier">
             <input
               required
               value={supplier}
@@ -171,7 +170,7 @@ export function AddUnitDialog({
               maxLength={120}
             />
           </Field>
-          <Field label="Current location">
+          <Field label="Location">
             <input
               required
               value={location}
@@ -196,14 +195,14 @@ export function AddUnitDialog({
             />
           </Field>
         </div>
-        <Field label="Condition and preparation">
+        <Field label="Condition">
           <textarea
             required
             value={condition}
             onChange={(e) => setCondition(e.target.value)}
             maxLength={500}
             rows={2}
-            placeholder="Record condition, cleaning, and any alteration needs."
+            placeholder="Cleaning, alterations…"
           />
         </Field>
         <div className="measurement-fields">
@@ -242,7 +241,7 @@ export function AddUnitDialog({
           </Field>
         </div>
         <div className="field-grid">
-          <Field label={`Recorded price (${project.currency})`}>
+          <Field label={`Price (${project.currency})`}>
             <input
               required
               type="number"
@@ -253,7 +252,7 @@ export function AddUnitDialog({
               onChange={(e) => setPrice(e.target.value)}
             />
           </Field>
-          <Field label="Price valid through">
+          <Field label="Valid until">
             <input
               required
               type="date"
@@ -262,17 +261,17 @@ export function AddUnitDialog({
             />
           </Field>
         </div>
-        <Field label="Price source / quote reference">
+        <Field label="Quote ref">
           <input
             required
             value={priceSource}
             onChange={(e) => setPriceSource(e.target.value)}
             maxLength={500}
-            placeholder="e.g. Named supplier quote and reference, or owned stock valuation"
+            placeholder="Supplier quote ref"
           />
         </Field>
         <div className="field-grid">
-          <Field label={`Proposed availability from (${project.timeZone})`}>
+          <Field label={`Available from (${project.timeZone})`}>
             <input
               type="datetime-local"
               value={from}
@@ -280,7 +279,7 @@ export function AddUnitDialog({
               onChange={(e) => setFrom(e.target.value)}
             />
           </Field>
-          <Field label="Proposed availability through">
+          <Field label="Available to">
             <input
               type="datetime-local"
               value={to}
@@ -289,7 +288,7 @@ export function AddUnitDialog({
             />
           </Field>
         </div>
-        <Field label="Availability source and what still needs checking">
+        <Field label="Availability notes">
           <textarea
             required
             value={availabilitySource}
@@ -313,15 +312,9 @@ export function AddUnitDialog({
               required
               onChange={(e) => setRights(e.target.checked)}
             />
-            I have rights to this reference image and permission to process it
-            with YouCam.
+            I have the rights to use this image with YouCam.
           </label>
         )}
-        <Notice>
-          New units begin with unconfirmed availability and no fitting. Add
-          actual supporting evidence in the unit record when it becomes
-          available.
-        </Notice>
         {error && <Notice tone="danger">{error}</Notice>}
         <div className="modal-actions">
           <Button type="button" onClick={onClose} disabled={saving}>
@@ -333,7 +326,7 @@ export function AddUnitDialog({
             busy={saving || busy}
             disabled={!!file && !rights}
           >
-            Add physical unit
+            Add unit
           </Button>
         </div>
       </form>

@@ -14,6 +14,7 @@ import {
   getApprovedAppearanceChoices,
 } from "./lineage";
 import { fingerprint } from "./hash";
+import { money } from "../format";
 import {
   getAllocationDecisionSummary,
   scheduledDressedLooks,
@@ -407,7 +408,7 @@ function buildDemands(
           finding(
             "PREPARATION_UNKNOWN",
             "unverified",
-            `${look.title} has no known preparation duration. Feasibility does not assume zero minutes.`,
+            `${look.title}: prep time unknown`,
             look.unitIds,
             [occurrence.id],
             [look.id],
@@ -433,7 +434,7 @@ function buildDemands(
           finding(
             "PREPARATION_ESTIMATED",
             "unverified",
-            `${look.title}'s ${look.preparationMinutes}-minute preparation is an estimate, not an observed result.`,
+            `${look.title}: ${look.preparationMinutes}-min prep (estimate)`,
             look.unitIds,
             [occurrence.id],
             [look.id],
@@ -707,7 +708,7 @@ function transitionFindings(production: Production): AllocationFinding[] {
           finding(
             "TRANSITION_UNKNOWN",
             "unverified",
-            `${performer.name}'s change duration is unknown; the reverse transition does not establish this direction.`,
+            `${performer.name}: change time unknown`,
             [],
             [occurrence.id, next.id],
           ),
@@ -747,7 +748,7 @@ function transitionFindings(production: Production): AllocationFinding[] {
           finding(
             "TRANSITION_ESTIMATED",
             "unverified",
-            `${performer.name}'s directional change duration is estimated, not observed.`,
+            `${performer.name}: change time estimated`,
             [],
             [occurrence.id, next.id],
           ),
@@ -774,7 +775,7 @@ function transitionFindings(production: Production): AllocationFinding[] {
           status === "infeasible" ? "conflict" : "unverified",
           status === "infeasible"
             ? `${resource} cannot complete the recorded changes within its capacity and change windows.`
-            : `${resource}'s change windows exceed the bounded crew checker; feasibility remains unverified.`,
+            : `${resource}: too many windows to verify`,
           [],
           unique(tasks.flatMap((task) => task.occurrences)),
         ),
@@ -845,7 +846,7 @@ function validateAllocationModel(
         checkLimited ? "COVERAGE_CHECK_LIMIT" : "DEMAND_COVERAGE",
         checkLimited ? "unverified" : "conflict",
         checkLimited
-          ? "Demand coverage exceeds the constraint checker's bounded matching scope; this assignment is unverified."
+          ? "Coverage not verified"
           : "The allocation must cover every required physical unit exactly once using only exact currently approved appearance recipes.",
       ),
     );
@@ -936,7 +937,7 @@ function validateAllocationModel(
         finding(
           "AVAILABILITY_UNCONFIRMED",
           "unverified",
-          `${unit.code}'s availability requires source confirmation${unit.availability.provenance === "synthetic" ? "; this is synthetic evidence" : ""}.`,
+          `${unit.code}: availability unconfirmed`,
           ...scope,
         ),
       );
@@ -945,7 +946,7 @@ function validateAllocationModel(
         finding(
           "PRICE_UNKNOWN",
           "conflict",
-          `${unit.code} has no quoted-price source. An unknown price cannot count as free stock under the hard budget.`,
+          `${unit.code}: no price recorded`,
           ...scope,
         ),
       );
@@ -954,7 +955,7 @@ function validateAllocationModel(
         finding(
           "INVALID_PRICE",
           "conflict",
-          `${unit.code} needs an exact nonnegative quote in minor currency units.`,
+          `${unit.code}: invalid price`,
           ...scope,
         ),
       );
@@ -967,7 +968,7 @@ function validateAllocationModel(
         finding(
           "QUOTE_EXPIRED",
           "unverified",
-          `${unit.code}'s quote needs checking; the source or validity is missing or expired.`,
+          `${unit.code}: quote expired`,
           ...scope,
         ),
       );
@@ -976,7 +977,7 @@ function validateAllocationModel(
         finding(
           "UNIT_LOCATION_UNVERIFIED",
           "unverified",
-          `${unit.code} is at ${unit.location || "an unknown location"}; transport to ${demand.occurrence.location || "the occurrence"} is not recorded.`,
+          `${unit.code}: transport from ${unit.location || "unknown location"} not recorded`,
           ...scope,
         ),
       );
@@ -1003,7 +1004,7 @@ function validateAllocationModel(
         finding(
           "FITTING_UNVERIFIED",
           "unverified",
-          `${unit.code}'s fit for this performer is ${fit.status.replaceAll("_", " ")}; appearance previews do not confirm physical fit.`,
+          `${unit.code}: fit ${fit.status.replaceAll("_", " ")}`,
           ...scope,
         ),
       );
@@ -1033,9 +1034,9 @@ function validateAllocationModel(
         : "MEASUREMENTS_UNKNOWN";
       const message = dimensions.length
         ? smaller
-          ? `${unit.code} has a recorded garment dimension smaller than the performer's corresponding dimension. Review allowances and fitting; no unrecorded alteration or compatibility is assumed.`
-          : `${unit.code}'s recorded dimensions are only a provisional screen. Practitioner allowances and a physical fitting remain separate evidence.`
-        : `${unit.code} lacks comparable performer and garment measurements. Compatibility is unknown.`;
+          ? `${unit.code}: smaller than performer`
+          : `${unit.code}: measurements provisional`
+        : `${unit.code}: measurements missing`;
       findings.push(finding(code, "unverified", message, ...scope));
     }
   }
@@ -1064,7 +1065,7 @@ function validateAllocationModel(
         finding(
           "CONTINUITY_APPROVAL_LINEAGE",
           "conflict",
-          "Every call in a continuity group must use one coherent currently approved candidate, with its exact preview and approval identity.",
+          "Use one approved look across the continuity group.",
           unique(group.flatMap((demand) => demand.allowedIds)),
           unique(group.map((demand) => demand.occurrence.id)),
           unique(group.map((demand) => demand.look.id)),
@@ -1102,7 +1103,7 @@ function validateAllocationModel(
       finding(
         "HARD_BUDGET",
         "conflict",
-        `The required ${totalCostCents} minor units exceed the hard ${production.budgetCents} budget. No artistic or budget constraint was relaxed.`,
+        `Over budget by ${money(totalCostCents - production.budgetCents, production.currency)}.`,
         unique(assignments.map((assignment) => assignment.unitId)),
       ),
     );
@@ -1136,7 +1137,7 @@ function solveAllocationModel(
     inputHash: allocationInputHash(production),
     solver: "stagecraft-bounded-exact/2-approved-choices",
     policy:
-      "Hard constraints first; choose one currently approved appearance per continuity group across every call, minimize production-window quote cost charged once per selected physical unit, then performer garment changeovers. Original recipes also require exact approval. The constraint checker shares interval construction with search; it is not an independent oracle. Consecutive same-look wear on one local day/location retains custody through the gap and prepares once unless a reset transition is recorded. Unknown timing, transport, fit and supplier evidence remain unverified. No implicit artistic substitution.",
+      "Hard constraints first, then lowest cost, then fewest changeovers.",
     createdAt: now,
   };
   if (
@@ -1166,7 +1167,7 @@ function solveAllocationModel(
         finding(
           "ALLOCATION_INPUT_MISSING",
           "conflict",
-          "Add mapped occurrences, cast looks and physical inventory before solving.",
+          "Add calls, looks and units first.",
         ),
       ]),
       totalCostCents: 0,
@@ -1182,7 +1183,7 @@ function solveAllocationModel(
         finding(
           "SEARCH_SCOPE",
           "unverified",
-          "This production exceeds the bounded exact engine's 100-demand review limit.",
+          "Too large to check (100-demand limit).",
         ),
       ],
       totalCostCents: 0,
@@ -1304,7 +1305,7 @@ function solveAllocationModel(
           finding(
             "NO_ELIGIBLE_UNIT",
             "conflict",
-            `${demand.look.title} has no available, category-compatible unit within its recorded window and exact approved appearance choices.`,
+            `${demand.look.title}: no eligible unit.`,
             demand.allowedIds,
             [demand.occurrence.id],
             [demand.look.id],
@@ -1406,7 +1407,7 @@ function solveAllocationModel(
           limited ? "unverified" : "conflict",
           limited
             ? `The deterministic search reached its ${maxNodes}-node bound without a checked solution. Infeasibility is not proved.`
-            : "Exhaustive search found no permitted combination satisfying physical-unit overlap, availability and the hard budget.",
+            : "No permitted allocation fits the recorded constraints.",
         ),
       ]),
       totalCostCents: 0,
@@ -1451,13 +1452,7 @@ function solveAllocationModel(
     findings: deduplicateFindings([
       ...checked.findings,
       ...(limited
-        ? [
-            finding(
-              "SEARCH_LIMIT",
-              "info",
-              `A feasible constraint-checked plan was found; the ${maxNodes}-node bound prevents an optimality claim.`,
-            ),
-          ]
+        ? [finding("SEARCH_LIMIT", "info", `Feasible; not proven optimal.`)]
         : []),
     ]),
     totalCostCents: checked.totalCostCents,

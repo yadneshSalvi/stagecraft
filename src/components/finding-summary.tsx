@@ -3,27 +3,33 @@ import type { AllocationFinding } from "@/lib/types";
 import { useProduction } from "./production-context";
 
 const labels: Record<string, string> = {
-  AVAILABILITY_UNCONFIRMED: "Availability needs confirmation",
-  FITTING_UNVERIFIED: "Physical fitting remains unverified",
-  MEASUREMENTS_UNKNOWN: "Comparable measurements are missing",
-  MEASUREMENT_SCREEN_PROVISIONAL: "Measurements are a provisional screen",
-  MEASUREMENT_SCREEN_REVIEW: "Measurements need a fitting review",
-  PREPARATION_ESTIMATED: "Preparation time is estimated",
-  PREPARATION_UNKNOWN: "Preparation time is unknown",
-  TRANSITION_ESTIMATED: "Change time is estimated",
-  TRANSITION_UNKNOWN: "Change time is unknown",
-  UNIT_LOCATION_UNVERIFIED: "Transport needs confirmation",
-  LOCATION_TRANSFER_UNKNOWN: "Location transfer time is unknown",
-  QUOTE_EXPIRED: "Quotes need checking",
-  SUBSTITUTE_REVIEW: "The substitute needs appearance review",
-  CREW_CAPACITY_UNKNOWN: "Crew capacity needs confirmation",
+  AVAILABILITY_UNCONFIRMED: "Availability unconfirmed",
+  FITTING_UNVERIFIED: "Fitting unverified",
+  MEASUREMENTS_UNKNOWN: "Measurements missing",
+  MEASUREMENT_SCREEN_PROVISIONAL: "Measurements provisional",
+  MEASUREMENT_SCREEN_REVIEW: "Measurements to review",
+  PREPARATION_ESTIMATED: "Prep time estimated",
+  PREPARATION_UNKNOWN: "Prep time unknown",
+  TRANSITION_ESTIMATED: "Change time estimated",
+  TRANSITION_UNKNOWN: "Change time unknown",
+  UNIT_LOCATION_UNVERIFIED: "Transport unconfirmed",
+  LOCATION_TRANSFER_UNKNOWN: "Transfer time unknown",
+  QUOTE_EXPIRED: "Quotes expired",
+  SUBSTITUTE_REVIEW: "Substitute needs approval",
+  CREW_CAPACITY_UNKNOWN: "Crew capacity unknown",
+  APPEARANCE_APPROVAL_REQUIRED: "Look approval missing",
+  UNIT_UNAVAILABLE: "Unit unavailable",
+  UNIT_OVERLAP: "Unit overlap",
+  HARD_BUDGET: "Over budget",
 };
 
 /** Presentation grouping only. Every original finding remains in the saved result. */
 export function FindingSummary({
   findings,
+  hiddenGroupCodes = [],
 }: {
   findings: AllocationFinding[];
+  hiddenGroupCodes?: string[];
 }) {
   const { project } = useProduction();
   if (!findings.length) return null;
@@ -45,40 +51,38 @@ export function FindingSummary({
       aria-label="Constraint and evidence summary"
     >
       <div className="finding-groups">
-        {ordered.map(([key, entries]) => {
-          const units = new Set(entries.flatMap((entry) => entry.unitIds));
-          const calls = new Set(
-            entries.flatMap((entry) => entry.occurrenceIds),
-          );
-          return (
-            <div
-              key={key}
-              className={`finding-group finding-${entries[0].severity}`}
-            >
-              <span className="status-dot" aria-hidden="true" />
-              <div>
-                <strong>{labels[entries[0].code] || entries[0].message}</strong>
-                <span>
-                  {units.size
-                    ? `${units.size} unit${units.size === 1 ? "" : "s"}`
-                    : "Production evidence"}
-                  {calls.size
-                    ? ` · ${calls.size} call${calls.size === 1 ? "" : "s"}`
-                    : ""}
-                  {entries[0].severity === "conflict"
-                    ? " · blocks adoption"
-                    : ""}
-                </span>
+        {ordered
+          .filter(([, entries]) => !hiddenGroupCodes.includes(entries[0].code))
+          .map(([key, entries]) => {
+            const units = new Set(entries.flatMap((entry) => entry.unitIds));
+            const calls = new Set(
+              entries.flatMap((entry) => entry.occurrenceIds),
+            );
+            return (
+              <div
+                key={key}
+                className={`finding-group finding-${entries[0].severity}`}
+              >
+                <span className="status-dot" aria-hidden="true" />
+                <div>
+                  <strong>
+                    {labels[entries[0].code] || entries[0].message}
+                  </strong>
+                  <span>
+                    {units.size
+                      ? `${units.size} unit${units.size === 1 ? "" : "s"}`
+                      : ""}
+                    {calls.size
+                      ? ` · ${calls.size} call${calls.size === 1 ? "" : "s"}`
+                      : ""}
+                  </span>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
       </div>
       <details className="finding-details">
-        <summary>
-          Read {messages.size} distinct evidence notes across {findings.length}{" "}
-          checks
-        </summary>
+        <summary>Details ({messages.size})</summary>
         <ul tabIndex={0} aria-label="Detailed constraint and evidence notes">
           {[...messages.entries()].map(([key, entries]) => {
             const occurrenceIds = [

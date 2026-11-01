@@ -251,7 +251,7 @@ export function applyBeautyCommand(
         true,
         face.consent.granted ? "stale" : "blocked",
       );
-      return `Attached ${performer.name}'s separately scoped face capture version ${face.version}; body capture, garment recipe and fitting evidence were preserved.`;
+      return `Added ${performer.name}'s face source.`;
     }
     case "withdraw_face_consent": {
       const performer = findRecord(
@@ -265,7 +265,7 @@ export function applyBeautyCommand(
         "This performer has no separate face capture to withdraw.",
       );
       revokeFaceConsent(production, performer.id, context.now);
-      return `Withdrew ${performer.name}'s face-source permission and beauty evidence; garment permission and approval remain separate.`;
+      return `Withdrew ${performer.name}'s face source.`;
     }
     case "update_beauty": {
       const look = findRecord(production.looks, command.lookId, "Look");
@@ -277,8 +277,7 @@ export function applyBeautyCommand(
           recipe,
           previews: [],
           approvals: [],
-          reviewReason:
-            "A separate beauty detail has been configured and needs actual provider output and approval.",
+          reviewReason: "Makeup needs a preview and approval.",
         };
       else if (canonicalJson(previous.recipe) !== canonicalJson(recipe)) {
         previous.recipe = recipe;
@@ -290,7 +289,7 @@ export function applyBeautyCommand(
         );
       }
       supersedeBeautyPacks(production, look.id);
-      return `Saved ${look.title}'s separate beauty recipe revision ${look.beauty!.revision}; no garment appearance approval was inferred or invalidated.`;
+      return `Saved ${look.title} makeup recipe.`;
     }
     case "add_beauty_preview": {
       const look = findRecord(production.looks, command.lookId, "Look");
@@ -350,10 +349,9 @@ export function applyBeautyCommand(
         "A beauty preview needs a distinct stored provider output.",
       );
       look.beauty.previews.push(structuredClone(preview));
-      look.beauty.reviewReason =
-        "Inspect the current face detail and record a separate makeup approval.";
+      look.beauty.reviewReason = "Review this makeup preview.";
       supersedeBeautyPacks(production, look.id);
-      return `Attached ${preview.provenance === "recorded_provider" ? "recorded" : "live"} beauty detail for ${performer.name}; approval remains an explicit separate decision.`;
+      return `New makeup preview for ${performer.name}.`;
     }
     case "approve_beauty": {
       const look = findRecord(production.looks, command.lookId, "Look");
@@ -420,7 +418,7 @@ export function applyBeautyCommand(
       });
       look.beauty.reviewReason = null;
       supersedeBeautyPacks(production, look.id);
-      return `${command.approvedBy.trim()} approved the exact separate beauty detail for ${performer.name}; garment, fit and supplier decisions remain independent.`;
+      return `${command.approvedBy.trim()} approved ${performer.name}'s makeup.`;
     }
   }
 }

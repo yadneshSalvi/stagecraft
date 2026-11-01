@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight, GitBranch, Ruler, Upload } from "lucide-react";
 import type { PhysicalUnit, Provenance } from "@/lib/types";
-import { day, money, provenanceLabel } from "@/lib/format";
+import { displayFixtureText } from "@/lib/presentation-copy";
+import { day, money } from "@/lib/format";
 import { fromLocalDateTime, toLocalDateTime } from "@/lib/datetime";
 import { uploadImage } from "@/lib/upload-client";
 import { useProduction } from "./production-context";
@@ -117,19 +118,16 @@ export function UnitDialog({
       }}
       wide
       title={unit.name}
-      description={`${unit.code} · one physical unit · ${unit.ownership === "rental" ? "rental inventory" : "owned inventory"}`}
     >
-      <div className="unit-detail">
+      <div className="unit-detail r3-unit-detail">
         <aside>
           <Photo
+            natural
             src={unit.imageUrl}
             alt={`${unit.name}, source garment reference`}
           />
-          <span className="image-caption">SOURCE GARMENT REFERENCE</span>
           <div className="unit-details-id">
-            <span className="mono">
-              {unit.code} / V{unit.version}
-            </span>
+            <span className="mono">{unit.code}</span>
             <Badge tone={unit.status === "available" ? "neutral" : "danger"}>
               {unit.status}
             </Badge>
@@ -137,7 +135,7 @@ export function UnitDialog({
           <div className="measurement-panel">
             <h3>
               <Ruler size={15} />
-              Recorded garment dimensions
+              Measurements
             </h3>
             {[
               { label: "Chest", value: unit.measurements.chestCm },
@@ -151,13 +149,9 @@ export function UnitDialog({
                 </strong>
               </div>
             ))}
-            <p>
-              Dimensions screen a candidate. They do not establish a physical
-              fitting.
-            </p>
           </div>
           <p className="unit-source-line">
-            {unit.priceSource}
+            {displayFixtureText(unit.priceSource, project.fixture)}
             <br />
             {money(unit.priceCents, project.currency)} · valid until{" "}
             {day(unit.priceValidUntil, project.timeZone)}
@@ -171,16 +165,16 @@ export function UnitDialog({
             href={`/production/${project.id}/handoff?unit=${unit.id}`}
             onClick={onClose}
           >
-            Prepare a sourcing request
+            Sourcing request
             <ArrowRight size={14} />
           </Link>
         </aside>
         <div>
           <div className="segmented" aria-label="Unit evidence section">
             {[
-              { id: "evidence", label: "Availability & custody" },
+              { id: "evidence", label: "Availability" },
               { id: "fitting", label: "Fitting" },
-              { id: "source", label: "Source photo" },
+              { id: "source", label: "Photo" },
             ].map((item) => (
               <button
                 key={item.id}
@@ -197,7 +191,7 @@ export function UnitDialog({
           {tab === "evidence" && (
             <form className="form-stack unit-evidence-form" onSubmit={save}>
               <div className="field-grid">
-                <Field label="Current location">
+                <Field label="Location">
                   <input
                     required
                     value={location}
@@ -205,7 +199,7 @@ export function UnitDialog({
                     maxLength={120}
                   />
                 </Field>
-                <Field label={`Recorded price (${project.currency})`}>
+                <Field label={`Price (${project.currency})`}>
                   <input
                     type="number"
                     min="0"
@@ -218,7 +212,7 @@ export function UnitDialog({
                 </Field>
               </div>
               <div className="field-grid">
-                <Field label="Price source / quote reference">
+                <Field label="Quote ref">
                   <input
                     value={priceSource}
                     onChange={(e) => setPriceSource(e.target.value)}
@@ -226,7 +220,7 @@ export function UnitDialog({
                     maxLength={500}
                   />
                 </Field>
-                <Field label="Price valid through">
+                <Field label="Valid until">
                   <input
                     type="date"
                     value={priceValidUntil}
@@ -235,7 +229,7 @@ export function UnitDialog({
                   />
                 </Field>
               </div>
-              <Field label="Condition / preparation notes">
+              <Field label="Condition">
                 <textarea
                   required
                   value={condition}
@@ -253,7 +247,7 @@ export function UnitDialog({
                     onChange={(e) => setFrom(e.target.value)}
                   />
                 </Field>
-                <Field label="Available through">
+                <Field label="Available to">
                   <input
                     type="datetime-local"
                     value={to}
@@ -262,7 +256,7 @@ export function UnitDialog({
                   />
                 </Field>
               </div>
-              <Field label="Source, named operator, and evidence">
+              <Field label="Evidence">
                 <textarea
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
@@ -271,14 +265,14 @@ export function UnitDialog({
                   maxLength={500}
                 />
               </Field>
-              <Field label="Evidence provenance">
+              <Field label="Source">
                 <select
                   value={provenance}
                   onChange={(e) => setProvenance(e.target.value as Provenance)}
                 >
-                  <option value="synthetic">Synthetic exercise</option>
-                  <option value="manual">Named operator’s manual record</option>
-                  <option value="observed">Observed custodian evidence</option>
+                  <option value="synthetic">Example</option>
+                  <option value="manual">Manual</option>
+                  <option value="observed">Observed</option>
                 </select>
               </Field>
               <label className="checkbox-field">
@@ -287,24 +281,15 @@ export function UnitDialog({
                   checked={confirmed}
                   onChange={(e) => setConfirmed(e.target.checked)}
                 />
-                The evidence above confirms this availability window.
+                Availability confirmed
               </label>
-              <Notice>
-                This records availability evidence. A supplier request,
-                reservation, and physical receipt are recorded separately in
-                Handoff.
-              </Notice>
               <Button variant="primary" busy={busy} type="submit">
-                Save unit evidence
+                Save
               </Button>
             </form>
           )}
           {tab === "fitting" && (
             <form className="form-stack unit-evidence-form" onSubmit={saveFit}>
-              <Notice>
-                Record who observed the fitting, for which performer, and when.
-                Include movement or alteration notes in the evidence.
-              </Notice>
               <Field label="Performer">
                 <select
                   value={fitting.performerId || ""}
@@ -323,7 +308,7 @@ export function UnitDialog({
                   ))}
                 </select>
               </Field>
-              <Field label="Fitting state">
+              <Field label="Fit">
                 <select
                   value={fitting.status}
                   onChange={(e) =>
@@ -334,16 +319,14 @@ export function UnitDialog({
                     })
                   }
                 >
-                  <option value="not_measured">
-                    Not measured / not fitted
-                  </option>
-                  <option value="provisional">Provisionally compatible</option>
-                  <option value="scheduled">Fitting scheduled</option>
-                  <option value="confirmed">Fit confirmed with evidence</option>
-                  <option value="alteration">Requires alteration</option>
+                  <option value="not_measured">Not fitted</option>
+                  <option value="provisional">Provisional</option>
+                  <option value="scheduled">Fitting booked</option>
+                  <option value="confirmed">Fitted</option>
+                  <option value="alteration">Needs alteration</option>
                 </select>
               </Field>
-              <Field label="Evidence provenance">
+              <Field label="Source">
                 <select
                   value={fitting.provenance}
                   onChange={(e) =>
@@ -353,14 +336,12 @@ export function UnitDialog({
                     })
                   }
                 >
-                  <option value="synthetic">
-                    Synthetic exercise — no physical outcome
-                  </option>
-                  <option value="manual">Manual practitioner record</option>
-                  <option value="observed">Actual observed fitting</option>
+                  <option value="synthetic">Example</option>
+                  <option value="manual">Manual</option>
+                  <option value="observed">Observed</option>
                 </select>
               </Field>
-              <Field label="Practitioner, date, observations, and evidence">
+              <Field label="Notes">
                 <textarea
                   required
                   value={fitting.evidence}
@@ -369,23 +350,20 @@ export function UnitDialog({
                   }
                   minLength={5}
                   maxLength={2400}
-                  placeholder="Who observed this? What was checked? Record any movement or alteration limits."
+                  placeholder="Who fitted it, what was checked"
                 />
               </Field>
               <Button variant="primary" busy={busy} type="submit">
-                Record fitting evidence
+                Save fitting
               </Button>
             </form>
           )}
           {tab === "source" && (
             <div className="form-stack unit-evidence-form">
-              <Notice>
-                A new garment image changes the render input. Dependent previews
-                will need a fresh review.
-              </Notice>
+              <Notice>A new image resets dependent approvals.</Notice>
               <Field
                 label="Garment reference image"
-                hint="An isolated, clearly visible garment. JPEG, PNG, or WebP under 10 MB."
+                hint="Garment alone, clearly visible · ≤10 MB"
               >
                 <input
                   type="file"
@@ -399,8 +377,7 @@ export function UnitDialog({
                   checked={rights}
                   onChange={(e) => setRights(e.target.checked)}
                 />
-                I have permission to use this garment image and process it with
-                YouCam.
+                I have the rights to use this image with YouCam.
               </label>
               <Button
                 variant="primary"
@@ -409,21 +386,12 @@ export function UnitDialog({
                 onClick={() => void upload()}
               >
                 <Upload size={15} />
-                Save source image
+                Save image
               </Button>
             </div>
           )}
-          {saved && (
-            <Notice tone="success">
-              Evidence saved as a new production revision.
-            </Notice>
-          )}
+          {saved && <Notice tone="success">Saved.</Notice>}
           {error && <Notice tone="danger">{error}</Notice>}
-          <p className="fine-print">
-            Current source: {provenanceLabel(unit.availability.provenance)}.
-            Original and amended records remain traceable through production
-            revisions.
-          </p>
         </div>
       </div>
     </Modal>

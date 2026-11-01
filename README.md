@@ -12,9 +12,9 @@ Follow a permitted script through a reviewed breakdown, a visual continuity wall
 
 **THE LAST LIGHT** opens as a private example with five characters, seven scenes, three story days and eight distinct looks. Mae moves from an ivory rehearsal blouse to midnight; Julian changes from olive to rust; Nora keeps the coat motif while her finale makeup intensifies. The wall shows the actual day-specific wardrobe and independent face detail.
 
-No decision is preapproved. Inspect Nora and Mae first, then either continue individual reviews or explicitly **Record example decisions**. That reversible action records exact-output approvals attributed to **Example reviewer (sample decision)**; unseen alternatives still need their own review. The same book supports coat repair, creative-direction reconciliation, Celeste’s recast and a frozen handoff.
+No decision is preapproved. Inspect Nora and Mae first, then either continue individual reviews or explicitly **Approve as example**. That reversible action records exact-output approvals attributed to **Example reviewer**; unseen alternatives still need their own review. The same book supports coat repair, creative-direction reconciliation, Celeste’s recast and a frozen handoff.
 
-Exploring **Schedule** first is supported: the fresh example shows amber **DECISIONS NEEDED**, with the exact scheduled-look count, **Review looks** and **Record example decisions**. Recording those decisions rechecks the allocation. Physical conflicts remain red and distinct from decisions awaiting review.
+Exploring **Schedule** first is supported: the fresh example shows amber **DECISIONS NEEDED**, with the exact scheduled-look count, **Review looks** and **Approve as example**. Recording those decisions rechecks the allocation. Physical conflicts remain red and distinct from decisions awaiting review.
 
 The public library contains **20 genuine recorded YouCam outputs across four operations**: 12 garments, 4 makeup details, 2 hair-colour studies and 2 necklaces. Original and replacement body/face sources are synthetic. Exact matching makes recorded reuse available without another provider submission; it also works for compatible library sources in a custom production.
 
@@ -56,7 +56,9 @@ pnpm test:e2e
 
 Database tests accept only explicitly configured local `stagecraft_dev` or `stagecraft_test` databases. Unit/integration suites replace paid provider calls; recorded browser journeys reject live YouCam requests before the application. The own-script browser journey performs one actual short Gemini extraction. Private-upload checks use the configured private Blob store. Live YouCam smoke tests are separate deliberate operations.
 
-The second review, including the repair-selection correction found during canonical acceptance, passed **232 unit/integration tests across 22 files** and **19/19 browser tests against the optimized local build**, with no failures, skips or retries. The browser gate took 201.813 seconds and used no paid YouCam tasks. It regenerated the 19-page crew PDF with all 27 images and complete printed requirements. [Current local verification](docs/evidence/review-round2-repair-verification.json) preserves the failing-to-passing proof and earlier baseline; the [release checklist](docs/release-checklist.md) tracks deployment separately. Production application `8310862` is live: all 19 distinct browser cases passed across the full run and one test-locator follow-up, with both attempts preserved in the [round-two production record](docs/evidence/review-round2-production-verification.json). The [preceding production verification](docs/evidence/review-production-verification.json) preserves its protected/canonical browser checks and two bounded fresh workflow smokes.
+The third review passes **254 unit/integration tests across 24 files** and a clean **21/21 browser gate in 218.914 seconds**, with zero failures, skips or retries. It adds explicit coverage at 1440×900 and 1366×768 for the repaired decision flow, one-time return parameters, comparison slider and above-the-fold controls. The final crew PDF has 17 A4 pages, 27 loaded images and all 37 frozen readiness requirements. No YouCam task was submitted for this round. The [round-three local record](docs/evidence/round3/local-verification.json) preserves earlier test-readiness failures and the final visual follow-up; the [release checklist](docs/release-checklist.md) records production acceptance separately.
+
+Earlier releases retain their original evidence: [round-two repair verification](docs/evidence/review-round2-repair-verification.json), [round-two production attempts](docs/evidence/review-round2-production-verification.json) and [round-one live verification](docs/evidence/review-production-verification.json).
 
 ## Saved work and provider limits
 
@@ -70,7 +72,7 @@ Private records/images expire after 30 days. Body and face permissions are separ
 
 ## Evidence and practical limits
 
-Synthetic inputs, actual provider outputs, manual decisions, AI critiques and software checks are labelled separately. No participant study, physical fitting, supplier reservation, time saving or environmental benefit is claimed. The full public-domain Act I import recorded both its initial **6/9** grounded cues and the revised **8/8** result; source offsets and denominators are published rather than selecting only the successful attempt.
+The interface uses one **Example** marker, a single sponsor credit and concise consent at upload. Per-image provenance chips are removed. **Evidence & limits** holds the full provenance and practical limits; original source identities, recipes and exact-output decisions remain recorded in the data and accessible descriptions. No participant study, physical fitting, supplier reservation, time saving or environmental benefit is claimed. The full public-domain Act I import recorded both its initial **6/9** grounded cues and the revised **8/8** result; source offsets and denominators are published rather than selecting only the successful attempt.
 
 Clothes V4 handles one garment reference per output. Makeup renders lip/blush with smoothing and reshaping fixed at zero. Hair colour renders a requested preset, not a physical dye or wig specification; one requested brown result visibly reads plum. Necklace VTO is appearance evidence, not a fit measurement. Every output needs inspection.
 
@@ -90,7 +92,9 @@ Allocation uses bounded exact TypeScript search. Its production **Constraint che
 - [Original production release observations](docs/evidence/production-review.json)
 - [Operations and deployment](docs/operations.md)
 - [Current release checks](docs/release-checklist.md)
-- [Current integrated local verification](docs/evidence/review-round2-repair-verification.json)
+- [Current local verification](docs/evidence/round3/local-verification.json)
+- [Round-three rendered copy audit](docs/evidence/round3/copy-audit.json)
+- [Round-two repair verification](docs/evidence/review-round2-repair-verification.json)
 - [Initial second-review local verification](docs/evidence/review-round2-local-verification.json)
 - [Preceding local verification](docs/evidence/review-local-verification.json)
 - [Asset provenance and licenses](docs/asset-licenses.md)

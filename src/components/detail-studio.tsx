@@ -19,7 +19,11 @@ import {
   getCurrentDetailPreview,
   detailIntentHash,
 } from "@/lib/domain/details";
-import { revision } from "@/lib/format";
+import {
+  displayApproval,
+  displayFixtureText,
+  displayInspectionNotes,
+} from "@/lib/presentation-copy";
 import { useProduction } from "./production-context";
 import { usePreviewJob } from "./use-preview-job";
 import { PreviewJobStatus } from "./preview-job-status";
@@ -27,7 +31,7 @@ import {
   PreviewAvailability,
   freshPreviewAvailable,
 } from "./preview-availability";
-import { ProvenanceChip } from "./provenance-chip";
+import { ImageComparison } from "./image-comparison";
 import { ApprovalOutput } from "./approval-output";
 import { FaceSourceDialog } from "./face-source-dialog";
 import { Badge, Button, Field, Modal, Notice, Photo } from "./ui";
@@ -55,6 +59,8 @@ export function DetailStudio({ look, kind }: { look: Look; kind: DetailKind }) {
   );
   const preview = getCurrentDetailPreview(look, kind, project);
   const approval = getCurrentDetailApproval(look, kind, project);
+  const decision = approval ? displayApproval(approval) : null;
+  const inspectionNotes = displayInspectionNotes(preview?.inspectionNotes);
   const name = kind === "hair_color" ? "Hair colour" : "Necklace";
   const [viewOverride, setView] = useState<
     "preview" | "source" | "compare" | null
@@ -103,11 +109,7 @@ export function DetailStudio({ look, kind }: { look: Look; kind: DetailKind }) {
       <section className="look-canvas beauty-canvas detail-canvas">
         <header className="look-heading">
           <div>
-            <p className="eyebrow">
-              {look.title} / {name.toUpperCase()}{" "}
-              {revision(detail?.revision || 1)}
-            </p>
-            <h1>{character?.name}</h1>
+            <h2>{character?.name}</h2>
             <p>
               {performer?.name || "Assign a performer"}
               <span>·</span>
@@ -121,13 +123,31 @@ export function DetailStudio({ look, kind }: { look: Look; kind: DetailKind }) {
                 .join(" / ")}
             </p>
           </div>
-          <Badge tone={approval ? "success" : "warning"}>
-            {approval
-              ? `${name} approved`
-              : preview
-                ? "Review needed"
-                : "Detail needed"}
-          </Badge>
+          <div className="appearance-approval detail-approval-action">
+            <Badge tone={approval ? "success" : "warning"}>
+              {approval ? "Approved" : preview ? "To review" : "No preview"}
+            </Badge>
+            <Button
+              variant={approval ? "default" : "primary"}
+              disabled={!preview || busy}
+              onClick={() => {
+                clearError();
+                setTarget(
+                  preview
+                    ? {
+                        id: preview.id,
+                        intent: detailIntentHash(project, look, kind),
+                      }
+                    : null,
+                );
+                setView("preview");
+                setApproving(true);
+              }}
+            >
+              {approval ? "Review approval" : `Approve ${name.toLowerCase()}`}
+              <Check size={15} />
+            </Button>
+          </div>
         </header>
         <div className="look-view-tabs">
           <div className="segmented" aria-label={`${name} image view`}>
@@ -143,30 +163,25 @@ export function DetailStudio({ look, kind }: { look: Look; kind: DetailKind }) {
                 }}
               >
                 {value === "preview"
-                  ? `${name} preview`
+                  ? "Preview"
                   : value === "source"
-                    ? "Face source"
-                    : `Compare ${name.toLowerCase()}`}
+                    ? "Source"
+                    : "Compare"}
               </button>
             ))}
           </div>
-          <span className="mono">INDEPENDENT DETAIL</span>
         </div>
         {source ? (
-          <div
-            className={`look-image-stage beauty-image-stage ${view === "compare" ? "comparison-stage" : ""}`}
-          >
-            {view === "compare" && (
-              <figure>
-                <Photo
-                  src={source}
-                  alt={`${performer?.name}, original face source`}
-                  original
-                />
-                <figcaption>ORIGINAL FACE SOURCE</figcaption>
-              </figure>
-            )}
-            <figure>
+          <div className="face-image-stage">
+            {view === "compare" && preview ? (
+              <ImageComparison
+                sourceUrl={source}
+                previewUrl={preview.imageUrl}
+                sourceAlt={`${performer?.name}, original face source`}
+                previewAlt={`${character?.name}, actual YouCam ${name.toLowerCase()} result`}
+                aspectRatio={4 / 5}
+              />
+            ) : (
               <Photo
                 src={view === "source" ? source : preview?.imageUrl || source}
                 alt={
@@ -175,103 +190,39 @@ export function DetailStudio({ look, kind }: { look: Look; kind: DetailKind }) {
                     : `${character?.name}, actual YouCam ${name.toLowerCase()} result`
                 }
                 original
+                natural
+                aspectRatio={4 / 5}
                 priority
               />
-              <figcaption>
-                {view === "source" || !preview
-                  ? "SOURCE CAPTURE"
-                  : `YOUCAM ${name.toUpperCase()} RESULT`}
-              </figcaption>
-            </figure>
+            )}
           </div>
         ) : (
           <div className="beauty-source-empty">
             <UserRound size={42} />
-            <h2>A clear source for the detail.</h2>
+            <h2>Face source needed</h2>
             <p>
               {kind === "hair_color"
-                ? "Add a permitted face capture with the full hair shape visible."
-                : "Add a permitted face capture with the neck and collar area visible."}
+                ? "Full hair visible."
+                : "Neck and collar visible."}
             </p>
             <Button variant="primary" onClick={openSource}>
               Add face source <ArrowRight size={15} />
             </Button>
           </div>
         )}
-        <div className="look-image-footer">
-          <div className="provenance-row">
-            {source && (
-              <ProvenanceChip kind={face?.synthetic ? "synthetic" : "photo"} />
-            )}
-            {preview && view !== "source" && (
-              <ProvenanceChip
-                kind={
-                  preview.provenance === "recorded_provider"
-                    ? "recorded"
-                    : "fresh"
-                }
-              />
-            )}
-          </div>
-          <span>
-            {kind === "hair_color"
-              ? "Requested colour study · inspect the rendered shade."
-              : "Accessory appearance · physical fit remains separate."}
-          </span>
-        </div>
-        {preview?.inspectionNotes && (
+        {detail?.reviewReason && (
+          <Notice tone="warning" title="Needs re-review">
+            {detail.reviewReason}
+          </Notice>
+        )}
+        {inspectionNotes && (
           <details className="inspection-notes">
-            <summary>Inspect this {name.toLowerCase()} result</summary>
-            <p>{preview.inspectionNotes}</p>
+            <summary>Inspection notes</summary>
+            <p>{inspectionNotes}</p>
           </details>
         )}
-        <section className="appearance-approval">
-          <div>
-            <span className="eyebrow">THE {name.toUpperCase()} DECISION</span>
-            <h3>
-              {approval
-                ? "Approved as its own detail."
-                : kind === "hair_color"
-                  ? "Does this colour follow the story?"
-                  : "Does this detail carry the character?"}
-            </h3>
-            <p>
-              {approval
-                ? `${approval.approvedBy} · ${approval.rationale}`
-                : "Review this source, exact recipe and output independently."}
-            </p>
-          </div>
-          <Button
-            variant={approval ? "default" : "primary"}
-            disabled={!preview || busy}
-            onClick={() => {
-              clearError();
-              setTarget(
-                preview
-                  ? {
-                      id: preview.id,
-                      intent: detailIntentHash(project, look, kind),
-                    }
-                  : null,
-              );
-              setView("preview");
-              setApproving(true);
-            }}
-          >
-            {approval
-              ? `Review ${name.toLowerCase()} approval`
-              : `Approve ${name.toLowerCase()} detail`}
-            <Check size={15} />
-          </Button>
-        </section>
         <details className="look-history">
-          <summary>
-            {name} evidence history{" "}
-            <span className="mono">
-              {detail?.previews.length || 0} OUTPUTS ·{" "}
-              {detail?.approvals.length || 0} DECISIONS
-            </span>
-          </summary>
+          <summary>History</summary>
           {detail?.approvals.map((entry) => (
             <div key={entry.id}>
               <Badge tone={entry.id === approval?.id ? "success" : "neutral"}>
@@ -281,16 +232,16 @@ export function DetailStudio({ look, kind }: { look: Look; kind: DetailKind }) {
                     ? "Earlier output"
                     : entry.state.replaceAll("_", " ")}
               </Badge>
-              <p>
-                {entry.approvedBy} · detail {revision(entry.detailRevision)} ·
-                capture {entry.faceCaptureVersion}
-              </p>
+              <p>{displayApproval(entry).approvedBy}</p>
               <p className="muted">
-                {entry.rationale}
+                {displayApproval(entry).rationale}
                 {entry.reason ? ` · ${entry.reason}` : ""}
               </p>
             </div>
           ))}
+          {!detail?.approvals.length && (
+            <p className="muted">No decisions yet.</p>
+          )}
         </details>
       </section>
       <DetailControls
@@ -316,12 +267,8 @@ export function DetailStudio({ look, kind }: { look: Look; kind: DetailKind }) {
         onClose={() => {
           if (!busy) setApproving(false);
         }}
-        title={
-          approval
-            ? `The recorded ${name.toLowerCase()} approval`
-            : `Approve this exact ${name.toLowerCase()} detail`
-        }
-        description={`${performer?.name} · Detail ${revision(detail?.revision || 1)} · face capture ${face?.version || "pending"}`}
+        title={approval ? `${name} approval` : `Approve ${name.toLowerCase()}`}
+        description={performer?.name}
       >
         <ApprovalOutput
           imageUrl={
@@ -337,23 +284,16 @@ export function DetailStudio({ look, kind }: { look: Look; kind: DetailKind }) {
         />
         {approval ? (
           <div className="form-stack">
-            <Notice tone="success" title={approval.approvedBy}>
-              {approval.rationale}
+            <Notice tone="success" title={decision?.approvedBy}>
+              {decision?.rationale}
             </Notice>
-            <p>
-              This is a separate appearance decision. A costume or makeup
-              approval cannot substitute for it.
-            </p>
-            <Button onClick={() => setApproving(false)}>Close approval</Button>
+            <Button onClick={() => setApproving(false)}>Close</Button>
           </div>
         ) : (
           <form className="form-stack" onSubmit={approve}>
-            <p className="muted">
-              Approves this appearance only; practical application and physical
-              fit are checked separately.
-            </p>
-            <Field label={`${name} reviewer name or role`}>
+            <Field label="Reviewer">
               <input
+                aria-label={`${name} reviewer name or role`}
                 value={author}
                 onChange={(event) => setAuthor(event.target.value)}
                 required
@@ -361,10 +301,9 @@ export function DetailStudio({ look, kind }: { look: Look; kind: DetailKind }) {
                 maxLength={100}
               />
             </Field>
-            <Field
-              label={`What did you approve in the ${name.toLowerCase()} detail?`}
-            >
+            <Field label="Note">
               <textarea
+                aria-label={`What did you approve in the ${name.toLowerCase()} detail?`}
                 value={rationale}
                 onChange={(event) => setRationale(event.target.value)}
                 required
@@ -374,14 +313,13 @@ export function DetailStudio({ look, kind }: { look: Look; kind: DetailKind }) {
             </Field>
             {changed && (
               <Notice tone="warning">
-                The result or creative intent changed. Close this dialog and
-                inspect the current detail before approving.
+                The preview changed. Re-inspect before approving.
               </Notice>
             )}
             {error && <Notice tone="danger">{error}</Notice>}
             <div className="modal-actions">
               <Button type="button" onClick={() => setApproving(false)}>
-                Keep inspecting
+                Cancel
               </Button>
               <Button
                 type="submit"
@@ -389,7 +327,7 @@ export function DetailStudio({ look, kind }: { look: Look; kind: DetailKind }) {
                 busy={busy}
                 disabled={changed}
               >
-                Record {name.toLowerCase()} approval <Check size={15} />
+                Approve <Check size={15} />
               </Button>
             </div>
           </form>
@@ -426,7 +364,7 @@ function DetailControls({
     (person) => person.id === look.performerId,
   );
   const face = performer?.faceCapture;
-  const name = kind === "hair_color" ? "hair colour" : "necklace";
+  const preview = getCurrentDetailPreview(look, kind, project);
   const changed =
     !detail || JSON.stringify(detail.recipe) !== JSON.stringify(recipe);
   const reference =
@@ -441,11 +379,12 @@ function DetailControls({
     <aside className="recipe-inspector detail-inspector">
       <section className="beauty-source-card">
         <div className="section-title">
-          <span className="eyebrow">THE FACE SOURCE</span>
-          <Badge>{face ? `Capture ${face.version}` : "Needed"}</Badge>
+          <h3>Face source</h3>
         </div>
         <div>
           <Photo
+            natural
+            aspectRatio={4 / 5}
             src={face?.consent.granted ? face.imageUrl : null}
             alt={
               face?.consent.granted
@@ -455,9 +394,6 @@ function DetailControls({
           />
           <div>
             <strong>{performer?.name || "Assign a performer"}</strong>
-            {face && (
-              <ProvenanceChip kind={face.synthetic ? "synthetic" : "photo"} />
-            )}
             <Button variant="quiet" onClick={onSource}>
               <UserRound size={13} />
               {face?.consent.granted ? "Manage face source" : "Add face source"}
@@ -469,12 +405,12 @@ function DetailControls({
         <div className="section-title">
           <h2>
             {kind === "hair_color" ? <Palette size={16} /> : <Gem size={16} />}
-            The {name} recipe
+            Recipe
           </h2>
         </div>
         {recipe.kind === "hair_color" ? (
           <>
-            <Field label="Requested hair colour preset">
+            <Field label="Hair colour">
               <select
                 value={recipe.preset}
                 onChange={(event) =>
@@ -491,14 +427,10 @@ function DetailControls({
                 ))}
               </select>
             </Field>
-            <p className="muted">
-              Use this as a colour study for the character’s hair or wig. Cut,
-              length and physical colour matching remain crew direction.
-            </p>
           </>
         ) : (
           <>
-            <Field label="Exact necklace reference">
+            <Field label="Necklace">
               <select
                 value={recipe.referenceId}
                 onChange={(event) =>
@@ -509,7 +441,10 @@ function DetailControls({
                 <option value="">Choose a reference</option>
                 {project.detailReferences?.map((item) => (
                   <option value={item.id} key={item.id}>
-                    {item.name}
+                    {displayFixtureText(
+                      item.name,
+                      project.fixture || !!item.librarySourceId,
+                    )}
                   </option>
                 ))}
               </select>
@@ -517,14 +452,18 @@ function DetailControls({
             {reference && (
               <div className="detail-reference">
                 <Photo
+                  natural
+                  aspectRatio={1}
                   src={reference.imageUrl}
                   alt={`${reference.name}, exact necklace reference`}
                   sizes="250px"
                 />
-                <strong>{reference.name}</strong>
-                <ProvenanceChip
-                  kind={reference.synthetic ? "synthetic" : "photo"}
-                />
+                <strong>
+                  {displayFixtureText(
+                    reference.name,
+                    project.fixture || !!reference.librarySourceId,
+                  )}
+                </strong>
               </div>
             )}
             <label className="checkbox-field">
@@ -538,60 +477,46 @@ function DetailControls({
                   })
                 }
               />
-              Remove the reference background
+              Remove background
             </label>
           </>
         )}
         {error && <Notice tone="danger">{error}</Notice>}
         <Button type="submit" busy={busy} disabled={!changed || state.pending}>
           <Check size={15} />
-          Save {name} recipe
+          Save recipe
         </Button>
       </form>
       <section className="generation-panel">
         <h3>
           <Sparkles size={15} />
-          Bring the detail into view
+          Preview
         </h3>
-        <p>
-          Each result is generated and reviewed separately from costume and
-          makeup.
-        </p>
         {face?.consent.granted && face.imageUrl ? (
           <>
             <Button
-              variant="primary"
+              variant={preview ? "default" : "primary"}
+              busy={state.recordedWorking || state.recordedPending}
+              disabled={changed || !!state.recordedIntent}
+              onClick={() => void state.generate("recorded")}
+            >
+              Use saved result
+              <ArrowRight size={13} />
+            </Button>
+            <Button
               busy={state.pending || state.working}
               disabled={
                 changed || !!state.intent || !freshPreviewAvailable(config)
               }
               onClick={() => void state.generate("live")}
             >
-              Generate fresh {name} detail
+              Generate preview
             </Button>
-            <span className="generation-cost">
-              Est. 1 YouCam unit · shared generation limits
-            </span>
-            <Button
-              busy={state.recordedWorking || state.recordedPending}
-              disabled={changed || !!state.recordedIntent}
-              onClick={() => void state.generate("recorded")}
-            >
-              Use matching recorded {name}
-              <ArrowRight size={13} />
-            </Button>
-            {changed && (
-              <p className="text-warning">
-                Save the recipe before generating or reusing a recording.
-              </p>
-            )}
+            <span className="generation-cost">1 unit</span>
+            {changed && <p className="text-warning">Save the recipe first.</p>}
             <PreviewAvailability config={config} />
           </>
-        ) : (
-          <Notice>
-            Add a permitted face source before generating this detail.
-          </Notice>
-        )}
+        ) : null}
         <PreviewJobStatus state={state} />
       </section>
     </aside>

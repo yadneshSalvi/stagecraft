@@ -2,7 +2,21 @@
 
 This checklist separates current review-round checks from the preceding deployed release. Synthetic decisions, provider images and software checks do not establish practitioner approval, physical fitting or supplier outcomes.
 
-Review round two starts from repository commit `4bc1176`, whose application is `deaf490`. It adds decisions-needed allocation guidance, exact garment-swap confirmation, verified recorded-pair suggestions, comparative choices and a refreshed change-review return. No new YouCam submissions, recordings, schema migrations or environment changes are part of this round. The canonical application is [stagecraft-swart.vercel.app](https://stagecraft-swart.vercel.app).
+The canonical application is [stagecraft-swart.vercel.app](https://stagecraft-swart.vercel.app). Current round-three checks appear first; earlier releases retain their original scope and observations.
+
+## Review round three — release checks
+
+This round starts from documentation commit `4424b8f` and application `8310862`. It fixes unrelated-decision repair blockers, consumes return parameters once, supports explicit creative-reference acknowledgement and prefers an approved duplicate candidate. The visual pass removes repeated disclosure, shortens working copy and brings decision results beside their actions. No new YouCam tasks, schema migrations or environment changes are required.
+
+- [x] Formatting, ESLint and TypeScript pass. The serial unit/PostgreSQL suite passes **254/254 across 24 files in 20.56 seconds**, including 18 round-three domain regressions and four presentation-compatibility cases.
+- [x] Independent local in-app checks: zero original approvals → approved burgundy → amber six-look blocker → example decisions → ready → adopted repair. Named wording acknowledgement clears only the current flag. The keyboard comparison slider works, the full-body preview and approval are visible at 1366×768, and allocation appears directly below its heading.
+- [x] Rendered copy audit: all eight scoped views meet the inventory's 110% ceiling; both approval dialogs contain seven authored items. Exact inventories, exclusions and historical attempts are retained in [copy audit](evidence/round3/copy-audit.json).
+- [x] Complete optimized local browser gate: **21/21 in 218.914 seconds**, zero failures, skips or retries. A final isolated CSS change places garment references beside actor previews; its exact-build visual follow-up is recorded separately in the local verification record.
+- [x] Final Readiness-copy crew PDF: **17 A4 pages, 27 loaded images, 37 frozen requirements**. First-page and makeup/necklace pages were visually checked; hair and final makeup were inspected in the preceding PDF with the same detail layout.
+- [ ] Production deployment, fresh-context full browser gate and independent in-app acceptance.
+- [ ] Complete paired screenshots at 1440×900 and 1366×768.
+
+Earlier browser attempts remain recorded: one run found strict `Saved` matching failed on JSX whitespace; the next completed 20/21 while an own-script test clicked before a documented 49-second authentication retry. The request trace showed successful route/config responses and a session 429. The readiness helper now awaits the actual workspace heading, retaining the existing assertion timeout and authentication protections. Its focused own-script follow-up passed **1/1 in 13.643 seconds**. These attempts are not represented as a clean full run.
 
 ## Review round two — released and verified
 

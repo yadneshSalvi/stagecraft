@@ -1,13 +1,6 @@
 "use client";
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  Check,
-  Circle,
-  Palette,
-  Scissors,
-  TriangleAlert,
-} from "lucide-react";
+import { ArrowUpRight, Palette, Scissors } from "lucide-react";
 import type { Production } from "@/lib/types";
 import {
   getCurrentApproval,
@@ -16,7 +9,6 @@ import {
   getCurrentBeautyPreview,
 } from "@/lib/domain/selectors";
 import { Photo } from "./ui";
-import { ProvenanceChip } from "./provenance-chip";
 import {
   getCurrentDetailApproval,
   getCurrentDetailPreview,
@@ -47,31 +39,16 @@ export function ContinuityWall({
     >
       <div className="continuity-wall-heading">
         <div>
-          <p className="eyebrow">
-            {compact ? "FOLLOW THE DEPENDENCIES" : "VISUAL CONTINUITY"}
-          </p>
-          <h2>{compact ? "Where the change lands" : "The story, in looks."}</h2>
+          <h2>{compact ? "Affected looks" : "Looks by story day"}</h2>
         </div>
         <div className="continuity-legend" aria-label="Approval states">
-          {!compact &&
-            project.looks.some(
-              (look) =>
-                getCurrentPreview(look, project)?.provenance ===
-                "recorded_provider",
-            ) && <ProvenanceChip kind="recorded" />}
-          {!compact &&
-            project.looks.some(
-              (look) =>
-                getCurrentPreview(look, project)?.provenance ===
-                "live_provider",
-            ) && <ProvenanceChip kind="fresh" />}
           <span>
             <span className="wall-status-dot approved" />
             Approved
           </span>
           <span>
             <span className="wall-status-dot awaiting" />
-            Awaiting review
+            To review
           </span>
           {compact && (
             <span>
@@ -93,7 +70,7 @@ export function ContinuityWall({
               <th scope="col">Character</th>
               {days.map((storyDay) => (
                 <th scope="col" key={storyDay}>
-                  <span>Story day {storyDay}</span>
+                  <span>Day {storyDay}</span>
                   <small>
                     SC{" "}
                     {project.scenes
@@ -180,14 +157,17 @@ export function ContinuityWall({
                               const unit = project.units.find(
                                 (item) => item.id === look.unitIds[0],
                               );
-                              const sceneNumbers = look.sceneIds
-                                .map((id) =>
-                                  project.scenes.find(
-                                    (scene) => scene.id === id,
+                              const previous = project.looks.find(
+                                (item) =>
+                                  item.characterId === character.id &&
+                                  item.storyDays.includes(
+                                    days[days.indexOf(storyDay) - 1],
                                   ),
-                                )
-                                .filter((scene) => scene?.storyDay === storyDay)
-                                .map((scene) => scene!.number);
+                              );
+                              const garmentChanged =
+                                previous &&
+                                previous.unitIds.join("|") !==
+                                  look.unitIds.join("|");
                               return (
                                 <Link
                                   key={look.id}
@@ -197,7 +177,7 @@ export function ContinuityWall({
                                 >
                                   <div className="continuity-cell-image">
                                     <Photo
-                                      fit="cover"
+                                      natural
                                       src={preview?.imageUrl || body?.imageUrl}
                                       alt={`${character.name}: ${preview ? "YouCam garment result" : "source awaiting garment result"}`}
                                       sizes={
@@ -232,36 +212,19 @@ export function ContinuityWall({
                                         </span>
                                       </span>
                                     )}
-                                    <span className="continuity-cell-state">
-                                      {changed ? (
-                                        <TriangleAlert size={12} />
-                                      ) : approval ? (
-                                        <Check size={12} />
-                                      ) : (
-                                        <Circle size={10} />
-                                      )}
-                                      {changed
-                                        ? "Affected"
-                                        : approval
-                                          ? "Approved"
-                                          : preview
-                                            ? "Review"
-                                            : "Source"}
-                                    </span>
                                     <ArrowUpRight
                                       className="continuity-open"
                                       size={16}
                                       aria-hidden="true"
                                     />
                                   </div>
-                                  <div className="continuity-cell-caption">
-                                    <strong>{unit?.name || look.title}</strong>
-                                    <span>
-                                      {look.title}{" "}
-                                      <span aria-hidden="true">·</span> SC{" "}
-                                      {sceneNumbers.join(" / ")}
-                                    </span>
-                                  </div>
+                                  {garmentChanged && !compact && (
+                                    <div className="continuity-cell-caption">
+                                      <strong>
+                                        {unit?.name || look.title}
+                                      </strong>
+                                    </div>
+                                  )}
                                 </Link>
                               );
                             })
@@ -269,17 +232,14 @@ export function ContinuityWall({
                             <div
                               className={`continuity-offstage ${appears && !character.ownClothes ? "needs-look" : ""}`}
                             >
-                              <span>
-                                {appears
-                                  ? character.ownClothes
-                                    ? "Own clothes"
-                                    : "Look to prepare"
-                                  : "Off scene"}
-                              </span>
-                              {appears && !character.ownClothes && (
+                              {appears && !character.ownClothes ? (
                                 <Link href={`/production/${project.id}/looks`}>
-                                  Prepare a look <ArrowUpRight size={12} />
+                                  Add look <ArrowUpRight size={12} />
                                 </Link>
+                              ) : (
+                                <span>
+                                  {appears ? "Own clothes" : "Off scene"}
+                                </span>
                               )}
                             </div>
                           )}
@@ -292,13 +252,6 @@ export function ContinuityWall({
           </tbody>
         </table>
       </div>
-      {!compact && (
-        <p className="continuity-wall-caption">
-          Costume frames follow story days. Round insets show separate makeup or
-          hair-colour results. Open any frame to inspect its sources and
-          decisions.
-        </p>
-      )}
     </section>
   );
 }

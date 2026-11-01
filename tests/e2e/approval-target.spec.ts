@@ -18,14 +18,12 @@ test("an approval cannot silently switch to an output that arrived after the dia
       .getByRole("button", { name: "Approve appearance", exact: true })
       .click();
     const dialog = page.getByRole("dialog", {
-      name: "Approve this exact appearance",
+      name: "Approve appearance",
     });
-    await dialog
-      .getByLabel("Reviewer name or role")
-      .fill("Synthetic output race review");
+    await dialog.getByLabel("Reviewer").fill("Synthetic output race review");
     const rationale =
       "Review of the inspected synthetic output; a later result must be inspected independently.";
-    await dialog.getByLabel("What did you approve?").fill(rationale);
+    await dialog.getByLabel("Note").fill(rationale);
     const newer = await page.request.post(
       `/api/projects/${project.id}/previews`,
       {
@@ -40,36 +38,30 @@ test("an approval cannot silently switch to an output that arrived after the dia
     );
     expect(newer.ok()).toBeTruthy();
     expect((await newer.json()).job.state).toBe("succeeded");
-    await dialog
-      .getByRole("button", { name: "Record appearance approval", exact: true })
-      .click();
+    await dialog.getByRole("button", { name: "Approve", exact: true }).click();
     await expect(
-      dialog.getByText(/A different output or creative intent is now current/),
+      dialog.getByText(/The preview changed\. Re-inspect before approving\./),
     ).toBeVisible();
     await expect(
       dialog.getByRole("button", {
-        name: "Record appearance approval",
+        name: "Approve",
         exact: true,
       }),
     ).toBeDisabled();
-    await expect(dialog.getByLabel("What did you approve?")).toHaveValue(
-      rationale,
-    );
+    await expect(dialog.getByLabel("Note")).toHaveValue(rationale);
     const current: Production = (
       await (await page.request.get(`/api/projects/${project.id}`)).json()
     ).project;
     expect(
       current.looks.find((look) => look.id === "look-mae")!.approvals,
     ).toHaveLength(0);
-    await dialog
-      .getByRole("button", { name: "Keep reviewing", exact: true })
-      .click();
+    await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
     await page
       .getByRole("button", { name: "Approve appearance", exact: true })
       .click();
     await expect(
       dialog.getByRole("button", {
-        name: "Record appearance approval",
+        name: "Approve",
         exact: true,
       }),
     ).toBeEnabled();
@@ -80,7 +72,7 @@ test("an approval cannot silently switch to an output that arrived after the dia
 
 test("a makeup decision cannot absorb a changed creative intent while its image stays the same", async ({
   page,
-}) => {
+}, testInfo) => {
   await authenticate(page.request);
   const created = await page.request.post("/api/projects", {
     data: { mode: "example" },
@@ -94,15 +86,31 @@ test("a makeup decision cannot absorb a changed creative intent while its image 
       `/production/${project.id}/looks?look=look-nora&detail=makeup`,
     );
     await page
-      .getByRole("button", { name: "Approve makeup detail", exact: true })
+      .getByRole("button", { name: "Approve makeup", exact: true })
       .click();
     const dialog = page.getByRole("dialog", {
-      name: "Approve this exact makeup detail",
+      name: "Approve makeup",
       exact: true,
     });
     await expect(
       dialog.getByRole("img", { name: /Exact output under review/ }),
     ).toBeVisible();
+    await expect
+      .poll(() =>
+        dialog.locator(".approval-output img").evaluate((node) => {
+          const image = node as HTMLImageElement;
+          if (!image.complete || !image.naturalWidth) return 1;
+          const frame = image.parentElement!.getBoundingClientRect();
+          return Math.abs(
+            frame.width / frame.height -
+              image.naturalWidth / image.naturalHeight,
+          );
+        }),
+      )
+      .toBeLessThan(0.005);
+    await page.screenshot({
+      path: testInfo.outputPath("makeup-approval-natural-aspect.png"),
+    });
     await dialog
       .getByLabel("Makeup reviewer name or role")
       .fill("Synthetic intent-race review");
@@ -127,15 +135,13 @@ test("a makeup decision cannot absorb a changed creative intent while its image 
       },
     );
     expect(changed.status()).toBe(200);
-    await dialog
-      .getByRole("button", { name: "Record makeup approval", exact: true })
-      .click();
+    await dialog.getByRole("button", { name: "Approve", exact: true }).click();
     await expect(
-      dialog.getByText(/A different output or creative intent is now current/),
+      dialog.getByText(/The preview changed\. Re-inspect before approving\./),
     ).toBeVisible();
     await expect(
       dialog.getByRole("button", {
-        name: "Record makeup approval",
+        name: "Approve",
         exact: true,
       }),
     ).toBeDisabled();

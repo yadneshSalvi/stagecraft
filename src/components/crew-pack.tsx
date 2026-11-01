@@ -15,9 +15,11 @@ import {
 import { getCurrentApproval, getCurrentPreview } from "@/lib/domain/selectors";
 import { dateTime, day, time, revision } from "@/lib/format";
 import { useProduction } from "./production-context";
+import { displayApproval, displayFixtureText } from "@/lib/presentation-copy";
 import { Badge, Button, EmptyState, Notice, Photo } from "./ui";
 import { CrewBeautyEvidence } from "./crew-beauty-evidence";
 import { CrewDetailEvidence } from "./crew-detail-evidence";
+import "./round3-wardrobe-handoff.css";
 
 export function CrewPackView({ packId }: { packId: string }) {
   const { project, send, busy } = useProduction();
@@ -27,7 +29,7 @@ export function CrewPackView({ packId }: { packId: string }) {
   if (!pack)
     return (
       <EmptyState
-        title="This pack isn’t in this working book."
+        title="Pack not found"
         action={
           <Link
             className="button button-primary"
@@ -36,10 +38,11 @@ export function CrewPackView({ packId }: { packId: string }) {
             Return to Handoff
           </Link>
         }
-      >
-        It may belong to another private production or have been deleted.
-      </EmptyState>
+      />
     );
+  const warnings = pack.warnings
+    .map((warning) => displayFixtureText(warning, project.fixture))
+    .filter(Boolean);
   const snapshot = pack.snapshot;
   const frozenProject = {
     ...project,
@@ -84,12 +87,12 @@ export function CrewPackView({ packId }: { packId: string }) {
       <div className="pack-toolbar no-print">
         <Link href={`/production/${project.id}/handoff`}>
           <ArrowLeft size={15} />
-          The handoff book
+          Handoff
         </Link>
         <div>
           <Button onClick={() => void copy()}>
             <Copy size={14} />
-            {copied ? "Private link copied" : "Copy private link"}
+            {copied ? "Copied" : "Copy link"}
           </Button>
           <Button variant="primary" onClick={() => window.print()}>
             <Printer size={15} />
@@ -99,10 +102,7 @@ export function CrewPackView({ packId }: { packId: string }) {
       </div>
       {pack.state === "superseded" && (
         <div className="pack-stale-banner no-print">
-          <Notice tone="danger" title="This pack has been superseded.">
-            A dependency changed after it was frozen. Review the current working
-            book and generate a new pack before the call.
-          </Notice>
+          <Notice tone="danger">Superseded</Notice>
           <Button onClick={() => void refreshPack()} busy={busy}>
             <RefreshCcw size={15} />
             Create a current pack
@@ -111,38 +111,33 @@ export function CrewPackView({ packId }: { packId: string }) {
       )}
       {(permissionMissing || facePermissionMissing) && (
         <Notice tone="warning">
-          Source permission has been withdrawn for a performer. Images are
-          hidden from this online pack. Previously downloaded copies cannot be
-          recalled.
+          Permission withdrawn; some images hidden.
         </Notice>
       )}
       <article className="crew-document">
         <header className="crew-document-header">
           <div>
             <span className="paper-brand">STAGECRAFT</span>
-            <p className="mono">COSTUME / HAIR / MAKEUP</p>
           </div>
           <div>
-            <span className="mono">SOURCE {revision(pack.sourceRevision)}</span>
             <strong>
               {pack.state === "superseded"
-                ? "SUPERSEDED COPY"
-                : pack.warnings.length
-                  ? "WORKING PACK — EVIDENCE PENDING"
-                  : "CURRENT CREW PACK"}
+                ? "Superseded"
+                : warnings.length
+                  ? "Evidence pending"
+                  : "Current"}
             </strong>
           </div>
         </header>
         <div className="crew-title">
-          <p className="eyebrow">{snapshot.title}</p>
           <h1>{pack.title.replace(/^Working pack · /, "")}</h1>
           <p>
             Frozen {dateTime(pack.generatedAt, zone)} · {zone} ·{" "}
-            {pack.occurrenceIds.length} scheduled calls
+            {pack.occurrenceIds.length} calls
           </p>
         </div>
-        {pack.warnings.length > 0 && (
-          <CrewReadiness key={pack.id} warnings={pack.warnings} />
+        {warnings.length > 0 && (
+          <CrewReadiness key={pack.id} warnings={warnings} />
         )}
         {[...snapshot.occurrences]
           .sort((a, b) => a.start.localeCompare(b.start))
@@ -197,6 +192,7 @@ export function CrewPackView({ packId }: { packId: string }) {
                     <article className="crew-look" key={look.id}>
                       <figure>
                         <Photo
+                          natural
                           priority
                           src={
                             consent
@@ -205,53 +201,39 @@ export function CrewPackView({ packId }: { packId: string }) {
                           }
                           alt={`${character?.name || look.title}: ${preview ? "generated garment preview" : "source portrait"}`}
                         />
-                        <figcaption>
-                          {consent
-                            ? preview
-                              ? `${preview.provenance === "recorded_provider" ? "RECORDED " : ""}YOUCAM PREVIEW`
-                              : "SOURCE — NOT AN APPROVED PREVIEW"
-                            : "SOURCE PERMISSION WITHDRAWN"}
-                        </figcaption>
+                        {(!consent || !preview) && (
+                          <figcaption>
+                            {consent
+                              ? "Source — not approved"
+                              : "Permission withdrawn"}
+                          </figcaption>
+                        )}
                       </figure>
                       <div className="crew-look-details">
                         <p className="crew-print-context">
                           SC {scene?.number} · {day(occurrence.start, zone)} ·{" "}
-                          {time(occurrence.start, zone)} · SOURCE{" "}
-                          {revision(pack.sourceRevision)} ·{" "}
-                          {pack.state === "superseded"
-                            ? "SUPERSEDED COPY"
-                            : pack.warnings.length
-                              ? "WORKING PACK"
-                              : "CURRENT CREW PACK"}
+                          {time(occurrence.start, zone)}
                         </p>
                         <div className="crew-look-heading">
                           <div>
-                            <span className="mono">
-                              {look.title.toUpperCase()} / RECIPE{" "}
-                              {revision(look.revision)}
-                            </span>
+                            <span className="mono">{look.title}</span>
                             <h3>{character?.name || look.title}</h3>
-                            <p>
-                              {performer?.name}
-                              {performer?.synthetic
-                                ? " · synthetic adult performer"
-                                : ""}
-                            </p>
+                            <p>{performer?.name}</p>
                           </div>
                           <Badge
                             tone={approval && consent ? "success" : "warning"}
                           >
                             {!consent
-                              ? "Source permission withdrawn"
+                              ? "Permission withdrawn"
                               : approval
-                                ? "Appearance approved"
-                                : "Appearance not approved"}
+                                ? "Approved"
+                                : "Not approved"}
                           </Badge>
                         </div>
                         {approval && (
                           <p className="crew-approval-line">
-                            Approval at source revision by {approval.approvedBy}{" "}
-                            · {approval.rationale}
+                            {displayApproval(approval).approvedBy} ·{" "}
+                            {displayApproval(approval).rationale}
                           </p>
                         )}
                         <CrewBeautyEvidence
@@ -300,13 +282,17 @@ export function CrewPackView({ packId }: { packId: string }) {
                                   </strong>
                                   <p>
                                     Collect from {unit.location} ·{" "}
-                                    {unit.supplier}
+                                    {displayFixtureText(
+                                      unit.supplier,
+                                      project.fixture,
+                                    )}
                                   </p>
                                   <small>
-                                    {fit
-                                      ? "Physical fitting evidence recorded"
-                                      : "Physical fitting requires evidence"}{" "}
-                                    · {unit.condition}
+                                    {fit ? "Fitted" : "Fitting needed"} ·{" "}
+                                    {displayFixtureText(
+                                      unit.condition,
+                                      project.fixture,
+                                    )}
                                   </small>
                                 </div>
                               </div>
@@ -316,28 +302,21 @@ export function CrewPackView({ packId }: { packId: string }) {
                         <dl className="crew-directions">
                           <div>
                             <dt>MAKEUP</dt>
-                            <dd>
-                              {look.makeup.notes ||
-                                "Application notes not yet recorded."}
-                            </dd>
+                            <dd>{look.makeup.notes || "—"}</dd>
                           </div>
                           <div>
                             <dt>HAIR</dt>
-                            <dd>
-                              {look.hair || "Hair direction not yet recorded."}
-                            </dd>
+                            <dd>{look.hair || "—"}</dd>
                           </div>
                           <div>
                             <dt>ACCESSORIES</dt>
-                            <dd>
-                              {look.accessories ||
-                                "No accessory direction recorded."}
-                            </dd>
+                            <dd>{look.accessories || "—"}</dd>
                           </div>
                           <div>
                             <dt>CONTINUITY</dt>
                             <dd>
-                              {look.note || "No additional continuity note."}
+                              {displayFixtureText(look.note, project.fixture) ||
+                                "—"}
                             </dd>
                           </div>
                         </dl>
@@ -345,19 +324,14 @@ export function CrewPackView({ packId }: { packId: string }) {
                           <Clock3 size={13} />
                           {look.preparationMinutes === null
                             ? "Preparation time unknown"
-                            : `${look.preparationMinutes} min preparation · ${look.preparationEvidence}`}
-                          . Actual changeover time requires separate
-                          observation.
+                            : `${look.preparationMinutes} min prep (${look.preparationEvidence})`}
                         </p>
                       </div>
                     </article>
                   );
                 })}
                 {!looks.length && (
-                  <p className="crew-no-look">
-                    No look is linked to this call. The working book needs a
-                    costume decision.
-                  </p>
+                  <p className="crew-no-look">No look for this call.</p>
                 )}
               </section>
             );
@@ -366,14 +340,8 @@ export function CrewPackView({ packId }: { packId: string }) {
           <strong>
             {snapshot.title} / {revision(pack.sourceRevision)}
           </strong>
-          <p>
-            Generated appearance previews are not evidence of physical fit or
-            exact garment reproduction. Rendered makeup is explicitly labelled;
-            other makeup and hair notes remain application direction. A printed
-            or saved copy is frozen and cannot update itself.
-          </p>
           <span className="mono">
-            FROZEN {new Date(pack.generatedAt).toISOString()} ·{" "}
+            FROZEN {dateTime(pack.generatedAt, zone)} ·{" "}
             {pack.state === "superseded"
               ? "SUPERSEDED"
               : "CHECK ONLINE BEFORE USE"}
@@ -381,8 +349,7 @@ export function CrewPackView({ packId }: { packId: string }) {
         </footer>
       </article>
       <p className="pack-privacy-note no-print">
-        This link opens only in the browser that owns the production. Print or
-        save a PDF deliberately when handing the frozen pages to crew.
+        Link works only in this browser.
       </p>
     </div>
   );
@@ -398,11 +365,9 @@ function CrewReadiness({ warnings }: { warnings: string[] }) {
     >
       <div className="crew-warnings-summary">
         <div>
-          <h2>Evidence pending</h2>
+          <h2>Readiness</h2>
           <p>
-            {warnings.length} unresolved{" "}
-            {warnings.length === 1 ? "requirement" : "requirements"} in this
-            frozen revision.
+            {warnings.length} open {warnings.length === 1 ? "item" : "items"}
           </p>
         </div>
         <button

@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Upload } from "lucide-react";
 import { uploadImage } from "@/lib/upload-client";
 import { useProduction } from "./production-context";
@@ -25,21 +25,20 @@ export function FaceSourceDialog({
   const [withdraw, setWithdraw] = useState(false);
   const [message, setMessage] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const dimensionsId = useId();
   async function save(event: React.FormEvent) {
     event.preventDefault();
     if (!file || !permitted || uploading || busy) return;
     setUploading(true);
     setError(null);
-    setMessage("Uploading and validating the separate face source…");
+    setMessage("Uploading…");
     try {
       const result = await uploadImage(file, project.id, "face", performerId);
       setProject(result.project);
       setFile(null);
       setPermitted(false);
       if (input.current) input.current.value = "";
-      setMessage(
-        "Face source saved privately. Beauty evidence now needs a fresh review; the garment source and its approval stay separate.",
-      );
+      setMessage("Saved. Face previews need re-review.");
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -56,9 +55,7 @@ export function FaceSourceDialog({
     const result = await send({ type: "withdraw_face_consent", performerId });
     if (result) {
       setWithdraw(false);
-      setMessage(
-        "Face permission withdrawn. New beauty derivations are blocked and existing beauty evidence is invalid. Garment permission remains separate.",
-      );
+      setMessage("Permission withdrawn.");
     }
   }
   return (
@@ -67,12 +64,13 @@ export function FaceSourceDialog({
       onClose={() => {
         if (!uploading && !busy) onClose();
       }}
-      title="A source for the makeup detail"
-      description={`${performer?.name || "Performer"} · independently versioned face capture`}
+      title="Face source"
     >
       <div className="face-source-preview">
         <Photo
           original
+          natural
+          aspectRatio={4 / 5}
           src={face?.consent.granted ? face.imageUrl : null}
           alt={
             face?.consent.granted
@@ -81,35 +79,31 @@ export function FaceSourceDialog({
           }
         />
         <div>
-          <Badge tone={face?.consent.granted ? "brass" : "warning"}>
-            {face?.consent.granted
-              ? face.synthetic
-                ? "Synthetic face source"
-                : "Private face source"
-              : "Face permission needed"}
-          </Badge>
+          {!face?.consent.granted && (
+            <Badge tone="warning">Permission needed</Badge>
+          )}
           <h3>{performer?.name}</h3>
-          <p>
-            {face ? `Face capture ${face.version}. ` : ""}Choose a clear,
-            front-facing image with the face unobstructed. This image is stored
-            and reviewed separately from the costume source.
-          </p>
+          <p>Clear, front-facing, face unobstructed.</p>
         </div>
       </div>
       <form onSubmit={save} className="form-stack">
         <Field
           label="Face source image"
-          hint="JPEG, PNG, or WebP under 10 MB. At least 512 px on the long edge and 384 px on the short edge."
+          hint="JPEG, PNG or WebP · ≤10 MB · ≥512 px"
         >
           <input
             ref={input}
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            aria-describedby={dimensionsId}
             onChange={(event) => {
               setFile(event.target.files?.[0] || null);
               setMessage("");
             }}
           />
+          <span className="sr-only" id={dimensionsId}>
+            At least 512 px long edge, 384 px short edge.
+          </span>
         </Field>
         <label className="checkbox-field">
           <input
@@ -117,14 +111,9 @@ export function FaceSourceDialog({
             checked={permitted}
             onChange={(event) => setPermitted(event.target.checked)}
           />
-          I have permission and image rights to store this face source and send
-          it to YouCam for this production’s makeup previews.
+          I have the rights to use this image with YouCam.
         </label>
-        <Notice>
-          Uploads and results are private to this browser’s production and
-          expire after 30 days. A face-source change requires new makeup
-          evidence.
-        </Notice>
+        <Notice>Private to this browser. Deleted after 30 days.</Notice>
         {message && (
           <p className="upload-feedback" role="status">
             {message}
@@ -142,18 +131,14 @@ export function FaceSourceDialog({
             disabled={!file || !permitted || busy}
           >
             <Upload size={15} />
-            Save private face source
+            Save face source
           </Button>
         </div>
       </form>
       {face?.consent.granted && (
         <details className="source-withdrawal">
           <summary>Withdraw face-source permission</summary>
-          <p>
-            Stops future makeup derivations and invalidates this performer’s
-            beauty previews and approvals. Previously downloaded copies cannot
-            be recalled.
-          </p>
+          <p>Removes this performer’s face previews and approvals.</p>
           <label className="checkbox-field">
             <input
               type="checkbox"

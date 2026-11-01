@@ -221,6 +221,17 @@ export const commandSchema = z.discriminatedUnion("type", [
     .strict(),
   z
     .object({
+      type: z.literal("acknowledge_direction_reference"),
+      characterId: identifier,
+      unitId: identifier,
+      sourceRevision: nonnegative,
+      referenceHash: z.string().regex(/^[a-f0-9]{64}$/),
+      acknowledgedBy: name,
+      rationale: z.string().trim().min(1).max(1000),
+    })
+    .strict(),
+  z
+    .object({
       type: z.literal("edit_direction"),
       characterId: identifier,
       text: text(3000),

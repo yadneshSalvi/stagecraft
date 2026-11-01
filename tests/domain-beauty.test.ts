@@ -482,7 +482,7 @@ describe("source-scoped consent and frozen beauty handoffs", () => {
     expect(snapshot.looks[0].previews).toEqual(nora(withdrawn).previews);
     expect(snapshot.looks[0].beauty!.previews).toEqual([]);
     expect(packed.packs.at(-1)!.warnings.join(" ")).toMatch(
-      /face source is missing or withdrawn/,
+      /face source missing/,
     );
     expect(packed.packs.at(-1)!.title).toMatch(/^Working pack/);
   });
@@ -623,7 +623,7 @@ describe("source-scoped consent and frozen beauty handoffs", () => {
       /separate beauty-detail preview/,
     );
     expect(production.packs.at(-1)!.warnings.join(" ")).toMatch(
-      /separate beauty detail is configured/,
+      /makeup not approved/,
     );
     production = approveBeauty(production);
     expect(production.packs.at(-1)!.state).toBe("superseded");

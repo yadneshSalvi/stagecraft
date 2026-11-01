@@ -56,14 +56,15 @@ export function RecipeInspector({
     palette.length <= 10 &&
     palette.every((color) => /^#[0-9a-f]{6}$/i.test(color));
   const unit = project.units.find((u) => u.id === unitId);
-  const needsPairGuide =
-    !getCurrentPreview(look, project) || unitId !== look.unitIds[0];
+  const preview = getCurrentPreview(look, project);
+  const needsPairGuide = !preview || unitId !== look.unitIds[0];
   const recordedLibrary = useRecordedLibrary({
     performerId: look.performerId || undefined,
     unitId,
     category: unitId === look.unitIds[0] ? look.category : unit?.category,
-    enabled: needsPairGuide && !!look.performerId && !!unitId,
+    enabled: !!look.performerId && !!unitId,
   });
+  const savedReady = recordedLibrary.catalog?.selection?.ready === true;
   const changed =
     unitId !== look.unitIds[0] ||
     makeup !== look.makeup.notes ||
@@ -105,7 +106,7 @@ export function RecipeInspector({
     <aside className="recipe-inspector">
       <section className="direction-note">
         <div className="section-title">
-          <span className="eyebrow">CHARACTER DIRECTION</span>
+          <h3>Direction</h3>
           <button
             className="icon-button"
             aria-label="Edit character direction"
@@ -114,31 +115,24 @@ export function RecipeInspector({
             <Edit3 size={13} />
           </button>
         </div>
-        <p>
-          {character?.direction.text ||
-            "Give this character a visual direction."}
-        </p>
+        <p>{character?.direction.text || "No direction yet"}</p>
         <div className="palette-swatches" aria-label="Character palette">
           {character?.direction.palette.map((color) => (
             <span key={color} style={{ background: color }} title={color} />
           ))}
         </div>
-        {character?.direction.approvedBy && (
-          <small>Direction by {character.direction.approvedBy}</small>
-        )}
       </section>
       <form onSubmit={save} className="recipe-form">
         <div className="section-title">
-          <h2>The recipe</h2>
-          <span className="mono">EXACT REFERENCES</span>
+          <h2>Recipe</h2>
         </div>
-        <Field label="01 / Costume unit">
+        <Field label="Costume unit">
           <select
             value={unitId}
             onChange={(event) => setUnitId(event.target.value)}
             required
           >
-            <option value="">Choose a physical unit</option>
+            <option value="">Choose a unit</option>
             {project.units.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.code} · {u.name}
@@ -161,9 +155,7 @@ export function RecipeInspector({
                 </small>
               </span>
               <Badge tone={unit.status === "available" ? "neutral" : "danger"}>
-                {unit.availability.confirmed
-                  ? "Availability recorded"
-                  : "Availability to confirm"}
+                {unit.availability.confirmed ? "Confirmed" : "Unconfirmed"}
               </Badge>
             </div>
           </div>
@@ -176,8 +168,8 @@ export function RecipeInspector({
             disabled={busy}
           />
         )}
-        <details className="recipe-details" open>
-          <summary>02 / Makeup & hair direction</summary>
+        <details className="recipe-details">
+          <summary>Makeup & hair</summary>
           <Field label="Makeup notes">
             <textarea
               value={makeup}
@@ -193,13 +185,9 @@ export function RecipeInspector({
               maxLength={800}
             />
           </Field>
-          <p className="recipe-disclaimer">
-            Crew instructions accompany the separately approved makeup and hair
-            views in the handoff.
-          </p>
         </details>
         <details className="recipe-details">
-          <summary>03 / Accessories & preparation</summary>
+          <summary>Accessories & prep</summary>
           <Field label="Accessories">
             <textarea
               value={accessories}
@@ -208,10 +196,7 @@ export function RecipeInspector({
               rows={2}
             />
           </Field>
-          <Field
-            label="Preparation estimate (minutes)"
-            hint="An estimate remains provisional until observed. Leave empty when unknown."
-          >
+          <Field label="Prep time (min)">
             <input
               type="number"
               min="0"
@@ -220,7 +205,7 @@ export function RecipeInspector({
               onChange={(event) => setMinutes(event.target.value)}
             />
           </Field>
-          <Field label="Continuity & application notes">
+          <Field label="Continuity notes">
             <textarea
               value={note}
               onChange={(event) => setNote(event.target.value)}
@@ -231,12 +216,9 @@ export function RecipeInspector({
         </details>
         {changed && (
           <div className="recipe-save">
-            <p>
-              Saving creates a new recipe revision and requires a new appearance
-              review.
-            </p>
+            <p>Saving resets the appearance approval.</p>
             <Button variant="primary" type="submit" busy={busy}>
-              Save recipe revision
+              Save recipe
               <ArrowRight size={14} />
             </Button>
           </div>
@@ -245,24 +227,28 @@ export function RecipeInspector({
       <section className="generation-panel">
         <div className="section-title">
           <h3>
-            <Sparkles size={15} /> Bring the garment into focus
+            <Sparkles size={15} /> Preview
           </h3>
         </div>
-        <p>
-          Clothes V4 uses this performer and this garment reference. Inspect the
-          silhouette, details, and any changes from the source.
-        </p>
         {!performer?.consent.granted || !performer.imageUrl ? (
           <>
-            <Notice tone="warning">
-              A permitted, usable performer source is needed before generating.
-            </Notice>
-            <Button onClick={onCast}>Add a source photo</Button>
+            <Button onClick={onCast}>Add source photo</Button>
           </>
         ) : (
           <>
+            {(config?.recordedPreviews ?? 1) > 0 && (
+              <Button
+                variant={!preview && savedReady ? "primary" : "default"}
+                busy={jobState.recordedWorking || jobState.recordedPending}
+                disabled={changed || !!jobState.recordedIntent}
+                onClick={() => void generate("recorded")}
+              >
+                Use saved result
+                <ArrowRight size={13} />
+              </Button>
+            )}
             <Button
-              variant="primary"
+              variant={!preview && !savedReady ? "primary" : "default"}
               busy={pending}
               disabled={
                 changed ||
@@ -273,23 +259,12 @@ export function RecipeInspector({
               onClick={() => void generate("live")}
             >
               <Sparkles size={15} />
-              {pending ? "Preview in progress" : "Generate a fresh preview"}
+              {pending ? "Generating…" : "Generate preview"}
             </Button>
             <span className="generation-cost">
-              Est. 2 YouCam units · {config?.ownerDailyJobLimit || 4} fresh jobs
-              per browser / day
+              2 units · {config?.ownerDailyJobLimit || 4}/day
             </span>
             <PreviewAvailability config={config} />
-            {(config?.recordedPreviews ?? 1) > 0 && (
-              <Button
-                busy={jobState.recordedWorking || jobState.recordedPending}
-                disabled={changed || !!jobState.recordedIntent}
-                onClick={() => void generate("recorded")}
-              >
-                Use matching recorded result
-                <ArrowRight size={13} />
-              </Button>
-            )}
             {changed && (
               <p className="text-warning">Save the recipe before generating.</p>
             )}
@@ -301,7 +276,7 @@ export function RecipeInspector({
         className="recipe-unit-link"
         href={`/production/${project.id}/wardrobe`}
       >
-        Inspect physical unit & fitting evidence
+        Unit & fitting
         <ArrowRight size={14} />
       </Link>
       <Modal
@@ -309,11 +284,10 @@ export function RecipeInspector({
         onClose={() => {
           if (!busy) setDirectionOpen(false);
         }}
-        title="The character’s visual direction"
-        description="Direction belongs to the story. It stays intact when the performer changes."
+        title="Direction"
       >
         <form onSubmit={saveDirection} className="form-stack">
-          <Field label="Character direction">
+          <Field label="Direction">
             <textarea
               value={direction}
               onChange={(event) => setDirection(event.target.value)}
@@ -321,21 +295,17 @@ export function RecipeInspector({
               maxLength={2000}
             />
           </Field>
-          <Field
-            label="Essential details"
-            hint="One per line. Changes to these requirements need a designer’s decision."
-          >
+          <Field label="Essentials">
             <textarea
+              placeholder="One per line"
               value={essential}
               onChange={(event) => setEssential(event.target.value)}
               maxLength={1800}
             />
           </Field>
-          <Field
-            label="Character colour palette"
-            hint="Up to ten six-digit hex colours, separated by commas; leave empty to clear."
-          >
+          <Field label="Palette">
             <input
+              placeholder="#6B2948, #1B2232"
               value={paletteText}
               onChange={(event) => setPaletteText(event.target.value)}
               maxLength={100}
@@ -347,11 +317,7 @@ export function RecipeInspector({
               Use colours such as #6B2948, with at most ten entries.
             </p>
           )}
-          <p className="muted">
-            Saving clears the direction’s approval and affected appearance
-            decisions. Existing images remain available for a new review when
-            their provider inputs have not changed.
-          </p>
+          <p className="muted">Saving resets affected approvals.</p>
           {error && <Notice tone="danger">{error}</Notice>}
           <div className="modal-actions">
             <Button type="button" onClick={() => setDirectionOpen(false)}>
@@ -363,7 +329,7 @@ export function RecipeInspector({
               disabled={!paletteValid}
               type="submit"
             >
-              Save direction for review
+              Save direction
             </Button>
           </div>
         </form>

@@ -21,6 +21,7 @@ import {
   evaluateRepairAlternative,
 } from "./change";
 import { DomainError, findRecord, requireFact } from "./errors";
+import { getDirectionReferenceReview } from "./direction";
 import { canonicalJson } from "./hash";
 import { applyCandidateCommand, adoptAppearanceCandidate } from "./candidates";
 import { createExampleProduction } from "./fixture";
@@ -303,7 +304,7 @@ export function applyCommand(
       if (performer.faceCapture)
         performer.faceCapture.librarySourceId = source.id;
       draft.performers.push(performer);
-      summary = `Imported ${performer.name} from the labelled synthetic adult cast library; no real participant permission is claimed.`;
+      summary = `Added ${performer.name} from the cast library.`;
       break;
     }
     case "import_example_unit": {
@@ -317,7 +318,7 @@ export function applyCommand(
       unit.librarySourceId = source.id;
       unit.approvedSubstituteIds = [];
       draft.units.push(unit);
-      summary = `Imported ${unit.code} as a distinct synthetic physical-unit record; no fitting, stock confirmation or purchase is inferred.`;
+      summary = `Added ${unit.code} from the wardrobe library.`;
       break;
     }
     case "set_own_clothes": {
@@ -346,7 +347,7 @@ export function applyCommand(
         },
         "The character's own-clothes planning scope changed.",
       );
-      summary = `${character.name} ${command.ownClothes ? "is explicitly exempt from managed wardrobe allocation and uses their own clothes" : "requires managed wardrobe planning again"}.`;
+      summary = `${character.name}: ${command.ownClothes ? "own clothes" : "managed wardrobe"}.`;
       break;
     }
     case "draft_schedule": {
@@ -394,7 +395,7 @@ export function applyCommand(
         start = end + command.gapMinutes * 60000;
         added++;
       }
-      summary = `Drafted ${added} missing scene calls in script order. Existing edited calls were retained; durations remain planning inputs.`;
+      summary = `Drafted ${added} scene calls.`;
       break;
     }
     case "set_example_decisions": {
@@ -404,7 +405,7 @@ export function applyCommand(
         "Sample decisions are available only in the explicitly synthetic example production.",
         403,
       );
-      const reviewer = "Example reviewer (sample decision)";
+      const reviewer = "Example reviewer";
       let decisions = 0;
       const revokedIds = new Set<string>();
       const revoke = (approval: {
@@ -418,7 +419,7 @@ export function applyCommand(
           approval.state === "current"
         ) {
           approval.state = "blocked";
-          approval.reason = "Example decisions were explicitly switched off.";
+          approval.reason = "Example approvals removed.";
           if (!revokedIds.has(approval.id)) {
             decisions++;
             revokedIds.add(approval.id);
@@ -456,8 +457,7 @@ export function applyCommand(
               captureVersion: preview.captureVersion,
               sceneIds: [...look.sceneIds],
               approvedBy: reviewer,
-              rationale:
-                "Sample creative decision on this exact recorded output for the synthetic story; no physical fitting or human research outcome is claimed.",
+              rationale: "Example approval.",
               approvedAt: now,
               state: "current",
               reason: null,
@@ -488,8 +488,7 @@ export function applyCommand(
               faceCaptureVersion: face.version,
               sceneIds: [...look.sceneIds],
               approvedBy: reviewer,
-              rationale:
-                "Sample independent makeup decision on the exact recorded synthetic face detail.",
+              rationale: "Example approval.",
               approvedAt: now,
               state: "current",
               reason: null,
@@ -515,8 +514,7 @@ export function applyCommand(
                   kind: detail.kind,
                   previewId: detailPreview.id,
                   approvedBy: reviewer,
-                  rationale:
-                    "Sample independent creative decision on this exact recorded synthetic detail; no physical outcome is claimed.",
+                  rationale: "Example approval.",
                 },
                 { now, makeId: (kind) => makeId(`example-${kind}-${look.id}`) },
               );
@@ -544,8 +542,7 @@ export function applyCommand(
                 candidateId,
                 previewId: preview.id,
                 approvedBy: reviewer,
-                rationale:
-                  "Sample exact candidate decision for the fictional production; no physical fit is inferred.",
+                rationale: "Example approval.",
               },
               {
                 now,
@@ -564,7 +561,7 @@ export function applyCommand(
           }
         }
       }
-      summary = `${command.enabled ? "Recorded" : "Removed"} ${decisions} explicit sample decisions. Manual approvals, source truth and physical evidence remain separate.`;
+      summary = `${command.enabled ? "Recorded" : "Removed"} ${decisions} example approvals.`;
       break;
     }
     case "update_production": {
@@ -617,7 +614,7 @@ export function applyCommand(
         production.subtitle !== draft.subtitle
       )
         for (const pack of draft.packs) pack.state = "superseded";
-      summary = "Updated the production's recorded settings.";
+      summary = "Updated production settings.";
       break;
     }
     case "review_scene": {
@@ -750,7 +747,7 @@ export function applyCommand(
         "needs_review",
       );
       for (const pack of draft.packs) pack.state = "superseded";
-      summary = `Adopted ${command.script.label}; preserved ${merged.diff.preservedReviewedSceneIds.length} reviewed scene corrections and flagged ${merged.diff.changedSceneIds.length} changed scenes.`;
+      summary = `Adopted ${command.script.label}: ${merged.diff.changedSceneIds.length} scenes changed.`;
       break;
     }
     case "update_occurrence": {
@@ -808,7 +805,7 @@ export function applyCommand(
       for (const pack of draft.packs)
         if (pack.snapshot.units.some((unit) => usedUnits.includes(unit.id)))
           pack.state = "superseded";
-      summary = `Updated ${occurrence.label}; story chronology and appearance approvals were preserved.`;
+      summary = `Updated ${occurrence.label}.`;
       break;
     }
     case "add_performer": {
@@ -845,6 +842,7 @@ export function applyCommand(
       );
       draft.characters.push({
         ...structuredClone(command.character),
+        directionAcknowledgements: [],
         direction: {
           ...structuredClone(command.character.direction),
           revision: 1,
@@ -915,7 +913,7 @@ export function applyCommand(
           if (pack.snapshot.performers.some((item) => item.id === performer.id))
             pack.state = "superseded";
       }
-      summary = `Updated ${performer.name}${sourceChanged ? " and advanced the source capture version" : ""}.`;
+      summary = `Updated ${performer.name}.`;
       break;
     }
     case "withdraw_consent": {
@@ -951,6 +949,62 @@ export function applyCommand(
     case "add_beauty_preview":
     case "approve_beauty": {
       summary = applyBeautyCommand(draft, command, { now, makeId });
+      break;
+    }
+    case "acknowledge_direction_reference": {
+      requireFact(
+        command.sourceRevision === previousRevision,
+        "STALE_DIRECTION_REFERENCE",
+        "Production changed. Review these references again.",
+        409,
+      );
+      const review = getDirectionReferenceReview(
+        production,
+        command.characterId,
+        command.unitId,
+      );
+      requireFact(
+        !!review,
+        "DIRECTION_REFERENCE_REQUIRED",
+        "This garment is not a current removed reference.",
+        409,
+      );
+      requireFact(
+        review.referenceHash === command.referenceHash,
+        "STALE_DIRECTION_REFERENCE",
+        "These references changed. Review them again.",
+        409,
+      );
+      requireFact(
+        !!command.acknowledgedBy.trim() &&
+          command.acknowledgedBy.trim().length <= 120 &&
+          !!command.rationale.trim() &&
+          command.rationale.trim().length <= 1000,
+        "DIRECTION_REVIEW_REQUIRED",
+        "Record a reviewer and reason.",
+      );
+      const character = findRecord(
+        draft.characters,
+        command.characterId,
+        "Character",
+      );
+      character.directionAcknowledgements = [
+        ...(character.directionAcknowledgements ?? []),
+        {
+          ...review,
+          id: makeId("direction-acknowledgement"),
+          acknowledgedRevision: draft.revision,
+          acknowledgedBy: command.acknowledgedBy.trim(),
+          rationale: command.rationale.trim(),
+          acknowledgedAt: now,
+        },
+      ];
+      for (const pack of draft.packs)
+        if (
+          pack.snapshot.looks.some((look) => review.lookIds.includes(look.id))
+        )
+          pack.state = "superseded";
+      summary = `Recorded wording choice for ${character.name}.`;
       break;
     }
     case "edit_direction":
@@ -1005,7 +1059,7 @@ export function applyCommand(
         false,
         "needs_review",
       );
-      summary = `Recorded direction revision ${character.direction.revision} for ${character.name}.`;
+      summary = `Saved ${character.name} direction.`;
       break;
     }
     case "create_look": {
@@ -1040,8 +1094,7 @@ export function applyCommand(
           recipe: validatedBeautyRecipe(look.beauty.recipe),
           previews: [],
           approvals: [],
-          reviewReason:
-            "Beauty detail is configured but not yet generated or approved.",
+          reviewReason: "Makeup needs a preview and approval.",
         };
       }
       if (look.details)
@@ -1057,8 +1110,7 @@ export function applyCommand(
             recipe: validatedDetailRecipe(draft, detail.recipe),
             previews: [],
             approvals: [],
-            reviewReason:
-              "Independent detail is configured and needs its own exact output and approval.",
+            reviewReason: "Detail needs a preview and approval.",
           };
         });
       requireFact(
@@ -1107,7 +1159,7 @@ export function applyCommand(
         },
         "A look was added to the scene plan.",
       );
-      summary = `Created ${look.title} for ${character.name}; no visual or physical approval was inferred.`;
+      summary = `Created ${look.title} for ${character.name}.`;
       break;
     }
     case "update_look": {
@@ -1189,7 +1241,7 @@ export function applyCommand(
       for (const pack of draft.packs)
         if (pack.snapshot.looks.some((item) => item.id === look.id))
           pack.state = "superseded";
-      summary = `Saved ${look.title}${before.revision !== look.revision ? ` as recipe revision ${look.revision}` : ""}.`;
+      summary = `Saved ${look.title}.`;
       break;
     }
     case "add_preview": {
@@ -1236,12 +1288,11 @@ export function applyCommand(
         "A preview needs a distinct, stored provider output image.",
       );
       look.previews.push(structuredClone(preview));
-      look.reviewReason =
-        "Inspect the current garment result and record a fresh exact-output appearance approval.";
+      look.reviewReason = "Review this garment preview.";
       for (const pack of draft.packs)
         if (pack.snapshot.looks.some((item) => item.id === look.id))
           pack.state = "superseded";
-      summary = `Attached a ${preview.provenance === "recorded_provider" ? "recorded" : "live"} provider result to ${look.title}; appearance approval remains explicit.`;
+      summary = `New preview for ${look.title}.`;
       break;
     }
     case "approve_look": {
@@ -1332,14 +1383,14 @@ export function applyCommand(
       for (const pack of draft.packs)
         if (pack.snapshot.looks.some((item) => item.id === look.id))
           pack.state = "superseded";
-      summary = `${command.approvedBy.trim()} approved the exact ${look.title} preview for ${performer.name}; fit and availability remain separate.`;
+      summary = `${command.approvedBy.trim()} approved ${look.title} for ${performer.name}.`;
       break;
     }
     case "add_unit": {
       requireNew(draft.units, command.unit.id, "Physical unit");
       validateUnit(command.unit, draft);
       draft.units.push({ ...structuredClone(command.unit), version: 1 });
-      summary = `Added physical unit ${command.unit.code}; its evidence provenance was retained.`;
+      summary = `Added unit ${command.unit.code}.`;
       break;
     }
     case "update_unit": {
@@ -1391,7 +1442,7 @@ export function applyCommand(
         `${unit.code}'s physical facts changed; affected allocation and handoff need review.`,
         commercialChanged,
       );
-      summary = `Updated ${unit.code} to fact version ${unit.version}; unrelated appearance approvals were preserved.`;
+      summary = `Updated ${unit.code}.`;
       break;
     }
     case "solve_allocation": {
@@ -1400,7 +1451,7 @@ export function applyCommand(
         sourceRevision: draft.revision,
         proposalId: makeId("allocation"),
       });
-      summary = `Computed ${draft.allocationResult.status.toLowerCase()} allocation using the bounded deterministic engine${draft.allocationResult.constraintChecked ? " and constraint check" : ""}.`;
+      summary = `Checked allocation: ${draft.allocationResult.status.toLowerCase().replaceAll("_", " ")}.`;
       break;
     }
     case "adopt_allocation": {
@@ -1487,7 +1538,7 @@ export function applyCommand(
       if (command.confirmation)
         result.acceptedConfirmation = structuredClone(command.confirmation);
       for (const pack of draft.packs) pack.state = "superseded";
-      summary = `Adopted ${draft.allocations.length} checked physical-unit assignments. Outstanding fitting, timing and supplier evidence remains visible.`;
+      summary = `Adopted ${draft.allocations.length} unit assignments.`;
       break;
     }
     case "create_sourcing": {
@@ -1535,7 +1586,7 @@ export function applyCommand(
         stale: false,
         note: command.note,
       });
-      summary = `Created a ${synthetic ? "synthetic " : ""}sourcing draft; no supplier message or confirmation was inferred.`;
+      summary = `Created a sourcing draft.`;
       break;
     }
     case "update_sourcing": {
@@ -1615,7 +1666,7 @@ export function applyCommand(
           unit.availability = {
             from: request.from,
             to: request.to,
-            source: `${command.provenance === "synthetic" ? "Synthetic exercise" : "Manual supplier confirmation"}: ${request.externalReference}. ${request.evidence}`,
+            source: `${request.externalReference}: ${request.evidence}`,
             checkedAt: now,
             confirmed: true,
             provenance: command.provenance,
@@ -1638,7 +1689,7 @@ export function applyCommand(
           { unitIds: request.unitIds },
           `Sourcing request recorded as ${command.status}; current custody and availability need review.`,
         );
-      summary = `${request.operator} recorded ${command.status}${request.provenance === "synthetic" ? " in the synthetic supplier exercise" : " with external evidence"}; receipt and return remain distinct stages.`;
+      summary = `${request.operator} recorded ${command.status}.`;
       break;
     }
     case "propose_change": {
@@ -1714,7 +1765,7 @@ export function applyCommand(
       });
       draft.proposals.push(proposal);
       newProposalId = proposal.id;
-      summary = `Prepared a ${command.seeded ? "seeded " : ""}${command.kind === "recast" ? "recast" : "garment replacement"} proposal against revision ${draft.revision}; the baseline plan was preserved.`;
+      summary = `Prepared a ${command.kind === "recast" ? "recast" : "replacement"} proposal.`;
       break;
     }
     case "adopt_repair": {
@@ -1735,6 +1786,12 @@ export function applyCommand(
         proposal.options,
         command.optionId,
         "Repair option",
+      );
+      requireFact(
+        !option.decisionsNeeded,
+        "REPAIR_DECISIONS_NEEDED",
+        `${option.decisionsNeeded?.count ?? 0} other looks need decisions first.`,
+        409,
       );
       requireFact(
         option.feasible,
@@ -1803,7 +1860,7 @@ export function applyCommand(
       );
       proposal.status = "adopted";
       proposal.adoptedAt = now;
-      summary = `Adopted ${option.label} as production revision ${draft.revision}. Exact reviewed candidate identities and ${proposal.impact.preservedApprovalIds.length} unrelated approvals were preserved; physical fitting and supplier evidence remain separate.`;
+      summary = `Adopted ${option.label}; ${proposal.impact.preservedApprovalIds.length} approvals kept.`;
       break;
     }
     case "create_pack": {
@@ -1871,24 +1928,18 @@ export function applyCommand(
               scene.characterIds.includes(character.id),
           ),
       ))
-        warnings.push(
-          `${character.name}: explicitly using own clothes; no managed garment allocation or appearance approval is claimed.`,
-        );
+        warnings.push(`${character.name}: own clothes`);
       for (const look of looks)
         if (!getCurrentApproval(look, draft))
-          warnings.push(
-            `${look.title}: no exact current appearance approval. Source portrait or unapproved preview must not be read as an approved look.`,
-          );
+          warnings.push(`${look.title}: not approved`);
       for (const look of looks)
         if (look.beauty && !getCurrentBeautyApproval(look))
-          warnings.push(
-            `${look.title}: separate beauty detail is configured but has no exact current beauty approval. Garment approval does not approve the face detail.`,
-          );
+          warnings.push(`${look.title}: makeup not approved`);
       for (const look of looks)
         for (const detail of look.details ?? [])
           if (!getCurrentDetailApproval(look, detail.kind, draft))
             warnings.push(
-              `${look.title}: independent ${detail.kind === "hair_color" ? "hair colour" : "necklace"} detail has no exact current approval. Digital output does not establish a physical wig, hairstyle or jewellery fit.`,
+              `${look.title}: ${detail.kind === "hair_color" ? "hair colour" : "necklace"} not approved`,
             );
       for (const look of looks)
         if (look.beauty) {
@@ -1896,9 +1947,7 @@ export function applyCommand(
             (performer) => performer.id === look.performerId,
           )?.faceCapture;
           if (!face?.imageUrl || !face.consent.granted)
-            warnings.push(
-              `${look.title}: a separately permitted face source is missing or withdrawn. Face images and beauty output are omitted from this new working pack.`,
-            );
+            warnings.push(`${look.title}: face source missing`);
         }
       for (const unitId of unitIds) {
         const unit = findRecord(draft.units, unitId, "Pack unit");
@@ -1912,14 +1961,8 @@ export function applyCommand(
               source.provenance === "manual",
           )
         )
-          warnings.push(
-            `${unit.code}: real supplier confirmation is outstanding.`,
-          );
+          warnings.push(`${unit.code}: supplier unconfirmed`);
       }
-      if (draft.fixture)
-        warnings.push(
-          "Synthetic production exercise. Cast portraits, script and inventory are fictional; only explicitly labelled provider previews are actual recorded or live provider outputs. No physical or supplier outcome is implied.",
-        );
       const title = command.title.trim() || "Crew scene pack";
       const candidates = (draft.appearanceCandidates ?? []).filter(
         (candidate) =>
@@ -1999,7 +2042,7 @@ export function applyCommand(
           for (const detail of look.details ?? []) {
             detail.previews = [];
             detail.reviewReason =
-              "Face-source permission is missing or withdrawn; independent detail images are omitted from this working pack.";
+              "Face permission missing; detail images omitted.";
           }
       for (const look of [
         ...pack.snapshot.looks,
@@ -2013,10 +2056,10 @@ export function applyCommand(
         ) {
           look.beauty.previews = [];
           look.beauty.reviewReason =
-            "Face-source permission is missing or withdrawn; beauty images were omitted from this working pack.";
+            "Face permission missing; makeup images omitted.";
         }
       draft.packs.push(pack);
-      summary = `Froze ${warnings.length ? "a working pack with outstanding-evidence warnings" : "a crew pack"} from revision ${draft.revision}.`;
+      summary = `Froze a crew pack.`;
       break;
     }
     case "update_transition": {
@@ -2090,7 +2133,7 @@ export function applyCommand(
         { occurrenceIds: [from.id, to.id] },
         "Directional preparation or crew-capacity requirements changed.",
       );
-      summary = `Recorded ${performer.name}'s exact directional change requirement; no reverse duration was inferred.`;
+      summary = `Recorded ${performer.name}'s change time.`;
       break;
     }
     default: {

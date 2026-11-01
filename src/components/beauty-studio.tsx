@@ -6,7 +6,10 @@ import {
   getCurrentBeautyApproval,
   getCurrentBeautyPreview,
 } from "@/lib/domain/selectors";
-import { revision } from "@/lib/format";
+import {
+  displayApproval,
+  displayInspectionNotes,
+} from "@/lib/presentation-copy";
 import { appearanceIntentHash } from "@/lib/domain/lineage";
 import { useProduction } from "./production-context";
 import { usePreviewJob } from "./use-preview-job";
@@ -26,6 +29,7 @@ export function BeautyStudio({ look }: { look: Look }) {
   );
   const preview = getCurrentBeautyPreview(look);
   const approval = getCurrentBeautyApproval(look);
+  const inspectionNotes = displayInspectionNotes(preview?.inspectionNotes);
   const [viewOverride, setView] = useState<BeautyView | null>(null);
   const view: BeautyView = !preview ? "source" : viewOverride || "preview";
   const [sourceOpen, setSourceOpen] = useState(false);
@@ -51,10 +55,7 @@ export function BeautyStudio({ look }: { look: Look }) {
       <section className="look-canvas beauty-canvas">
         <header className="look-heading">
           <div>
-            <p className="eyebrow">
-              {look.title} / MAKEUP {revision(look.beauty?.revision || 1)}
-            </p>
-            <h1>{character?.name || "Character makeup"}</h1>
+            <h2>{character?.name || "Makeup"}</h2>
             <p>
               {performer?.name || "Assign a performer"}
               <span>·</span>
@@ -68,13 +69,34 @@ export function BeautyStudio({ look }: { look: Look }) {
                 .join(" / ")}
             </p>
           </div>
-          <Badge tone={approval ? "success" : "warning"}>
-            {approval
-              ? "Makeup approved"
-              : preview
-                ? "Makeup review needed"
-                : "Makeup detail needed"}
-          </Badge>
+          <div className="appearance-approval detail-approval-action">
+            <Badge tone={approval ? "success" : "warning"}>
+              {approval ? "Approved" : preview ? "To review" : "No preview"}
+            </Badge>
+            <Button
+              variant={approval ? "default" : "primary"}
+              disabled={!preview || busy}
+              onClick={() => {
+                setTargetId(preview?.id || null);
+                setTargetIntent(appearanceIntentHash(project, [look.id]));
+                setView("preview");
+                setError(null);
+                setApproving(true);
+              }}
+            >
+              {approval ? (
+                <>
+                  <Check size={16} />
+                  Review approval
+                </>
+              ) : (
+                <>
+                  Approve makeup
+                  <ArrowRight size={15} />
+                </>
+              )}
+            </Button>
+          </div>
         </header>
         <BeautyImage
           performer={performer}
@@ -85,69 +107,18 @@ export function BeautyStudio({ look }: { look: Look }) {
           onSource={openSource}
         />
         {look.beauty?.reviewReason && (
-          <Notice tone="warning" title="The makeup detail needs review.">
+          <Notice tone="warning" title="Needs re-review">
             {look.beauty.reviewReason}
           </Notice>
         )}
-        {preview && (
+        {inspectionNotes && (
           <details className="inspection-notes">
-            <summary>What to inspect in the makeup detail</summary>
-            <p>
-              {preview.inspectionNotes ||
-                "Compare lip edges, blush placement, colour, skin texture and identity cues against the independent face source."}
-            </p>
-            <p className="muted">
-              Smoothing and lip reshaping are set to zero. Generated pixels may
-              still differ; inspect the actual result before approving.
-            </p>
+            <summary>Inspection notes</summary>
+            <p>{inspectionNotes}</p>
           </details>
         )}
-        <section className="appearance-approval">
-          <div>
-            <span className="eyebrow">THE MAKEUP DECISION</span>
-            <h3>
-              {approval
-                ? "Approved for this face and these scenes."
-                : "Does this palette carry the character?"}
-            </h3>
-            <p>
-              {approval
-                ? `${approval.approvedBy} · ${approval.rationale}`
-                : "Review the exact face source, makeup recipe and result as a separate creative decision."}
-            </p>
-          </div>
-          <Button
-            variant={approval ? "default" : "primary"}
-            disabled={!preview || busy}
-            onClick={() => {
-              setTargetId(preview?.id || null);
-              setTargetIntent(appearanceIntentHash(project, [look.id]));
-              setView("preview");
-              setError(null);
-              setApproving(true);
-            }}
-          >
-            {approval ? (
-              <>
-                <Check size={16} />
-                Review makeup approval
-              </>
-            ) : (
-              <>
-                Approve makeup detail
-                <ArrowRight size={15} />
-              </>
-            )}
-          </Button>
-        </section>
         <details className="look-history">
-          <summary>
-            Makeup evidence history{" "}
-            <span className="mono">
-              {look.beauty?.previews.length || 0} OUTPUTS ·{" "}
-              {look.beauty?.approvals.length || 0} DECISIONS
-            </span>
-          </summary>
+          <summary>History</summary>
           {look.beauty?.approvals.map((entry) => (
             <div key={entry.id}>
               <Badge tone={entry.id === approval?.id ? "success" : "neutral"}>
@@ -157,18 +128,15 @@ export function BeautyStudio({ look }: { look: Look }) {
                     ? "Earlier output"
                     : entry.state.replaceAll("_", " ")}
               </Badge>
-              <p>
-                {entry.approvedBy} · makeup {revision(entry.beautyRevision)} ·
-                face capture {entry.faceCaptureVersion}
-              </p>
+              <p>{displayApproval(entry).approvedBy}</p>
               <p className="muted">
-                {entry.rationale}
+                {displayApproval(entry).rationale}
                 {entry.reason ? ` · ${entry.reason}` : ""}
               </p>
             </div>
           ))}
           {!look.beauty?.approvals.length && (
-            <p className="muted">No makeup approval has been recorded.</p>
+            <p className="muted">No decisions yet.</p>
           )}
         </details>
       </section>

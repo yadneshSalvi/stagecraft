@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ArrowDown,
   ArrowRight,
   Check,
   GitBranch,
@@ -10,44 +9,32 @@ import {
   ShieldCheck,
   TriangleAlert,
 } from "lucide-react";
-import type { RepairProposal } from "@/lib/types";
-import { money, revision } from "@/lib/format";
+import type { Production, RepairProposal } from "@/lib/types";
+import { money } from "@/lib/format";
 import { useProduction } from "./production-context";
 import { Badge, Button, Field, Modal, Notice, Photo } from "./ui";
 import { FindingSummary } from "./finding-summary";
 import { ContinuityWall } from "./continuity-wall";
-import { ProvenanceChip } from "./provenance-chip";
-import { DirectionRepair } from "./direction-repair";
+import { DirectionRepair, DirectionAcknowledgement } from "./direction-repair";
+import { CandidateApproval } from "./candidate-approval";
+import { ExampleDecisions } from "./example-decisions";
 import {
   getCurrentApproval,
   getCurrentCandidatePreview,
 } from "@/lib/domain/lineage";
+import { getCreativeReferenceFlags } from "@/lib/domain/direction";
 
-export function ChangeReview({
-  open,
-  onClose,
-  initialUnitId,
-  initialCharacterId,
-  initialReplacementId,
-  refreshImpactOnOpen = false,
-}: {
+type ChangeReviewProps = {
   open: boolean;
   onClose: () => void;
   initialUnitId?: string;
   initialCharacterId?: string;
   initialReplacementId?: string;
   refreshImpactOnOpen?: boolean;
-}) {
-  return open ? (
-    <ChangeReviewSession
-      open
-      onClose={onClose}
-      initialUnitId={initialUnitId}
-      initialCharacterId={initialCharacterId}
-      initialReplacementId={initialReplacementId}
-      refreshImpactOnOpen={refreshImpactOnOpen}
-    />
-  ) : null;
+};
+
+export function ChangeReview(props: ChangeReviewProps) {
+  return props.open ? <ChangeReviewSession {...props} /> : null;
 }
 
 function ChangeReviewSession({
@@ -56,15 +43,8 @@ function ChangeReviewSession({
   initialUnitId,
   initialCharacterId,
   initialReplacementId,
-  refreshImpactOnOpen,
-}: {
-  open: boolean;
-  onClose: () => void;
-  initialUnitId?: string;
-  initialCharacterId?: string;
-  initialReplacementId?: string;
-  refreshImpactOnOpen: boolean;
-}) {
+  refreshImpactOnOpen = false,
+}: ChangeReviewProps) {
   const { project, send, busy, error, clearError } = useProduction();
   const [kind, setKind] = useState<RepairProposal["kind"]>(
     initialCharacterId ? "recast" : "garment_unavailable",
@@ -82,10 +62,13 @@ function ChangeReviewSession({
   const [proposalId, setProposalId] = useState<string | null>(null);
   const [optionId, setOptionId] = useState<string | null>(null);
   const [adopted, setAdopted] = useState(false);
+  const [revisionNotice, setRevisionNotice] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const ownMutation = useRef(false);
   const resumedImpact = useRef(false);
+  const pendingRefresh = useRef<number | null>(null);
+  const chosenReplacement = useRef<string | null>(null);
   const seenRevision = useRef(project.revision);
-  const [revisionNotice, setRevisionNotice] = useState(false);
   useEffect(() => {
     if (seenRevision.current === project.revision) return;
     seenRevision.current = project.revision;
@@ -106,18 +89,21 @@ function ChangeReviewSession({
       (proposal.status !== "adopted" &&
         proposal.baseRevision !== project.revision));
   const selected = proposal?.options.find((option) => option.id === optionId);
-  const preservedApprovalCount = proposal
-    ? new Set([
-        ...proposal.impact.preservedApprovalIds,
-        ...(proposal.impact.preservedBeautyApprovalIds || []),
-        ...(proposal.impact.preservedDetailApprovalIds || []),
-      ]).size
-    : 0;
   const unit = project.units.find((u) => u.id === subject);
   const character = project.characters.find((c) => c.id === subject);
+  const creativeFlags = proposal
+    ? adopted
+      ? getCreativeReferenceFlags(
+          project,
+          proposal.impact.lookIds,
+          proposal.impact.creativeFlags?.map((flag) => flag.unitId) || [],
+        )
+      : proposal.impact.creativeFlags || []
+    : [];
   const propose = useCallback(async () => {
     ownMutation.current = true;
     setRevisionNotice(false);
+    setRefreshing(true);
     clearError();
     const next = await send({
       type: "propose_change",
@@ -128,24 +114,46 @@ function ChangeReviewSession({
     });
     if (next) {
       seenRevision.current = next.revision;
-      const p = next.proposals.at(-1);
-      if (p) {
-        setProposalId(p.id);
+      const result = next.proposals.at(-1);
+      if (result) {
+        setProposalId(result.id);
+        const preferred = result.options.find(
+          (option) =>
+            (option.replacementUnitId || option.replacementPerformerId) ===
+            chosenReplacement.current,
+        );
         setOptionId(
-          p.options.find((o) => o.feasible)?.id || p.options[0]?.id || null,
+          preferred?.id ||
+            result.options.find((option) => option.feasible)?.id ||
+            result.options.find((option) => option.decisionsNeeded)?.id ||
+            result.options[0]?.id ||
+            null,
         );
         setAdopted(false);
       }
     }
     ownMutation.current = false;
+    setRefreshing(false);
   }, [clearError, kind, project.fixture, replacement, send, subject]);
   useEffect(() => {
     if (!refreshImpactOnOpen || resumedImpact.current || busy) return;
     resumedImpact.current = true;
     void propose();
   }, [busy, propose, refreshImpactOnOpen]);
+  useEffect(() => {
+    if (busy || pendingRefresh.current !== project.revision) return;
+    pendingRefresh.current = null;
+    void propose();
+  }, [busy, project.revision, propose]);
+  function decisionSaved(next: Production | null) {
+    if (next) {
+      seenRevision.current = next.revision;
+      pendingRefresh.current = next.revision;
+    }
+    ownMutation.current = false;
+  }
   async function adopt() {
-    if (!proposal || !optionId) return;
+    if (!proposal || !optionId || isStale || !selected?.feasible) return;
     ownMutation.current = true;
     const next = await send({
       type: "adopt_repair",
@@ -172,18 +180,22 @@ function ChangeReviewSession({
       essential,
       palette,
     });
-    if (next) seenRevision.current = next.revision;
+    if (next) {
+      seenRevision.current = next.revision;
+      if (!adopted) pendingRefresh.current = next.revision;
+    }
     ownMutation.current = false;
     return !!next;
   }
   function close() {
-    if (busy) return;
-    onClose();
-    setProposalId(null);
-    setOptionId(null);
-    setAdopted(false);
+    if (busy || refreshing) return;
     clearError();
+    onClose();
   }
+  const alternativeHref = proposal
+    ? `/production/${project.id}/looks?look=${proposal.impact.lookIds[0] || ""}&detail=alternatives&${kind === "recast" ? `performer=${replacement}&recast=${subject}` : `repair=${subject}`}`
+    : "";
+  const decisionHref = `/production/${project.id}/looks?look=${selected?.decisionsNeeded?.lookIds[0] || ""}&${kind === "recast" ? `returnRecast=${subject}&returnPerformer=${replacement}` : `returnChange=${subject}`}`;
   return (
     <Modal
       open={open}
@@ -191,26 +203,57 @@ function ChangeReviewSession({
       wide
       title={
         adopted
-          ? "A considered new revision."
+          ? "Change adopted"
           : proposal
-            ? "Follow the change."
-            : "The show changes. The story stays."
+            ? "Change impact"
+            : "Review a change"
       }
-      description={
-        adopted
-          ? "The selected evidence follows the new revision. Review any remaining dependencies before the crew handoff."
-          : "See exactly what depends on this decision before you change the working book."
+      footer={
+        <>
+          <Button onClick={close} disabled={busy || refreshing}>
+            {adopted ? "Back to production" : "Cancel"}
+          </Button>
+          {adopted ? (
+            <Link
+              className="button button-primary"
+              href={`/production/${project.id}/looks?look=${proposal?.impact.lookIds[0] || ""}`}
+              onClick={close}
+            >
+              Review affected looks <ArrowRight size={16} />
+            </Link>
+          ) : !proposal || isStale ? (
+            <Button
+              variant="primary"
+              busy={busy || refreshing || (resumingImpact && !error)}
+              disabled={!subject || (kind === "recast" && !replacement)}
+              onClick={() => void propose()}
+            >
+              {resumingImpact
+                ? error
+                  ? "Retry impact refresh"
+                  : "Refreshing impact"
+                : isStale
+                  ? "Recompute impact"
+                  : "Preview the impact"}
+              <GitBranch size={16} />
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              busy={busy || refreshing}
+              disabled={!selected?.feasible}
+              onClick={() => void adopt()}
+            >
+              Adopt this revision <ArrowRight size={16} />
+            </Button>
+          )}
+        </>
       }
     >
-      {project.fixture && (
-        <div className="fixture-line">
-          <ProvenanceChip kind="synthetic" />
-          <span>A reversible change in your working copy.</span>
-        </div>
-      )}
       {project.fixture &&
-        !project.looks.some((look) => getCurrentApproval(look, project)) &&
-        !adopted && (
+        !proposal &&
+        !resumingImpact &&
+        !project.looks.some((look) => getCurrentApproval(look, project)) && (
           <p className="change-review-nudge">
             Approve{" "}
             <Link
@@ -226,18 +269,15 @@ function ChangeReviewSession({
             >
               Mae
             </Link>{" "}
-            first to see which decisions a change preserves.
+            first.
           </p>
         )}
-      {revisionNotice && (
-        <Notice>
-          The working book changed. Review the current inputs and prepare a new
-          impact proposal.
-        </Notice>
+      {(revisionNotice || isStale) && !refreshing && (
+        <Notice>Production changed. Preview the impact again.</Notice>
       )}
-      {resumingImpact && !error && (
+      {(resumingImpact || refreshing) && !error && (
         <p className="change-refresh-status" role="status">
-          Refreshing this change against the current decisions…
+          Refreshing impact…
         </p>
       )}
       {!proposal && !resumingImpact && (
@@ -249,11 +289,11 @@ function ChangeReviewSession({
               onClick={() => {
                 setKind("garment_unavailable");
                 setSubject(initialUnitId || project.units[0]?.id || "");
+                chosenReplacement.current = null;
               }}
             >
               <GitBranch size={22} />
               <strong>A garment is unavailable</strong>
-              <span>Trace the unit through looks, scenes, and sourcing.</span>
             </button>
             <button
               className={kind === "recast" ? "selected" : ""}
@@ -261,24 +301,22 @@ function ChangeReviewSession({
               onClick={() => {
                 setKind("recast");
                 setSubject(project.characters[0]?.id || "");
+                chosenReplacement.current = null;
               }}
             >
               <RefreshCcw size={22} />
               <strong>A character is recast</strong>
-              <span>
-                Keep the direction. Review the new performer’s evidence.
-              </span>
             </button>
           </div>
           {kind === "garment_unavailable" ? (
-            <Field label="Which physical unit is unavailable?">
+            <Field label="Unavailable unit">
               <select
                 value={subject}
                 onChange={(event) => setSubject(event.target.value)}
               >
-                {project.units.map((u) => (
-                  <option value={u.id} key={u.id}>
-                    {u.code} · {u.name}
+                {project.units.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.code} · {item.name}
                   </option>
                 ))}
               </select>
@@ -290,9 +328,9 @@ function ChangeReviewSession({
                   value={subject}
                   onChange={(event) => setSubject(event.target.value)}
                 >
-                  {project.characters.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
+                  {project.characters.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
                     </option>
                   ))}
                 </select>
@@ -304,198 +342,214 @@ function ChangeReviewSession({
                 >
                   <option value="">Choose a performer</option>
                   {project.performers
-                    .filter((p) => p.id !== character?.performerId)
-                    .map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                        {p.synthetic ? " · synthetic" : ""}
+                    .filter((item) => item.id !== character?.performerId)
+                    .map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
                       </option>
                     ))}
                 </select>
               </Field>
             </div>
           )}
-          <div className="change-intent">
-            <span className="mono">CHANGE INTENT</span>
-            <p>
-              {kind === "garment_unavailable"
-                ? `${unit?.name || "This garment"} can no longer be allocated. Compare replacements using this production’s recorded constraints.`
-                : "Actor-specific previews, approvals, and fitting evidence will need review. Character direction and unrelated cast decisions remain."}
-            </p>
-          </div>
         </div>
       )}
       {proposal && (
         <>
-          <div className="change-summary">
-            <div>
-              <span className="mono">
-                {revision(proposal.baseRevision)} / BASE REVISION
-              </span>
-              <h3>
-                {kind === "garment_unavailable"
-                  ? `${unit?.code || "Unit"} leaves the wardrobe.`
-                  : `${character?.name || "This character"} gets a new performer.`}
-              </h3>
-              {proposal.impact.explanation.map((line, index) => (
-                <p key={index}>{line}</p>
-              ))}
-            </div>
-            <div className="dependency-path">
-              <span>
-                {kind === "garment_unavailable" ? unit?.code : character?.name}
-              </span>
-              <ArrowDown size={16} />
-              <span>
-                {proposal.impact.lookIds.length} dependent look
-                {proposal.impact.lookIds.length === 1 ? "" : "s"}
-              </span>
-              <ArrowDown size={16} />
-              <span>
-                {proposal.impact.sceneIds.length} scene
-                {proposal.impact.sceneIds.length === 1 ? "" : "s"} ·{" "}
-                {proposal.impact.occurrenceIds.length} calls
-              </span>
-            </div>
+          <div className="dependency-path" aria-label="Affected dependencies">
+            <span>
+              {kind === "garment_unavailable" ? unit?.code : character?.name}
+            </span>
+            <ArrowRight size={16} />
+            <span>{proposal.impact.lookIds.length} looks</span>
+            <ArrowRight size={16} />
+            <span>
+              {proposal.impact.sceneIds.length} scenes ·{" "}
+              {proposal.impact.occurrenceIds.length} calls
+            </span>
           </div>
-          {!adopted && (
-            <>
-              <div className="section-title">
-                <h3>Review the repair</h3>
-                <span className="muted">
-                  No creative decision is approved for you.
-                </span>
+          {selected?.decisionsNeeded && (
+            <div className="repair-decisions-needed" role="status">
+              <Notice tone="warning">
+                {selected.decisionsNeeded.count} other look
+                {selected.decisionsNeeded.count === 1
+                  ? " needs"
+                  : "s need"}{" "}
+                decisions first.
+              </Notice>
+              <div className="button-row">
+                <Link className="button" href={decisionHref} onClick={close}>
+                  Review looks <ArrowRight size={15} />
+                </Link>
+                <ExampleDecisions
+                  compact
+                  onMutationStart={() => {
+                    ownMutation.current = true;
+                  }}
+                  onMutationEnd={decisionSaved}
+                />
               </div>
-              <div className="repair-options repair-options-visual">
-                {proposal.options.map((option) => {
-                  const replacementUnit = project.units.find(
-                    (u) => u.id === option.replacementUnitId,
-                  );
-                  const performer = project.performers.find(
-                    (p) => p.id === option.replacementPerformerId,
-                  );
-                  const candidate = project.appearanceCandidates?.find(
-                    (item) => item.id === option.candidateId,
-                  );
-                  const candidatePreview =
-                    candidate && getCurrentCandidatePreview(project, candidate);
-                  return (
-                    <button
-                      className={`repair-option ${option.id === optionId ? "selected" : ""}`}
-                      key={option.id}
-                      onClick={() => setOptionId(option.id)}
-                      aria-pressed={option.id === optionId}
-                      aria-label={`${option.label} · ${option.feasible ? "Reviewable proposal" : option.requiresVisualApproval ? "Appearance approval needed" : "Constraint conflict"}`}
-                    >
-                      <div className="repair-option-image">
-                        <Photo
-                          src={
-                            candidatePreview?.imageUrl ||
-                            replacementUnit?.imageUrl ||
-                            performer?.imageUrl
-                          }
-                          alt={
-                            candidatePreview
-                              ? `Actual YouCam performer preview for ${option.label}`
-                              : `${replacementUnit?.name || performer?.name || "Repair option"}, source reference`
-                          }
-                        />
-                        {candidatePreview && replacementUnit && (
-                          <span className="repair-reference-inset">
-                            <Photo
-                              src={replacementUnit.imageUrl}
-                              alt={`Exact reference ${replacementUnit.code}`}
-                              sizes="65px"
-                            />
-                          </span>
-                        )}
-                        <span className="repair-image-label">
-                          {candidatePreview
-                            ? "ACTUAL YOUCAM RESULT"
-                            : "SOURCE REFERENCE"}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="repair-option-top">
-                          <strong>{option.label}</strong>
-                          <span className="radio-indicator">
-                            {option.id === optionId && <Check size={12} />}
-                          </span>
-                        </div>
-                        <p>{option.explanation}</p>
-                        <div className="inline-badges">
-                          <Badge
-                            tone={
-                              option.feasible
-                                ? "info"
-                                : option.requiresVisualApproval
-                                  ? "warning"
-                                  : "danger"
-                            }
-                          >
-                            {option.feasible
-                              ? "Reviewable proposal"
-                              : option.requiresVisualApproval
-                                ? "Appearance approval needed"
-                                : "Constraint conflict"}
-                          </Badge>
-                          {option.costDeltaCents !== 0 && (
-                            <span className="mono">
-                              {option.costDeltaCents > 0 ? "+" : ""}
-                              {money(option.costDeltaCents, project.currency)}
-                            </span>
-                          )}
-                        </div>
-                        <p className="repair-evidence-count">
-                          {
-                            new Set(
-                              option.findings.map((finding) => finding.code),
-                            ).size
-                          }{" "}
-                          evidence categories to inspect
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-              {proposal.impact.lookIds.length > 0 && (
-                <div className="repair-review-action">
-                  <p>
-                    Inspect exact outputs together, record a decision, then
-                    return to refresh this impact.
-                  </p>
-                  <Link
-                    className="button button-primary"
-                    href={`/production/${project.id}/looks?look=${proposal.impact.lookIds[0] || ""}&detail=alternatives&${proposal.kind === "recast" ? `performer=${replacement}&recast=${subject}` : `repair=${subject}`}`}
-                    onClick={close}
-                  >
-                    Compare & review alternatives <ArrowRight size={15} />
-                  </Link>
-                </div>
-              )}
-              {selected && <FindingSummary findings={selected.findings} />}
-              {!proposal.options.length && (
-                <Notice tone="warning">
-                  No repair satisfies the recorded constraints. Add an allowed
-                  replacement, obtain availability evidence, or explicitly
-                  revise the requirement before recomputing.
-                </Notice>
-              )}
-            </>
+            </div>
           )}
           <ContinuityWall
             project={project}
             compact
             affectedLookIds={proposal.impact.lookIds}
           />
-          {!!proposal.impact.creativeFlags?.length && (
+          {!adopted && (
+            <>
+              <div className="section-title">
+                <h3>Repairs</h3>
+                {proposal.impact.lookIds.length > 0 && (
+                  <Link
+                    className="inline-action"
+                    href={alternativeHref}
+                    onClick={close}
+                  >
+                    Compare alternatives <ArrowRight size={14} />
+                  </Link>
+                )}
+              </div>
+              <div className="repair-options repair-options-visual">
+                {proposal.options.map((option) => {
+                  const replacementUnit = project.units.find(
+                    (item) => item.id === option.replacementUnitId,
+                  );
+                  const performer = project.performers.find(
+                    (item) => item.id === option.replacementPerformerId,
+                  );
+                  const candidate = project.appearanceCandidates?.find(
+                    (item) => item.id === option.candidateId,
+                  );
+                  const preview =
+                    candidate && getCurrentCandidatePreview(project, candidate);
+                  const conflict = option.findings.some(
+                    (finding) =>
+                      finding.severity === "conflict" &&
+                      finding.code !== "APPEARANCE_APPROVAL_REQUIRED",
+                  );
+                  const status = option.feasible
+                    ? "Ready"
+                    : conflict
+                      ? "Conflict"
+                      : option.requiresVisualApproval
+                        ? "Needs approval"
+                        : option.decisionsNeeded
+                          ? "Decisions needed"
+                          : "Needs checking";
+                  return (
+                    <article
+                      className={`repair-choice ${option.id === optionId ? "selected" : ""}`}
+                      key={option.id}
+                    >
+                      <button
+                        className={`repair-option ${option.id === optionId ? "selected" : ""}`}
+                        onClick={() => {
+                          setOptionId(option.id);
+                          chosenReplacement.current =
+                            option.replacementUnitId ||
+                            option.replacementPerformerId ||
+                            null;
+                        }}
+                        aria-pressed={option.id === optionId}
+                        aria-label={`${option.label} · ${status}`}
+                      >
+                        <div className="repair-option-image">
+                          <Photo
+                            natural
+                            original={!!preview}
+                            src={
+                              preview?.imageUrl ||
+                              replacementUnit?.imageUrl ||
+                              performer?.imageUrl
+                            }
+                            alt={
+                              preview
+                                ? `Actual YouCam performer preview for ${option.label}`
+                                : `${replacementUnit?.name || performer?.name || "Repair option"}, source reference`
+                            }
+                          />
+                          {preview && replacementUnit && (
+                            <span className="repair-reference-inset">
+                              <Photo
+                                natural
+                                src={replacementUnit.imageUrl}
+                                alt={`Exact reference ${replacementUnit.code}`}
+                                sizes="65px"
+                              />
+                            </span>
+                          )}
+                        </div>
+                        <div className="repair-option-copy">
+                          <div className="repair-option-top">
+                            <strong>{option.label}</strong>
+                            <span className="radio-indicator">
+                              {option.id === optionId && <Check size={12} />}
+                            </span>
+                          </div>
+                          <div className="inline-badges">
+                            <Badge
+                              tone={
+                                option.feasible
+                                  ? "success"
+                                  : conflict
+                                    ? "danger"
+                                    : "warning"
+                              }
+                            >
+                              {status}
+                            </Badge>
+                            {option.costDeltaCents !== 0 && (
+                              <span className="mono">
+                                {option.costDeltaCents > 0 ? "+" : ""}
+                                {money(option.costDeltaCents, project.currency)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                      {candidate && preview && (
+                        <div className="repair-inline-review">
+                          <CandidateApproval
+                            candidate={candidate}
+                            onMutationStart={() => {
+                              ownMutation.current = true;
+                              chosenReplacement.current =
+                                option.replacementUnitId ||
+                                option.replacementPerformerId ||
+                                null;
+                            }}
+                            onMutationEnd={decisionSaved}
+                          />
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+              {selected && (
+                <FindingSummary
+                  findings={selected.findings}
+                  hiddenGroupCodes={
+                    selected.decisionsNeeded
+                      ? ["APPEARANCE_APPROVAL_REQUIRED"]
+                      : []
+                  }
+                />
+              )}
+              {!proposal.options.length && (
+                <Notice tone="warning">
+                  No repair fits the recorded constraints.
+                </Notice>
+              )}
+            </>
+          )}
+          {creativeFlags.length > 0 && (
             <section className="creative-impact">
-              <span className="eyebrow">CREATIVE INTENT TO RECONCILE</span>
-              <h3>The old garment is still in the direction.</h3>
+              <h3>Direction still names the old garment</h3>
               <ul>
-                {proposal.impact.creativeFlags.map((flag, index) => (
-                  <li key={`${flag.characterId}-${index}`}>
+                {creativeFlags.map((flag) => (
+                  <li key={`${flag.characterId}:${flag.unitId}`}>
                     <strong>
                       {
                         project.characters.find(
@@ -507,187 +561,111 @@ function ChangeReviewSession({
                   </li>
                 ))}
               </ul>
-              <p>
-                These references need an explicit edit or a deliberate decision
-                to retain them.
-              </p>
-              {adopted &&
-                [
-                  ...new Set(
-                    proposal.impact.creativeFlags.map(
-                      (flag) => flag.characterId,
-                    ),
-                  ),
-                ].map((id) => {
-                  const character = project.characters.find(
+              {[...new Set(creativeFlags.map((flag) => flag.characterId))].map(
+                (id) => {
+                  const currentCharacter = project.characters.find(
                     (item) => item.id === id,
                   );
-                  return character ? (
+                  return currentCharacter ? (
                     <DirectionRepair
-                      key={id}
-                      character={character}
+                      key={`${id}:${currentCharacter.direction.revision}`}
+                      character={currentCharacter}
                       busy={busy}
                       onSave={handleDirectionSave}
                     />
                   ) : null;
-                })}
+                },
+              )}
+              {adopted &&
+                creativeFlags.map((flag) => (
+                  <DirectionAcknowledgement
+                    key={`${flag.characterId}:${flag.unitId}`}
+                    characterId={flag.characterId}
+                    unitId={flag.unitId}
+                    onMutationStart={() => {
+                      ownMutation.current = true;
+                    }}
+                    onMutationEnd={(next) => {
+                      if (next) seenRevision.current = next.revision;
+                      ownMutation.current = false;
+                    }}
+                  />
+                ))}
             </section>
           )}
           <div className="impact-columns">
             <section className="impact-preserved">
               <h4>
-                <ShieldCheck size={17} /> What stays valid
+                <ShieldCheck size={17} />
+                What stays valid
               </h4>
               <ul>
-                {proposal.impact.preserved.map((line, i) => (
-                  <li key={i}>{line}</li>
-                ))}
                 {proposal.impact.preservedApprovalIds.length > 0 && (
                   <li>
-                    {proposal.impact.preservedApprovalIds.length} existing
-                    appearance approval
-                    {proposal.impact.preservedApprovalIds.length === 1
-                      ? ""
-                      : "s"}{" "}
-                    preserved
+                    {proposal.impact.preservedApprovalIds.length} look approvals
                   </li>
                 )}
-                {(proposal.impact.preservedBeautyApprovalIds?.length || 0) >
-                  0 && (
+                {!!proposal.impact.preservedBeautyApprovalIds?.length && (
                   <li>
-                    {proposal.impact.preservedBeautyApprovalIds!.length}{" "}
-                    independent makeup approval(s) preserved
+                    {proposal.impact.preservedBeautyApprovalIds.length} makeup
+                    approvals
                   </li>
                 )}
-                {(proposal.impact.preservedDetailApprovalIds?.length || 0) >
-                  0 && (
+                {!!proposal.impact.preservedDetailApprovalIds?.length && (
                   <li>
-                    {proposal.impact.preservedDetailApprovalIds!.length}{" "}
-                    independent hair or accessory approval(s) preserved
+                    {proposal.impact.preservedDetailApprovalIds.length} hair &
+                    necklace approvals
                   </li>
                 )}
+                <li>Script & chronology</li>
               </ul>
             </section>
             <section className="impact-review">
               <h4>
-                <TriangleAlert size={17} /> What needs attention
+                <TriangleAlert size={17} />
+                {adopted ? "Changed" : "What needs attention"}
               </h4>
               <ul>
                 <li>
                   {proposal.impact.sceneIds
-                    .map((id) => project.scenes.find((s) => s.id === id))
+                    .map(
+                      (id) =>
+                        project.scenes.find((scene) => scene.id === id)?.number,
+                    )
                     .filter(Boolean)
-                    .map((s) => `Scene ${s!.number}`)
-                    .join(", ") || "No scheduled scenes"}
+                    .map((number) => `SC ${number}`)
+                    .join(" · ") || "No scheduled scenes"}
                 </li>
                 {proposal.impact.invalidatedApprovalIds.length > 0 && (
                   <li>
-                    {proposal.impact.invalidatedApprovalIds.length} appearance
-                    approval
-                    {proposal.impact.invalidatedApprovalIds.length === 1
-                      ? ""
-                      : "s"}{" "}
-                    affected
+                    {proposal.impact.invalidatedApprovalIds.length} look{" "}
+                    {adopted ? "decisions" : "approvals"}
                   </li>
                 )}
-                {(proposal.impact.invalidatedBeautyApprovalIds?.length || 0) >
-                  0 && (
+                {!!proposal.impact.invalidatedBeautyApprovalIds?.length && (
                   <li>
-                    {proposal.impact.invalidatedBeautyApprovalIds!.length}{" "}
-                    independent makeup approval(s) affected
+                    {proposal.impact.invalidatedBeautyApprovalIds.length} makeup{" "}
+                    {adopted ? "decisions" : "approvals"}
                   </li>
                 )}
-                {(proposal.impact.invalidatedDetailApprovalIds?.length || 0) >
-                  0 && (
+                {!!proposal.impact.invalidatedDetailApprovalIds?.length && (
                   <li>
-                    {proposal.impact.invalidatedDetailApprovalIds!.length}{" "}
-                    independent hair or accessory approval(s) affected
+                    {proposal.impact.invalidatedDetailApprovalIds.length} hair &
+                    necklace {adopted ? "decisions" : "approvals"}
                   </li>
                 )}
-                <li>
-                  {proposal.impact.sourcingIds.length} sourcing record
-                  {proposal.impact.sourcingIds.length === 1 ? "" : "s"} ·{" "}
-                  {proposal.impact.packIds.length} crew pack
-                  {proposal.impact.packIds.length === 1 ? "" : "s"}
-                </li>
+                {proposal.impact.sourcingIds.length > 0 && (
+                  <li>{proposal.impact.sourcingIds.length} sourcing records</li>
+                )}
+                {proposal.impact.packIds.length > 0 && (
+                  <li>{proposal.impact.packIds.length} crew packs</li>
+                )}
               </ul>
             </section>
           </div>
-          {adopted && (
-            <Notice
-              tone="success"
-              title={`${revision(project.revision)} is now the current working book.`}
-            >
-              <p className="change-measured-impact">
-                {kind === "garment_unavailable"
-                  ? `Removing ${unit?.code || "the selected unit"}`
-                  : `Recasting ${character?.name || "the selected character"}`}
-                : {proposal.impact.lookIds.length} look
-                {proposal.impact.lookIds.length === 1 ? "" : "s"},{" "}
-                {proposal.impact.sceneIds.length} scene
-                {proposal.impact.sceneIds.length === 1 ? "" : "s"},{" "}
-                {proposal.impact.occurrenceIds.length} call
-                {proposal.impact.occurrenceIds.length === 1 ? "" : "s"}{" "}
-                identified
-                {preservedApprovalCount > 0
-                  ? `; ${preservedApprovalCount} appearance and detail approval${preservedApprovalCount === 1 ? "" : "s"} preserved.`
-                  : "."}
-              </p>
-              The exact reviewed alternative remains attached. Open the affected
-              looks to inspect their current decisions and any independent
-              details that need review.
-            </Notice>
-          )}
         </>
       )}
       {error && <Notice tone="danger">{error}</Notice>}
-      {isStale && (
-        <Notice tone="warning">
-          The production changed after this proposal was prepared. Recompute its
-          impact before adoption.
-        </Notice>
-      )}
-      <div className="modal-actions">
-        <Button onClick={close} disabled={busy}>
-          {adopted ? "Back to production" : "Cancel"}
-        </Button>
-        {adopted ? (
-          <Link
-            className="button button-primary"
-            href={`/production/${project.id}/looks?look=${proposal?.impact.lookIds[0] || ""}`}
-            onClick={close}
-          >
-            Review affected looks
-            <ArrowRight size={16} />
-          </Link>
-        ) : !proposal || isStale ? (
-          <Button
-            variant="primary"
-            busy={busy || (resumingImpact && !error)}
-            disabled={!subject || (kind === "recast" && !replacement)}
-            onClick={() => void propose()}
-          >
-            {resumingImpact
-              ? error
-                ? "Retry impact refresh"
-                : "Refreshing impact"
-              : isStale
-                ? "Recompute impact"
-                : "Preview the impact"}
-            <GitBranch size={16} />
-          </Button>
-        ) : (
-          <Button
-            variant="primary"
-            busy={busy}
-            disabled={!selected?.feasible}
-            onClick={() => void adopt()}
-          >
-            Adopt this revision
-            <ArrowRight size={16} />
-          </Button>
-        )}
-      </div>
     </Modal>
   );
 }

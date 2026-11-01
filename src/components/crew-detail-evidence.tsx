@@ -4,6 +4,11 @@ import {
   getCurrentDetailApproval,
   getCurrentDetailPreview,
 } from "@/lib/domain/details";
+import {
+  displayApproval,
+  displayFixtureText,
+  displayInspectionNotes,
+} from "@/lib/presentation-copy";
 import { Badge, Photo } from "./ui";
 
 export function CrewDetailEvidence({
@@ -38,44 +43,42 @@ export function CrewDetailEvidence({
           >
             <figure>
               <Photo
+                natural
                 priority
                 src={permitted ? preview?.imageUrl : null}
                 alt={`${look.title}, separate generated ${name.toLowerCase()} detail`}
               />
               <figcaption>
                 {!permitted
-                  ? "FACE PERMISSION WITHDRAWN"
+                  ? "Permission withdrawn"
                   : preview
-                    ? `${preview.provenance === "recorded_provider" ? "RECORDED " : ""}YOUCAM ${name.toUpperCase()}`
-                    : `${name.toUpperCase()} PREVIEW NEEDED`}
+                    ? name
+                    : `No ${name.toLowerCase()} preview`}
               </figcaption>
             </figure>
             <div>
               <div className="crew-beauty-title">
-                <span className="mono">
-                  {name.toUpperCase()} · R{detail.revision}
-                  {preview ? ` · FACE ${preview.faceCaptureVersion}` : ""}
-                </span>
                 <Badge tone={approval && permitted ? "success" : "warning"}>
                   {!permitted
                     ? "Permission missing"
                     : approval
-                      ? `${name} approved`
+                      ? "Approved"
                       : "Review needed"}
                 </Badge>
               </div>
               <p>
                 {detail.recipe.kind === "hair_color"
-                  ? `Requested colour preset: ${detail.recipe.preset}`
-                  : `Exact reference: ${frozenProject.detailReferences?.find((item) => item.id === (detail.recipe as { referenceId: string }).referenceId)?.name || "Necklace reference"}`}
+                  ? `Preset: ${detail.recipe.preset}`
+                  : `Reference: ${displayFixtureText(frozenProject.detailReferences?.find((item) => item.id === (detail.recipe as { referenceId: string }).referenceId)?.name || "Necklace reference", frozenProject.fixture)}`}
               </p>
-              <p>
-                {approval
-                  ? `Approval at source revision: ${approval.approvedBy} · ${approval.rationale}`
-                  : "This detail needs its own exact-output decision."}
-              </p>
+              {approval && (
+                <p>
+                  {displayApproval(approval).approvedBy} ·{" "}
+                  {displayApproval(approval).rationale}
+                </p>
+              )}
               {preview?.inspectionNotes && (
-                <small>{preview.inspectionNotes}</small>
+                <small>{displayInspectionNotes(preview.inspectionNotes)}</small>
               )}
             </div>
           </section>

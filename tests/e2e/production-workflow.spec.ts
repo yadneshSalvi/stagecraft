@@ -44,7 +44,7 @@ async function command(
   const body = await result.json();
   expect(result.ok(), JSON.stringify(body)).toBe(true);
   await expect(
-    page.getByText("All changes saved", { exact: true }),
+    page.getByRole("status").filter({ hasText: /^\s*Saved\s*$/ }),
   ).toBeVisible();
   return body.project;
 }
@@ -56,7 +56,8 @@ async function example(page: Page): Promise<Production> {
     { timeout: 75_000 },
   );
   await page
-    .getByRole("button", { name: "Step inside the production", exact: true })
+    .locator(".landing-hero")
+    .getByRole("button", { name: "Open example", exact: true })
     .click();
   const created = await response;
   expect(created.status()).toBe(201);
@@ -111,39 +112,42 @@ async function approveLook(page: Page): Promise<Production> {
     .getByRole("button", { name: "Approve appearance", exact: true })
     .click();
   const dialog = page.getByRole("dialog", {
-    name: "Approve this exact appearance",
+    name: "Approve appearance",
     exact: true,
   });
+  await dialog.getByLabel("Reviewer").fill("Synthetic browser reviewer");
   await dialog
-    .getByLabel("Reviewer name or role")
-    .fill("Synthetic browser reviewer");
-  await dialog
-    .getByLabel("What did you approve?")
+    .getByLabel("Note")
     .fill(
       "This exact recorded appearance supports the stated direction. Physical fitting remains unverified.",
     );
   const result = await command(page, "approve_look", () =>
-    dialog
-      .getByRole("button", { name: "Record appearance approval", exact: true })
-      .click(),
+    dialog.getByRole("button", { name: "Approve", exact: true }).click(),
   );
   await expect(dialog).not.toBeVisible();
   return result;
 }
 async function exampleDecisions(page: Page, id: string): Promise<Production> {
   await visit(page, id);
+  const actionName = /^(Approve as example|Manage example approvals)$/;
+  if (!(await page.getByRole("button", { name: actionName }).count())) {
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
+    await expect(
+      page.getByRole("dialog", { name: "Settings", exact: true }),
+    ).toBeVisible();
+  }
   await page
     .getByRole("button", {
-      name: /^(Record example decisions|Manage example decisions)$/,
+      name: actionName,
     })
     .click();
   const dialog = page.getByRole("dialog", {
-    name: "Rehearse the decisions.",
+    name: "Example approvals",
     exact: true,
   });
   const result = await command(page, "set_example_decisions", () =>
     dialog
-      .getByRole("button", { name: "Record example decisions", exact: true })
+      .getByRole("button", { name: "Approve as example", exact: true })
       .click(),
   );
   await expect(dialog).not.toBeVisible();
@@ -159,7 +163,7 @@ async function candidateDecision(
   });
   await expect(card).toHaveCount(1);
   const approve = card.getByRole("button", {
-    name: "Approve this alternative",
+    name: "Approve alternative",
     exact: true,
   });
   if (await approve.isDisabled()) {
@@ -170,7 +174,7 @@ async function candidateDecision(
     );
     await card
       .getByRole("button", {
-        name: "Use matching recorded alternative",
+        name: "Use saved preview",
         exact: true,
       })
       .click();
@@ -181,21 +185,17 @@ async function candidateDecision(
   }
   await approve.click();
   const dialog = page.getByRole("dialog", {
-    name: "Approve this exact alternative",
+    name: "Approve alternative",
     exact: true,
   });
+  await dialog.getByLabel("Reviewer").fill("Synthetic alternative reviewer");
   await dialog
-    .getByLabel("Alternative reviewer name or role")
-    .fill("Synthetic alternative reviewer");
-  await dialog
-    .getByLabel("Why does this alternative carry the character?")
+    .getByLabel("Note")
     .fill(
       "The exact source, garment and output preserve the character’s current intent in this synthetic rehearsal.",
     );
   const result = await command(page, "approve_candidate", () =>
-    dialog
-      .getByRole("button", { name: "Record alternative approval", exact: true })
-      .click(),
+    dialog.getByRole("button", { name: "Approve", exact: true }).click(),
   );
   await expect(dialog).not.toBeVisible();
   return result;
@@ -207,9 +207,7 @@ async function allocate(
 ): Promise<Production> {
   await visit(page, id, "/schedule");
   const solved = await command(page, "solve_allocation", () =>
-    page
-      .getByRole("button", { name: "Check the allocation", exact: true })
-      .click(),
+    page.getByRole("button", { name: "Check allocation", exact: true }).click(),
   );
   expect(["FEASIBLE", "OPTIMAL"]).toContain(solved.allocationResult?.status);
   expect(solved.allocationResult).toMatchObject({
@@ -222,7 +220,7 @@ async function allocate(
   ).toBeFocused();
   if (!adopt) return solved;
   const confirmation = page.getByRole("checkbox", {
-    name: "I have reviewed these exact garment changes and direction references. Adopt this proposal.",
+    name: "I’ve reviewed these garment swaps.",
     exact: true,
   });
   if (await confirmation.count()) {
@@ -246,22 +244,22 @@ async function pack(page: Page, id: string): Promise<Production> {
     .getByRole("button", { name: "Create a crew pack", exact: true })
     .click();
   const dialog = page.getByRole("dialog", {
-    name: "Freeze a clear crew handoff",
+    name: "New crew pack",
     exact: true,
   });
   await dialog
     .getByLabel("Pack title")
     .fill("Recorded review-round continuity call");
   const result = await command(page, "create_pack", () =>
-    dialog
-      .getByRole("button", { name: "Create frozen pack", exact: true })
-      .click(),
+    dialog.getByRole("button", { name: "Create pack", exact: true }).click(),
   );
   await expect(page).toHaveURL(
     new RegExp(`/handoff/${result.packs.at(-1)!.id}$`),
   );
   await expect(
-    page.getByText("WORKING PACK — EVIDENCE PENDING", { exact: true }),
+    page
+      .locator(".crew-document-header")
+      .getByText("Evidence pending", { exact: true }),
   ).toBeVisible();
   return result;
 }
@@ -280,16 +278,14 @@ async function returnToImpact(page: Page): Promise<Production> {
       .click(),
   );
   await expect(
-    page.getByRole("dialog", { name: "Follow the change.", exact: true }),
+    page.getByRole("dialog", { name: "Change impact", exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByLabel("Which physical unit is unavailable?"),
-  ).not.toBeVisible();
+  await expect(page.getByLabel("Unavailable unit")).not.toBeVisible();
   return result;
 }
 async function adoptRepair(page: Page, code?: string): Promise<Production> {
   const dialog = page.getByRole("dialog", {
-    name: "Follow the change.",
+    name: "Change impact",
     exact: true,
   });
   if (code)
@@ -312,7 +308,7 @@ async function recordedMakeup(
       item.request().method() === "POST",
   );
   await page
-    .getByRole("button", { name: "Use matching recorded makeup", exact: true })
+    .getByRole("button", { name: "Use saved result", exact: true })
     .click();
   const result = await response;
   expect(result.ok()).toBe(true);
@@ -321,10 +317,10 @@ async function recordedMakeup(
     state: "succeeded",
   });
   await page
-    .getByRole("button", { name: "Approve makeup detail", exact: true })
+    .getByRole("button", { name: "Approve makeup", exact: true })
     .click();
   const dialog = page.getByRole("dialog", {
-    name: "Approve this exact makeup detail",
+    name: "Approve makeup",
     exact: true,
   });
   await dialog
@@ -336,9 +332,7 @@ async function recordedMakeup(
       "Inspected the exact new performer face source, lip and blush result for this synthetic continuity state.",
     );
   return command(page, "approve_beauty", () =>
-    dialog
-      .getByRole("button", { name: "Record makeup approval", exact: true })
-      .click(),
+    dialog.getByRole("button", { name: "Approve", exact: true }).click(),
   );
 }
 async function recordedNecklace(page: Page, id: string): Promise<Production> {
@@ -350,7 +344,7 @@ async function recordedNecklace(page: Page, id: string): Promise<Production> {
   );
   await page
     .getByRole("button", {
-      name: "Use matching recorded necklace",
+      name: "Use saved result",
       exact: true,
     })
     .click();
@@ -361,10 +355,10 @@ async function recordedNecklace(page: Page, id: string): Promise<Production> {
     state: "succeeded",
   });
   await page
-    .getByRole("button", { name: "Approve necklace detail", exact: true })
+    .getByRole("button", { name: "Approve necklace", exact: true })
     .click();
   const dialog = page.getByRole("dialog", {
-    name: "Approve this exact necklace detail",
+    name: "Approve necklace",
     exact: true,
   });
   await dialog
@@ -376,9 +370,7 @@ async function recordedNecklace(page: Page, id: string): Promise<Production> {
       "Inspected the exact Celeste source and brass pendant output; physical placement still needs a fitting.",
     );
   return command(page, "approve_detail", () =>
-    dialog
-      .getByRole("button", { name: "Record necklace approval", exact: true })
-      .click(),
+    dialog.getByRole("button", { name: "Approve", exact: true }).click(),
   );
 }
 
@@ -470,7 +462,7 @@ test("one production carries approved coat repair through recast, independent de
   const requirementDetails = requirements.locator(".crew-warnings-details");
   expect(frozen.warnings.length).toBeGreaterThan(0);
   await expect(requirements).toContainText(
-    `${frozen.warnings.length} unresolved requirements`,
+    `${frozen.warnings.length} open items`,
   );
   await expect(requirementsToggle).toHaveAttribute("aria-expanded", "false");
   await expect(requirementsToggle).toHaveAttribute(
@@ -479,7 +471,9 @@ test("one production carries approved coat repair through recast, independent de
   );
   await expect(requirementDetails).not.toBeVisible();
   await expect(
-    page.getByText("WORKING PACK — EVIDENCE PENDING", { exact: true }),
+    page
+      .locator(".crew-document-header")
+      .getByText("Evidence pending", { exact: true }),
   ).toBeVisible();
   await expect(
     page.locator(".crew-look > figure img").first(),
@@ -550,7 +544,7 @@ test("one production carries approved coat repair through recast, independent de
       .click();
     await page
       .getByRole("dialog")
-      .getByLabel("Which physical unit is unavailable?")
+      .getByLabel("Unavailable unit")
       .selectOption("unit-coat-oxblood");
     p = await impact(page);
     const proposal = p.proposals.at(-1)!;
@@ -565,7 +559,7 @@ test("one production carries approved coat repair through recast, independent de
     expect(proposal.impact.invalidatedBeautyApprovalIds).toEqual([]);
     expect(proposal.impact.creativeFlags?.length).toBeGreaterThan(0);
     const dialog = page.getByRole("dialog", {
-      name: "Follow the change.",
+      name: "Change impact",
       exact: true,
     });
     await expect(
@@ -575,7 +569,7 @@ test("one production carries approved coat repair through recast, independent de
       dialog.getByRole("button", { name: "Adopt this revision", exact: true }),
     ).toBeDisabled();
     await dialog
-      .getByRole("link", { name: "Compare & review alternatives", exact: true })
+      .getByRole("link", { name: "Compare alternatives", exact: true })
       .click();
     const burgundy = p.units.find((unit) => unit.id === "unit-coat-burgundy")!;
     p = await candidateDecision(page, id, burgundy.name);
@@ -608,9 +602,10 @@ test("one production carries approved coat repair through recast, independent de
       )!.id,
     ).toBe(originalMae.id);
     const adoptedDialog = page.getByRole("dialog", {
-      name: "A considered new revision.",
+      name: "Change adopted",
       exact: true,
     });
+    await adoptedDialog.locator(".direction-repair > summary").click();
     await adoptedDialog
       .getByLabel("Nora Vale character direction")
       .fill(
@@ -621,7 +616,7 @@ test("one production carries approved coat repair through recast, independent de
       .fill("Long coat silhouette\nA recurring single physical coat");
     p = await command(page, "edit_direction", () =>
       adoptedDialog
-        .getByRole("button", { name: "Save direction for review", exact: true })
+        .getByRole("button", { name: "Save direction", exact: true })
         .click(),
     );
     expect(
@@ -676,23 +671,19 @@ test("one production carries approved coat repair through recast, independent de
       .getByRole("button", { name: "Prepare sourcing request", exact: true })
       .click();
     const dialog = page.getByRole("dialog", {
-      name: "Prepare a sourcing request",
+      name: "Sourcing request",
       exact: true,
     });
     const unit = p.units.find((item) => item.id === "unit-coat-burgundy")!;
-    await dialog
-      .getByLabel("Recorded supplier / custodian")
-      .selectOption(unit.supplier);
+    await dialog.getByLabel("Supplier").selectOption(unit.supplier);
     await dialog.getByLabel(new RegExp(unit.code)).check();
     await dialog
-      .getByLabel("Pickup, return, measurement, and preparation notes")
+      .getByLabel("Notes")
       .fill(
         "Synthetic sourcing rehearsal only. No supplier message or reservation is sent.",
       );
     p = await command(page, "create_sourcing", () =>
-      dialog
-        .getByRole("button", { name: "Create request draft", exact: true })
-        .click(),
+      dialog.getByRole("button", { name: "Create draft", exact: true }).click(),
     );
     const request = p.sourcing.at(-1)!;
     expect(request).toMatchObject({
@@ -706,7 +697,7 @@ test("one production carries approved coat repair through recast, independent de
       exact: true,
     });
     await expect(
-      responseDialog.getByRole("combobox", { name: "Provenance", exact: true }),
+      responseDialog.getByRole("combobox", { name: "Source", exact: true }),
     ).toHaveValue("synthetic");
     for (const status of [
       "requested",
@@ -714,23 +705,19 @@ test("one production carries approved coat repair through recast, independent de
       "received",
       "returned",
     ] as const) {
+      await responseDialog.getByLabel("Next stage").selectOption(status);
       await responseDialog
-        .getByLabel("Next recorded stage")
-        .selectOption(status);
-      await responseDialog
-        .getByLabel("Operator name / role")
+        .getByLabel("Operator")
         .fill("Synthetic browser operator");
       await responseDialog
-        .getByLabel("Response or custody evidence")
+        .getByLabel("Evidence")
         .fill(
           `Synthetic ${status} rehearsal. No real supplier response or custody transfer occurred.`,
         );
-      await responseDialog
-        .getByLabel("External reference / evidence reference")
-        .fill(`SYNTHETIC-${status}`);
+      await responseDialog.getByLabel("Reference").fill(`SYNTHETIC-${status}`);
       p = await command(page, "update_sourcing", () =>
         responseDialog
-          .getByRole("button", { name: "Record this stage", exact: true })
+          .getByRole("button", { name: "Save stage", exact: true })
           .click(),
       );
       expect(p.sourcing.find((item) => item.id === request.id)).toMatchObject({
@@ -777,14 +764,14 @@ test("one production carries approved coat repair through recast, independent de
         .performerId,
     ).toBe("performer-ada");
     dialog = page.getByRole("dialog", {
-      name: "Follow the change.",
+      name: "Change impact",
       exact: true,
     });
     await expect(
       dialog.getByRole("button", { name: "Adopt this revision", exact: true }),
     ).toBeDisabled();
     await dialog
-      .getByRole("link", { name: "Compare & review alternatives", exact: true })
+      .getByRole("link", { name: "Compare alternatives", exact: true })
       .click();
     await expect(
       page.getByText("Recast study · Celeste Rowan", { exact: true }),
@@ -853,7 +840,7 @@ test("one production carries approved coat repair through recast, independent de
       .getByRole("button", { name: "Review a change", exact: true })
       .click();
     const dialog = page.getByRole("dialog", {
-      name: "The show changes. The story stays.",
+      name: "Review a change",
       exact: true,
     });
     await expect(
@@ -878,10 +865,12 @@ test("one production carries approved coat repair through recast, independent de
   );
   await visit(page, id, `/handoff/${frozen.id}`);
   await expect(
-    page.getByText("This pack has been superseded.", { exact: true }),
+    page.locator(".pack-stale-banner").getByText("Superseded", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("SUPERSEDED COPY", { exact: true }),
+    page
+      .locator(".crew-document-header")
+      .getByText("Superseded", { exact: true }),
   ).toBeVisible();
   expect(
     stored.units.find((unit) => unit.id === "unit-coat-burgundy")!.fitting
@@ -906,9 +895,7 @@ test("approval changes solver admissibility and revocation cannot become an adop
   await expect(review).toContainText("C-014 Oxblood velvet coat");
   await expect(review).toContainText("C-033 Burgundy wool coat");
   await expect(review).toContainText("SC 01 / 04 / 07");
-  await expect(review).toContainText(
-    "The old garment is still in the direction.",
-  );
+  await expect(review).toContainText("Direction still names the old garment");
   expect(p.units.find((unit) => unit.id === "unit-coat-oxblood")!.status).toBe(
     "available",
   );
@@ -917,24 +904,34 @@ test("approval changes solver admissibility and revocation cannot become an adop
     exact: true,
   });
   const confirmation = review.getByRole("checkbox", {
-    name: "I have reviewed these exact garment changes and direction references. Adopt this proposal.",
+    name: "I’ve reviewed these garment swaps.",
     exact: true,
   });
   await expect(confirmation).not.toBeChecked();
   await expect(adoption).toBeDisabled();
-  await page.getByText("Why these physical units?", { exact: true }).click();
+  await page.getByText("Why these units?", { exact: true }).click();
   const originalChoice = page
     .locator(".choice-comparisons > li")
-    .filter({ hasText: "Original recipe · C-014" });
-  await expect(originalChoice).toContainText("Production total: +£15");
-  await expect(originalChoice).toContainText("Same garment changeovers");
+    .filter({ hasText: "Original · C-014" });
+  await expect(originalChoice).toContainText("+£15");
+  const originalComparison = p
+    .allocationResult!.choiceComparisons!.flatMap(
+      (comparison) => comparison.choices,
+    )
+    .find(
+      (choice) =>
+        choice.original && choice.unitIds.includes("unit-coat-oxblood"),
+    );
+  expect(originalComparison).toMatchObject({
+    planCostDeltaCents: 1500,
+    changeoverDelta: 0,
+    reason: "higher_cost",
+  });
   const staleConfirmation = getAllocationAdoptionReview(p, p.allocationResult!);
   await confirmation.check();
   await expect(adoption).toBeEnabled();
   p = await command(page, "solve_allocation", () =>
-    page
-      .getByRole("button", { name: "Check the allocation", exact: true })
-      .click(),
+    page.getByRole("button", { name: "Check allocation", exact: true }).click(),
   );
   expect(p.allocationResult!.inputHash).toBe(staleConfirmation.inputHash);
   expect(p.allocationResult!.proposalId).not.toBe(staleConfirmation.proposalId);
@@ -960,10 +957,8 @@ test("approval changes solver admissibility and revocation cannot become an adop
   expect((await persisted(page, id)).revision).toBe(p.revision);
   await confirmation.check();
   p = await command(page, "adopt_allocation", () => adoption.click());
-  await expect(review).toContainText("The garment changes you adopted");
-  await expect(review).toContainText(
-    "The old garment is still in the direction.",
-  );
+  await expect(review).toContainText("Adopted swaps");
+  await expect(review).toContainText("Direction still names the old garment");
   expect(p.allocationResult!.acceptedConfirmation?.sourceRevision).toBe(
     p.revision - 1,
   );
@@ -1005,16 +1000,14 @@ test("approval changes solver admissibility and revocation cannot become an adop
     }),
   });
   await card
-    .getByRole("button", { name: "Review this decision", exact: true })
+    .getByRole("button", { name: "Review approval", exact: true })
     .click();
   const dialog = page.getByRole("dialog", {
-    name: "This exact alternative is approved.",
+    name: "Approved alternative",
     exact: true,
   });
   p = await command(page, "revoke_candidate_approval", () =>
-    dialog
-      .getByRole("button", { name: "Revoke this decision", exact: true })
-      .click(),
+    dialog.getByRole("button", { name: "Revoke", exact: true }).click(),
   );
   for (const look of p.looks.filter(
     (item) => item.characterId === "char-nora",
@@ -1052,18 +1045,19 @@ test("Schedule first explains missing decisions and records explicit example dec
   const id = p.id;
   await visit(page, id, "/schedule");
   const actions = page.locator(".schedule-heading");
+  const approvalNudge = page.locator(".schedule-approval-nudge");
   await expect(
-    actions.getByRole("link", { name: "Review looks", exact: true }),
+    approvalNudge.getByRole("link", { name: "Review looks", exact: true }),
   ).toBeVisible();
   await expect(
-    actions.getByRole("button", {
-      name: "Record example decisions",
+    approvalNudge.getByRole("button", {
+      name: "Approve as example",
       exact: true,
     }),
   ).toBeVisible();
   p = await command(page, "solve_allocation", () =>
     actions
-      .getByRole("button", { name: "Check the allocation", exact: true })
+      .getByRole("button", { name: "Check allocation", exact: true })
       .click(),
   );
   expect(p.allocationResult).toMatchObject({
@@ -1078,12 +1072,20 @@ test("Schedule first explains missing decisions and records explicit example dec
   });
   await expect(result).toBeFocused();
   await expect(
-    result.getByText("DECISIONS NEEDED", { exact: true }),
+    result
+      .getByRole("status", {
+        name: "Allocation status: DECISIONS_NEEDED",
+        exact: true,
+      })
+      .locator(".badge"),
   ).toHaveClass(/badge-warning/);
-  await expect(result).toContainText(
-    "8 of 8 looks need an approved appearance before allocation.",
-  );
-  await expect(result.getByText("INFEASIBLE", { exact: true })).toHaveCount(0);
+  await expect(result).toContainText("8 of 8 looks need approval.");
+  await expect(
+    result.getByRole("status", {
+      name: "Allocation status: INFEASIBLE",
+      exact: true,
+    }),
+  ).toHaveCount(0);
   await expect(result.locator(".allocation-policy")).not.toHaveAttribute(
     "open",
     "",
@@ -1096,13 +1098,13 @@ test("Schedule first explains missing decisions and records explicit example dec
   ).toBeVisible();
   await visit(page, id, "/schedule");
   await result
-    .getByRole("button", { name: "Record example decisions", exact: true })
+    .getByRole("button", { name: "Approve as example", exact: true })
     .click();
   const dialog = page.getByRole("dialog", {
-    name: "Rehearse the decisions.",
+    name: "Example approvals",
     exact: true,
   });
-  await expect(dialog).toContainText("Example reviewer (sample decision)");
+  await expect(dialog).toContainText("Example reviewer");
   const refreshed = page.waitForResponse(
     (response) =>
       /\/api\/projects\/[^/]+\/commands$/.test(path(response)) &&
@@ -1111,7 +1113,7 @@ test("Schedule first explains missing decisions and records explicit example dec
   );
   await command(page, "set_example_decisions", () =>
     dialog
-      .getByRole("button", { name: "Record example decisions", exact: true })
+      .getByRole("button", { name: "Approve as example", exact: true })
       .click(),
   );
   const response = await refreshed;
@@ -1123,7 +1125,12 @@ test("Schedule first explains missing decisions and records explicit example dec
     decisions: { looksTotal: 8, approvedLooks: 8, missingLookIds: [] },
   });
   await expect(dialog).not.toBeVisible();
-  await expect(result.getByText("FEASIBLE", { exact: true })).toBeVisible();
+  await expect(
+    result.getByRole("status", {
+      name: "Allocation status: FEASIBLE",
+      exact: true,
+    }),
+  ).toBeVisible();
   await expect(
     result.getByRole("button", {
       name: "Adopt these assignments",
@@ -1131,11 +1138,13 @@ test("Schedule first explains missing decisions and records explicit example dec
     }),
   ).toBeEnabled();
   expect(
-    p.looks.every(
-      (look) =>
-        getCurrentApproval(look, p)?.approvedBy ===
-        "Example reviewer (sample decision)",
-    ),
+    p.looks.every((look) => {
+      const approval = getCurrentApproval(look, p);
+      return (
+        approval?.approvedBy === "Example reviewer" &&
+        approval.decisionSource === "example"
+      );
+    }),
   ).toBe(true);
   p = await command(page, "adopt_allocation", () =>
     result
@@ -1165,12 +1174,12 @@ test("a recorded charcoal repair survives a refreshed impact and a Celeste recas
     .click();
   await page
     .getByRole("dialog")
-    .getByLabel("Which physical unit is unavailable?")
+    .getByLabel("Unavailable unit")
     .selectOption("unit-coat-oxblood");
   p = await impact(page);
   await page
-    .getByRole("dialog", { name: "Follow the change.", exact: true })
-    .getByRole("link", { name: "Compare & review alternatives", exact: true })
+    .getByRole("dialog", { name: "Change impact", exact: true })
+    .getByRole("link", { name: "Compare alternatives", exact: true })
     .click();
   p = await candidateDecision(
     page,
@@ -1205,9 +1214,7 @@ test("a recorded charcoal repair survives a refreshed impact and a Celeste recas
   await expect(dialog.getByRole("alert")).toContainText(
     "Retry this same change",
   );
-  await expect(
-    dialog.getByLabel("Which physical unit is unavailable?"),
-  ).not.toBeVisible();
+  await expect(dialog.getByLabel("Unavailable unit")).not.toBeVisible();
   await expect(
     dialog.getByRole("button", { name: "Retry impact refresh", exact: true }),
   ).toBeEnabled();
@@ -1225,15 +1232,30 @@ test("a recorded charcoal repair survives a refreshed impact and a Celeste recas
   });
   p = await adoptRepair(page, "C-021");
   dialog = page.getByRole("dialog", {
-    name: "A considered new revision.",
+    name: "Change adopted",
     exact: true,
   });
-  await expect(dialog.locator(".change-measured-impact")).toContainText(
-    "Removing C-014: 2 looks, 3 scenes, 3 calls identified;",
+  const refreshedImpact = p.proposals.at(-1)!.impact;
+  const dependencies = dialog.getByLabel("Affected dependencies");
+  await expect(dependencies).toContainText("C-014");
+  await expect(dependencies).toContainText(
+    `${refreshedImpact.lookIds.length} looks`,
   );
-  await expect(dialog.locator(".change-measured-impact")).toContainText(
-    "appearance and detail approvals preserved",
+  await expect(dependencies).toContainText(
+    `${refreshedImpact.sceneIds.length} scenes · ${refreshedImpact.occurrenceIds.length} calls`,
   );
+  const preserved = dialog.locator(".impact-preserved");
+  for (const [label, count] of [
+    ["look approvals", refreshedImpact.preservedApprovalIds.length],
+    ["makeup approvals", refreshedImpact.preservedBeautyApprovalIds!.length],
+    [
+      "hair & necklace approvals",
+      refreshedImpact.preservedDetailApprovalIds!.length,
+    ],
+  ] as const) {
+    expect(count).toBeGreaterThan(0);
+    await expect(preserved).toContainText(`${count} ${label}`);
+  }
   for (const look of p.looks.filter(
     (item) => item.characterId === "char-nora",
   )) {
@@ -1244,6 +1266,7 @@ test("a recorded charcoal repair survives a refreshed impact and a Celeste recas
   expect(
     p.looks.find((look) => look.id === "look-nora")!.beauty!.approvals,
   ).toEqual(originalBeauty);
+  await dialog.locator(".direction-repair > summary").click();
   await dialog
     .getByLabel("Nora Vale character direction")
     .fill(
@@ -1254,9 +1277,7 @@ test("a recorded charcoal repair survives a refreshed impact and a Celeste recas
     .fill("Long coat silhouette\nA recurring single physical coat");
   await dialog.getByLabel("Nora Vale colour palette").fill("#34363C");
   p = await command(page, "edit_direction", () =>
-    dialog
-      .getByRole("button", { name: "Save direction for review", exact: true })
-      .click(),
+    dialog.getByRole("button", { name: "Save direction", exact: true }).click(),
   );
   expect(
     getCurrentApproval(
@@ -1290,8 +1311,8 @@ test("a recorded charcoal repair survives a refreshed impact and a Celeste recas
     .selectOption("performer-celeste");
   p = await impact(page);
   await page
-    .getByRole("dialog", { name: "Follow the change.", exact: true })
-    .getByRole("link", { name: "Compare & review alternatives", exact: true })
+    .getByRole("dialog", { name: "Change impact", exact: true })
+    .getByRole("link", { name: "Compare alternatives", exact: true })
     .click();
   p = await candidateDecision(
     page,
@@ -1341,6 +1362,37 @@ test("a recorded charcoal repair survives a refreshed impact and a Celeste recas
     .getByRole("dialog")
     .getByRole("button", { name: "Back to production", exact: true })
     .click();
+  // Reopen without navigation: the consumed recast URL must not survive adoption.
+  await page
+    .getByRole("button", { name: "Review a change", exact: true })
+    .click();
+  const reopenedRecast = page.getByRole("dialog", {
+    name: "Review a change",
+    exact: true,
+  });
+  await expect(
+    reopenedRecast.getByRole("button", {
+      name: "A garment is unavailable",
+      exact: true,
+    }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await reopenedRecast
+    .getByRole("button", { name: "A character is recast", exact: true })
+    .click();
+  await expect(
+    reopenedRecast.getByRole("combobox", {
+      name: "Replacement performer",
+      exact: true,
+    }),
+  ).toHaveValue("performer-ada");
+  await expect(
+    reopenedRecast
+      .getByRole("combobox", { name: "Replacement performer", exact: true })
+      .locator('option[value="performer-celeste"]'),
+  ).toHaveCount(0);
+  await reopenedRecast
+    .getByRole("button", { name: "Cancel", exact: true })
+    .click();
   p = await allocate(page, id);
   expect(p.allocationResult!.totalCostCents).toBe(46_500);
   expect(
@@ -1386,7 +1438,7 @@ test("both approved repair choices remain feasible and preserve the explicitly s
     .click();
   await page
     .getByRole("dialog")
-    .getByLabel("Which physical unit is unavailable?")
+    .getByLabel("Unavailable unit")
     .selectOption("unit-coat-oxblood");
   p = await impact(page);
   expect(
@@ -1404,8 +1456,8 @@ test("both approved repair choices remain feasible and preserve the explicitly s
       ),
   ).toMatchObject({ feasible: false, requiresVisualApproval: true });
   await page
-    .getByRole("dialog", { name: "Follow the change.", exact: true })
-    .getByRole("link", { name: "Compare & review alternatives", exact: true })
+    .getByRole("dialog", { name: "Change impact", exact: true })
+    .getByRole("link", { name: "Compare alternatives", exact: true })
     .click();
   p = await candidateDecision(
     page,
@@ -1425,14 +1477,14 @@ test("both approved repair choices remain feasible and preserve the explicitly s
     ).toEqual([]);
   }
   const impactDialog = page.getByRole("dialog", {
-    name: "Follow the change.",
+    name: "Change impact",
     exact: true,
   });
   await expect(
-    impactDialog.getByRole("button", { name: /C-033.*Reviewable proposal/ }),
+    impactDialog.getByRole("button", { name: /C-033.*Ready/ }),
   ).toBeVisible();
   await expect(
-    impactDialog.getByRole("button", { name: /C-021.*Reviewable proposal/ }),
+    impactDialog.getByRole("button", { name: /C-021.*Ready/ }),
   ).toBeVisible();
   p = await adoptRepair(page, "C-033");
   for (const look of p.looks.filter(

@@ -37,6 +37,8 @@ export {
 export {
   getCreativeReferenceFlags,
   getCurrentCreativeReferenceFlags,
+  getDirectionReferenceReview,
+  getCurrentDirectionAcknowledgement,
 } from "./direction";
 export {
   detailInputHash,

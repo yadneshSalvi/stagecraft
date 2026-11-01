@@ -124,7 +124,7 @@ export function adoptAppearanceCandidate(
     } else {
       delete look.activeCandidateId;
       look.reviewReason =
-        "Casting changed; this scene variant needs its own exact performer output and approval.";
+        "Casting changed; this look needs a preview and approval.";
     }
   }
   if (recast) {
@@ -150,8 +150,7 @@ export function adoptAppearanceCandidate(
         unit.fitting = {
           performerId: candidate.performerId,
           status: "not_measured",
-          evidence:
-            "Replacement performer requires a physical fitting; appearance approval does not establish fit.",
+          evidence: "New performer needs a fitting.",
           provenance: "manual",
         };
         unit.version += 1;
@@ -228,7 +227,7 @@ export function applyCandidateCommand(
         409,
       );
       production.appearanceCandidates.push(candidate);
-      return `Created an unapproved appearance candidate for ${look.title}; the working recipe is unchanged.`;
+      return `New alternative for ${look.title}.`;
     }
     case "add_candidate_preview": {
       const candidate = findRecord(
@@ -291,10 +290,9 @@ export function applyCandidateCommand(
         (item) => item.activeCandidateId === candidate.id,
       )) {
         look.previews.push(structuredClone(preview));
-        look.reviewReason =
-          "Inspect the new exact candidate output and record its appearance decision.";
+        look.reviewReason = "Review this alternative preview.";
       }
-      return "Attached exact provider evidence to the proposed candidate; approval and adoption remain separate decisions.";
+      return "Alternative preview ready.";
     }
     case "approve_candidate": {
       const candidate = findRecord(
@@ -365,7 +363,7 @@ export function applyCandidateCommand(
         ];
         look.reviewReason = null;
       }
-      return `${command.approvedBy.trim()} approved the exact candidate output and current creative intent; adoption is still explicit.`;
+      return `${command.approvedBy.trim()} approved an alternative.`;
     }
     case "revoke_candidate_approval": {
       const candidate = findRecord(
@@ -387,15 +385,14 @@ export function applyCandidateCommand(
         )) {
           copy.state = "blocked";
           copy.reason = approval.reason;
-          look.reviewReason =
-            "The adopted candidate approval was revoked. Record a new exact decision before allocation.";
+          look.reviewReason = "Approval revoked. Re-approve before allocation.";
         }
       context.invalidate(candidate.lookIds);
-      return "Revoked the exact candidate decision, including its adopted copies and dependent handoffs.";
+      return "Revoked an alternative.";
     }
     case "adopt_candidate": {
       adoptAppearanceCandidate(production, command.candidateId, context);
-      return "Adopted the reviewed candidate while preserving its exact provider-output and approval identities.";
+      return "Adopted an alternative.";
     }
   }
 }

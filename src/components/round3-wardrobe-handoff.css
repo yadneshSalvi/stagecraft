@@ -1,0 +1,231 @@
+.r3-wardrobe .wardrobe-toolbar {
+  gap: 24px;
+  margin: 32px 0 24px;
+}
+.r3-wardrobe .ledger-head,
+.r3-wardrobe .ledger-row {
+  grid-template-columns:
+    minmax(0, 1.6fr) minmax(160px, 0.9fr) minmax(112px, 0.6fr)
+    24px;
+  gap: 24px;
+  padding: 16px;
+}
+.r3-wardrobe .ledger-unit {
+  gap: 24px;
+}
+.r3-wardrobe .ledger-unit .photo-natural {
+  width: 96px;
+  height: auto;
+  flex: 0 0 96px;
+  align-self: start;
+}
+.r3-wardrobe .ledger-unit h2 {
+  margin: 8px 0;
+  font-size: 24px;
+}
+.r3-wardrobe .ledger-unit p {
+  margin-bottom: 16px;
+}
+.r3-wardrobe .ledger-evidence {
+  gap: 8px;
+}
+.r3-wardrobe .ledger-evidence p {
+  margin: 8px 0 0;
+}
+.r3-wardrobe .ledger-commitment p {
+  margin: 16px 0 8px;
+}
+.r3-unit-detail {
+  grid-template-columns: 224px minmax(0, 1fr);
+  gap: 32px;
+}
+.r3-unit-detail > aside > .photo-natural {
+  height: auto;
+  width: 100%;
+}
+.r3-unit-detail .unit-details-id {
+  margin: 16px 0;
+}
+.r3-unit-detail .measurement-panel {
+  margin: 24px 0;
+  padding: 16px 0;
+}
+.r3-unit-detail .unit-source-line {
+  margin: 16px 0;
+  line-height: 1.6;
+}
+.r3-unit-detail .unit-evidence-form {
+  padding-top: 24px;
+  gap: 16px;
+}
+.r3-handoff .handoff-track {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin: 24px 0 32px;
+  padding: 24px;
+}
+.r3-handoff .handoff-track > svg {
+  display: none;
+}
+.r3-handoff .handoff-track > div {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.r3-handoff .handoff-track strong {
+  font-size: 28px;
+}
+.r3-handoff .handoff-track span {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--muted);
+}
+.r3-handoff .sourcing-grid {
+  gap: 24px;
+}
+.r3-handoff .sourcing-document {
+  padding: 24px;
+  border-top-width: 1px;
+}
+.r3-handoff .sourcing-document h3 {
+  margin: 24px 0 16px;
+  font-size: 24px;
+}
+.r3-handoff .sourcing-doc-facts {
+  margin-top: 24px;
+  padding-top: 16px;
+}
+.r3-handoff .document-action {
+  padding: 16px 0 0;
+}
+.r3-handoff .packs-section {
+  margin-top: 40px;
+}
+.r3-handoff .packs-section > .section-title {
+  padding-bottom: 16px;
+}
+.r3-handoff .pack-row {
+  padding: 24px;
+  gap: 24px;
+}
+.r3-handoff .pack-paper-icon {
+  width: 64px;
+  height: 80px;
+}
+.r3-handoff .pack-row h3 {
+  margin: 8px 0;
+}
+.source-paper-unit > .photo-natural {
+  height: auto;
+  align-self: start;
+}
+.crew-look > figure > .photo-natural {
+  height: auto;
+  min-height: 0;
+}
+.crew-beauty-evidence > figure > .photo-natural {
+  height: auto;
+  min-height: 0;
+}
+.crew-pack-page .pack-toolbar {
+  margin-bottom: 24px;
+  gap: 16px;
+}
+.crew-pack-page .pack-toolbar > div {
+  gap: 8px;
+}
+.crew-pack-page .crew-title {
+  padding: 32px 0;
+}
+.crew-pack-page .crew-title h1 {
+  margin: 0 0 16px;
+}
+.crew-pack-page .crew-title p {
+  margin: 0;
+}
+.crew-pack-page .crew-approval-line {
+  margin: 8px 0 16px;
+}
+.crew-pack-page .crew-document-footer {
+  margin-top: 32px;
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .r3-wardrobe .ledger-head,
+  .r3-wardrobe .ledger-row {
+    grid-template-columns: minmax(0, 1.4fr) minmax(136px, 1fr) 24px;
+    gap: 16px;
+  }
+  .r3-wardrobe .ledger-head > :nth-child(3),
+  .r3-wardrobe .ledger-commitment {
+    display: none;
+  }
+  .r3-wardrobe .ledger-unit {
+    gap: 16px;
+  }
+  .r3-wardrobe .ledger-unit .photo-natural {
+    width: 80px;
+    flex-basis: 80px;
+  }
+  .r3-handoff .sourcing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .r3-wardrobe .wardrobe-toolbar {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .r3-wardrobe .ledger-head {
+    display: none;
+  }
+  .r3-wardrobe .ledger-row {
+    grid-template-columns: minmax(0, 1fr) 24px;
+    gap: 16px;
+    padding: 16px 0;
+  }
+  .r3-wardrobe .ledger-evidence {
+    grid-column: 1;
+    margin-left: 96px;
+  }
+  .r3-wardrobe .ledger-row > svg {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .r3-wardrobe .ledger-unit h2 {
+    font-size: 22px;
+  }
+  .r3-unit-detail {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .r3-unit-detail > aside > .photo-natural {
+    max-width: 240px;
+    margin-inline: auto;
+  }
+  .r3-handoff .handoff-track {
+    gap: 16px;
+    padding: 16px;
+  }
+  .r3-handoff .handoff-track > div {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .r3-handoff .sourcing-grid {
+    grid-template-columns: 1fr;
+  }
+  .r3-handoff .pack-row {
+    padding: 16px;
+    gap: 16px;
+  }
+}
+@media print {
+  .crew-pack-page .crew-title {
+    padding: 16px 0;
+  }
+  .crew-pack-page .crew-document-footer {
+    margin-top: 16px;
+  }
+}

@@ -1,0 +1,240 @@
+{
+  "version": 1,
+  "completedAt": "2026-11-01T11:10:48.227230+00:00",
+  "scope": "STAGECRAFT review round 3 local software verification; canonical deployment acceptance is recorded separately",
+  "baselineCommit": "4424b8fb58908c13c88201a5a0b9e5cba682ae18",
+  "sourceState": "Round-three implementation before root publication. The complete functional suite preceded only the final repair-reference framing correction described below.",
+  "runtime": {
+    "node": "22.22.3",
+    "packageManager": "pnpm 10.15.0",
+    "next": "16.4.3",
+    "browser": "Playwright Chromium",
+    "database": "isolated local PostgreSQL"
+  },
+  "functionalCoverage": [
+    "S1: exact-approved repair with unrelated missing decisions is amber, counts unique relevant looks, and offers working review/example actions followed by automatic re-proposal; physical conflicts remain blocking.",
+    "S2: consumed change/recast/impact return parameters are removed; close/reload does not create another proposal; manual same-board reopening clears previous recast intent.",
+    "S3: named deliberate-word acknowledgements bind exact direction, reference, scope and revision; preserve valid pixel approvals; and cannot grant appearance approval.",
+    "S4: an exact current approved twin is preferred over a newer unapproved duplicate; stale scope and permission checks remain enforced.",
+    "Minimal default disclosure, plain titles, costumed landing, natural images/comparison slider, compact wall/repair/allocation and legacy presentation cleanup preserve consent, errors, data, accessibility and immutable records."
+  ],
+  "staticChecks": {
+    "formatting": "passed",
+    "eslint": "passed",
+    "typescript": "passed",
+    "optimizedBuild": "passed",
+    "diffWhitespace": "passed"
+  },
+  "unitIntegration": {
+    "files": 24,
+    "passed": 254,
+    "failed": 0,
+    "skipped": 0,
+    "durationSeconds": 20.56,
+    "newDomainCases": 18,
+    "newPresentationCompatibilityCases": 4,
+    "providerCalls": "transport doubles"
+  },
+  "focusedDomain": {
+    "files": 7,
+    "passed": 119,
+    "failed": 0,
+    "durationSeconds": 6.99,
+    "includesIndependentBruteForceOracleCases": 192,
+    "qualification": "The production constraint checker remains separate from this independent test oracle; no physical validation is implied."
+  },
+  "fullBrowser": {
+    "startedAt": "2026-11-01T11:03:45.876Z",
+    "passed": 21,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "retries": 0,
+    "durationSeconds": 218.914,
+    "optimizedBuild": true,
+    "workers": 1,
+    "freshYouCamSubmissions": 0,
+    "retainedEarlierCases": 19,
+    "newViewportCases": 2,
+    "scope": "Final functional implementation including the Readiness print heading, before the final repair-reference framing adjustment. All previous ownership, privacy, request recovery, approval race, exact repair/recast, supplier export, PDF and own-script journeys passed.",
+    "otherExternalCalls": "One actual short Gemini extraction and the configured private Blob upload path were exercised in this full run."
+  },
+  "finalPresentationGate": {
+    "startedAt": "2026-11-01T11:08:44.833Z",
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "retries": 0,
+    "durationSeconds": 15.109,
+    "optimizedRebuild": "passed",
+    "files": [
+      "src/app/round3.css",
+      "src/components/change-review.tsx",
+      "tests/e2e/round3-review.spec.ts"
+    ],
+    "reason": "At compact size, the prior absolute source-reference inset obscured the actor head/coat. It now sits beside the actor in the same bounded image row.",
+    "checks": [
+      "Both 1440x900 and 1366x768 complete round-three repair journeys passed.",
+      "Actor and reference frames do not overlap; each retains its natural aspect ratio.",
+      "Actor frame is at most 160px high; reference frame is at most 80px high.",
+      "First wall row, full costume image, approval action, repair footer/recovery actions and allocation result/adoption remain above the fold.",
+      "Updated repair screenshots visually inspected at both desktop sizes."
+    ],
+    "freshYouCamSubmissions": 0,
+    "qualification": "No unit/domain/provider behavior changed after the full 21-case gate. The final two-viewport suite and optimized rebuild verify the bounded presentation correction; root runs the full suite again on the final canonical deployment."
+  },
+  "priorAttempts": [
+    {
+      "kind": "interrupted initial complete run",
+      "finding": "The Saved status contained JSX whitespace. Actual Gemini extraction and review mutation succeeded, but an exact text regex failed.",
+      "correction": "Retained the Saved assertion with whitespace tolerance in two helpers.",
+      "appBehaviorChanged": false,
+      "rawDiagnostics": "Retained privately, including trace, context and screenshot; no complete pass count is claimed."
+    },
+    {
+      "kind": "complete run before readiness-helper correction",
+      "startedAt": "2026-11-01T10:58:13.259Z",
+      "passed": 20,
+      "failed": 1,
+      "skipped": 0,
+      "flaky": 0,
+      "retries": 0,
+      "durationSeconds": 220.229,
+      "finding": "The own-script visit helper accepted the loading main element. The route returned 200 in 8.1ms and config returned 200 in 10.3ms; session GET correctly returned 429 in 5.7ms with 49-second Retry-After. Its 20-second action timeout ended before the scheduled 49.1-second GET-only recovery. No replacement anonymous identity was created.",
+      "correction": "Wait for the actual workspace heading using the existing 75-second assertion budget. Applied the same boundary to three new two-viewport navigation sites; no timeout, auth limit or application change.",
+      "focusedRetest": {
+        "startedAt": "2026-11-01T11:02:31.889Z",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "retries": 0,
+        "durationSeconds": 13.643
+      },
+      "rawDiagnostics": "Complete report, trace and screenshot retained privately."
+    }
+  ],
+  "copyAudit": {
+    "record": "copy-audit.json",
+    "viewportsMeasured": [
+      {
+        "width": 1366,
+        "height": 768
+      }
+    ],
+    "coreProfiles": 8,
+    "approvalDialogProfiles": 2,
+    "allMeasuredCoreProfilesAtOrBelow110PercentOfInventoryTarget": true,
+    "counts": [
+      {
+        "profile": "landing",
+        "authoredUniqueComparable": 10,
+        "approximateTarget": 20
+      },
+      {
+        "profile": "fresh-board",
+        "authoredUniqueComparable": 20,
+        "approximateTarget": 24
+      },
+      {
+        "profile": "looks-costume",
+        "authoredUniqueComparable": 29,
+        "approximateTarget": 32
+      },
+      {
+        "profile": "change-impact",
+        "authoredUniqueComparable": 31,
+        "approximateTarget": 38
+      },
+      {
+        "profile": "allocation-decisions-needed",
+        "authoredUniqueComparable": 26,
+        "approximateTarget": 30
+      },
+      {
+        "profile": "handoff",
+        "authoredUniqueComparable": 13,
+        "approximateTarget": 20
+      },
+      {
+        "profile": "wardrobe",
+        "authoredUniqueComparable": 12,
+        "approximateTarget": 12
+      },
+      {
+        "profile": "evidence",
+        "authoredUniqueComparable": 44,
+        "approximateTarget": 40
+      }
+    ],
+    "finalApprovalCounts": {
+      "costume": 7,
+      "makeup": 7
+    },
+    "faceApprovalLetterboxPixels": 0,
+    "method": "Whole active default view, including below fold; explicit identity/data and repeated-row exclusions. Exact raw lists, occurrence counts, exclusions and separate shared chrome are retained. No vocabulary blacklist.",
+    "limits": "Current-version measurements of bounded profiles, not a measured 1170-to610 global DOM reduction or a human readability/usability study. Earlier checkpoint and final modal follow-up are distinguished; later link-label and reference-framing edits do not change the counts."
+  },
+  "screenshots": {
+    "directory": "after/",
+    "images": 10,
+    "viewports": [
+      {
+        "width": 1440,
+        "height": 900
+      },
+      {
+        "width": 1366,
+        "height": 768
+      }
+    ],
+    "actualViewportAndRasterDimensionsVerified": true,
+    "states": [
+      "board",
+      "looks",
+      "repair-decisions-needed",
+      "repair-ready",
+      "allocation"
+    ],
+    "foldMeasurements": [
+      "after/layout-1440x900.json",
+      "after/layout-1366x768.json"
+    ],
+    "source": "Isolated synthetic QA examples; root supplements these with canonical production screenshots."
+  },
+  "crewPdf": {
+    "regenerated": true,
+    "pages": 17,
+    "paper": "A4",
+    "loadedImages": 27,
+    "unresolvedRequirements": 37,
+    "onlineDisclosure": "Collapsed by default; keyboard, ARIA, expand/collapse, revision preservation and print expansion assertions passed.",
+    "print": "Every frozen requirement is automatically printed.",
+    "visualReview": {
+      "renderer": "Poppler at 96 DPI",
+      "finalHeadingPages": [1, 3],
+      "sameDetailLayoutPagesAlsoInspected": [7, 16],
+      "observations": "Readable first-page readiness list and separate makeup, hair-colour and necklace evidence; no clipping or overlap. The actor/reference repair-card correction does not affect crew PDF styles."
+    },
+    "sha256": "2d1d51c510dc9a4ddf1347f4c96794172b7731554940c857cb184f6221f9f931",
+    "artifact": "Retained privately; no new public user document was published."
+  },
+  "supplierExport": {
+    "browserCsvAndPrintCheck": "passed",
+    "pages": 1,
+    "paper": "A4",
+    "visualReview": "Rendered at 96 DPI and inspected; readable, unclipped supplier, unit, quote, status and full source window."
+  },
+  "providerEvidence": {
+    "newYouCamTasks": 0,
+    "newRecordings": 0,
+    "existingOutputs": 20,
+    "sourceAndTransportHashes": "unchanged"
+  },
+  "limits": [
+    "Synthetic software verification; no practitioner, physical fitting, supplier outcome or human time-saving claim.",
+    "Automated accessibility and keyboard checks do not replace a human assistive-technology study.",
+    "Canonical deployment, final publication scans and production acceptance belong to the root release record."
+  ]
+}

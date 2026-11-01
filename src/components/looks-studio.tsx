@@ -21,7 +21,11 @@ import {
   getCurrentBeautyPreview,
 } from "@/lib/domain/selectors";
 import type { Look } from "@/lib/types";
-import { provenanceLabel, revision } from "@/lib/format";
+import {
+  displayApproval,
+  displayInspectionNotes,
+} from "@/lib/presentation-copy";
+import { ImageComparison } from "./image-comparison";
 import { useProduction } from "./production-context";
 import { Badge, Button, EmptyState, Field, Modal, Notice, Photo } from "./ui";
 import { RecipeInspector } from "./recipe-inspector";
@@ -35,7 +39,6 @@ import {
   getCurrentDetailPreview,
 } from "@/lib/domain/details";
 import { LibraryDialog } from "./example-library";
-import { ProvenanceChip } from "./provenance-chip";
 import { appearanceIntentHash } from "@/lib/domain/lineage";
 import { CastManager, NewLookDialog } from "./cast-manager";
 
@@ -72,6 +75,15 @@ export function LooksStudio() {
       scroll: false,
     });
   };
+  const repairSubject = search.get("returnChange") || search.get("repair");
+  const recastSubject = search.get("returnRecast") || search.get("recast");
+  const returnPerformer =
+    search.get("returnPerformer") || search.get("performer");
+  const returnHref = repairSubject
+    ? `/production/${project.id}?change=${encodeURIComponent(repairSubject)}&impact=refresh`
+    : recastSubject && returnPerformer
+      ? `/production/${project.id}?recast=${encodeURIComponent(recastSubject)}&performer=${encodeURIComponent(returnPerformer)}&impact=refresh`
+      : undefined;
   const [cast, setCast] = useState(false);
   const [newLook, setNewLook] = useState(false);
   const [library, setLibrary] = useState(false);
@@ -84,11 +96,11 @@ export function LooksStudio() {
   return (
     <>
       <div className="studio-titlebar">
-        <Link href={`/production/${project.id}`}>
+        <Link href={returnHref || `/production/${project.id}`}>
           <ArrowLeft size={14} />
-          Production board
+          {returnHref ? "Return to change review" : "Production board"}
         </Link>
-        <span className="eyebrow">THE LOOK STUDIO</span>
+        <h1>Looks</h1>
         <div>
           <Button
             variant="quiet"
@@ -126,7 +138,7 @@ export function LooksStudio() {
               onClick={() => showDetail("makeup")}
             >
               <Palette size={15} />
-              Makeup detail
+              Makeup
             </button>
             <button
               aria-pressed={detail === "alternatives"}
@@ -153,12 +165,11 @@ export function LooksStudio() {
               Necklace
             </button>
           </div>
-          <span>Each output has its own evidence and decision.</span>
         </div>
       )}
       {!selected ? (
         <EmptyState
-          title="A character becomes a presence."
+          title="No looks yet"
           action={
             <div className="button-row">
               <Button variant="primary" onClick={() => setCast(true)}>
@@ -171,14 +182,10 @@ export function LooksStudio() {
               </Button>
             </div>
           }
-        >
-          Add a permitted performer source, connect a character and a garment,
-          then see the appearance take shape.
-        </EmptyState>
+        />
       ) : (
         <div className="studio-layout">
           <aside className="character-rail">
-            <p className="eyebrow">THE CHARACTERS</p>
             {project.looks.map((look) => {
               const character = project.characters.find(
                 (c) => c.id === look.characterId,
@@ -236,23 +243,16 @@ export function LooksStudio() {
                     <strong>{character?.name || "Character"}</strong>
                     <small>{look.title}</small>
                     <span
-                      className={`look-status ${currentApproval ? "approved" : ""}`}
-                    >
-                      {currentApproval
-                        ? detail === "makeup"
-                          ? "Makeup approved"
-                          : detail === "hair_color"
-                            ? "Hair colour approved"
-                            : detail === "necklace"
-                              ? "Necklace approved"
-                              : "Approved appearance"
-                        : currentPreview
-                          ? "Ready for review"
-                          : detail === "makeup" &&
-                              !performer?.faceCapture?.consent.granted
-                            ? "Face source needed"
-                            : "Preview needed"}
-                    </span>
+                      className={`look-status-dot ${currentApproval ? "approved" : currentPreview ? "review" : "empty"}`}
+                      role="img"
+                      aria-label={
+                        currentApproval
+                          ? "Approved"
+                          : currentPreview
+                            ? "To review"
+                            : "No preview"
+                      }
+                    />
                   </span>
                   {selected.id === look.id && (
                     <span className="character-marker" />
@@ -260,13 +260,6 @@ export function LooksStudio() {
                 </button>
               );
             })}
-            <div className="studio-source-note">
-              <Layers3 size={17} />
-              <p>
-                One recipe can carry across several scenes. A change follows its
-                exact dependencies.
-              </p>
-            </div>
           </aside>
           {detail === "makeup" ? (
             <BeautyStudio key={selected.id} look={selected} />
@@ -275,13 +268,6 @@ export function LooksStudio() {
               key={`${selected.id}-${search.get("performer") || "current"}`}
               look={selected}
               prospectivePerformerId={search.get("performer") || undefined}
-              returnHref={
-                search.get("repair")
-                  ? `/production/${project.id}?change=${encodeURIComponent(search.get("repair")!)}&impact=refresh`
-                  : search.get("recast") && search.get("performer")
-                    ? `/production/${project.id}?recast=${encodeURIComponent(search.get("recast")!)}&performer=${encodeURIComponent(search.get("performer")!)}&impact=refresh`
-                    : undefined
-              }
             />
           ) : detail === "hair_color" || detail === "necklace" ? (
             <DetailStudio
@@ -383,10 +369,8 @@ function LookCanvas({
       <section className="look-canvas">
         <header className="look-heading">
           <div>
-            <p className="eyebrow">
-              {look.title} / RECIPE {revision(look.revision)}
-            </p>
-            <h1>{character?.name || "Character look"}</h1>
+            <h2>{character?.name || "Character look"}</h2>
+            <span className="look-name">{look.title}</span>
             <p>
               {performer?.name || "Assign a performer"}
               <span>·</span>
@@ -400,9 +384,34 @@ function LookCanvas({
                 .join(" / ")}
             </p>
           </div>
-          <Badge tone={approval ? "success" : "warning"}>
-            {approval ? "Appearance approved" : "Awaiting review"}
-          </Badge>
+          <div className="appearance-approval">
+            <Badge tone={approval ? "success" : "warning"}>
+              {approval ? "Approved" : preview ? "To review" : "No preview"}
+            </Badge>
+            <Button
+              variant={approval ? "default" : "primary"}
+              disabled={!preview || busy}
+              onClick={() => {
+                setApprovalTarget(preview?.id || null);
+                setApprovalIntent(appearanceIntentHash(project, scopeLookIds));
+                setError(null);
+                setView("preview");
+                setApproving(true);
+              }}
+            >
+              {approval ? (
+                <>
+                  <Check size={16} />
+                  Review approval
+                </>
+              ) : (
+                <>
+                  Approve appearance
+                  <ArrowRight size={15} />
+                </>
+              )}
+            </Button>
+          </div>
         </header>
         <div className="look-view-tabs">
           <div className="segmented" aria-label="Image view">
@@ -412,14 +421,14 @@ function LookCanvas({
               disabled={!preview}
               onClick={() => selectView("preview")}
             >
-              YouCam preview
+              Preview
             </button>
             <button
               aria-pressed={view === "source"}
               className={view === "source" ? "active" : ""}
               onClick={() => selectView("source")}
             >
-              Original source
+              Source
             </button>
             <button
               aria-pressed={view === "compare"}
@@ -430,26 +439,20 @@ function LookCanvas({
               Compare
             </button>
           </div>
-          <span className="mono">BODY / FULL FRAME</span>
         </div>
-        <div
-          className={`look-image-stage ${view === "compare" ? "comparison-stage" : ""}`}
-        >
-          {view === "compare" && (
-            <figure>
-              <Photo
-                original
-                src={performer?.imageUrl}
-                alt={`Original source of ${performer?.name}`}
-              />
-              <figcaption>
-                {performer?.synthetic ? "SYNTHETIC SOURCE" : "ORIGINAL SOURCE"}
-              </figcaption>
-            </figure>
-          )}
-          <figure>
+        <div className="costume-image-stage">
+          {view === "compare" && preview && performer?.imageUrl ? (
+            <ImageComparison
+              sourceUrl={performer.imageUrl}
+              previewUrl={preview.imageUrl}
+              sourceAlt={`Original source of ${performer.name}`}
+              previewAlt={`${character?.name}, YouCam generated garment preview`}
+            />
+          ) : (
             <Photo
+              natural
               original
+              priority
               src={
                 view === "source"
                   ? performer?.imageUrl
@@ -460,97 +463,22 @@ function LookCanvas({
                   ? `${performer?.name}, original permitted source`
                   : `${character?.name}, ${preview ? "YouCam generated garment preview" : "source image awaiting preview"}`
               }
-              priority
             />
-            <figcaption>
-              {view === "source"
-                ? performer?.synthetic
-                  ? "SYNTHETIC CAST SOURCE"
-                  : "PERMITTED CAST SOURCE"
-                : preview
-                  ? provenanceLabel(preview.provenance).toUpperCase()
-                  : "SOURCE · PREVIEW NEEDED"}
-            </figcaption>
-          </figure>
-        </div>
-        <div className="look-image-footer">
-          <div className="provenance-row">
-            <ProvenanceChip
-              kind={performer?.synthetic ? "synthetic" : "photo"}
-            />
-            {preview && view !== "source" && (
-              <ProvenanceChip
-                kind={
-                  preview.provenance === "recorded_provider"
-                    ? "recorded"
-                    : "fresh"
-                }
-              />
-            )}
-          </div>
-          <span>Original sources stay inspectable.</span>
+          )}
         </div>
         {look.reviewReason && (
-          <Notice tone="warning" title="This look needs a fresh review.">
+          <Notice tone="warning" title="Needs re-review">
             {look.reviewReason}
           </Notice>
         )}
         {preview?.inspectionNotes && (
           <details className="inspection-notes">
-            <summary>What to inspect in this result</summary>
-            <p>{preview.inspectionNotes}</p>
-            <p className="muted">
-              Compare face, silhouette, garment details, and story-critical
-              elements with the sources. Provider completion is not an
-              appearance approval.
-            </p>
+            <summary>Inspection notes</summary>
+            <p>{displayInspectionNotes(preview.inspectionNotes)}</p>
           </details>
         )}
-        <section className="appearance-approval">
-          <div>
-            <span className="eyebrow">THE APPEARANCE DECISION</span>
-            <h3>
-              {approval
-                ? "Approved for these scenes."
-                : "Does this carry the character?"}
-            </h3>
-            <p>
-              {approval
-                ? `${approval.approvedBy} · ${approval.rationale}`
-                : "An approval applies to this performer, this exact recipe, and this output."}
-            </p>
-          </div>
-          <Button
-            variant={approval ? "default" : "primary"}
-            disabled={!preview || busy}
-            onClick={() => {
-              setApprovalTarget(preview?.id || null);
-              setApprovalIntent(appearanceIntentHash(project, scopeLookIds));
-              setError(null);
-              setView("preview");
-              setApproving(true);
-            }}
-          >
-            {approval ? (
-              <>
-                <Check size={16} />
-                Review approval
-              </>
-            ) : (
-              <>
-                Approve appearance
-                <ArrowRight size={15} />
-              </>
-            )}
-          </Button>
-        </section>
         <details className="look-history">
-          <summary>
-            Recipe & approval history{" "}
-            <span className="mono">
-              {look.previews.length} OUTPUTS · {look.approvals.length} DECISIONS
-            </span>
-          </summary>
+          <summary>History</summary>
           {look.approvals.map((entry) => (
             <div key={entry.id}>
               <Badge tone={entry.id === approval?.id ? "success" : "neutral"}>
@@ -560,20 +488,14 @@ function LookCanvas({
                     ? "Earlier output"
                     : entry.state.replaceAll("_", " ")}
               </Badge>
-              <p>
-                {entry.approvedBy} · recipe {revision(entry.recipeRevision)}
-              </p>
+              <p>{displayApproval(entry).approvedBy}</p>
               <p className="muted">
-                {entry.rationale}
+                {displayApproval(entry).rationale}
                 {entry.reason ? ` · ${entry.reason}` : ""}
               </p>
             </div>
           ))}
-          {!look.approvals.length && (
-            <p className="muted">
-              No appearance decisions have been recorded yet.
-            </p>
-          )}
+          {!look.approvals.length && <p className="muted">No decisions yet.</p>}
         </details>
       </section>
       <RecipeInspector
@@ -594,12 +516,8 @@ function LookCanvas({
         onClose={() => {
           if (!busy) setApproving(false);
         }}
-        title={
-          approval
-            ? "The recorded appearance approval"
-            : "Approve this exact appearance"
-        }
-        description={`${character?.name} · ${performer?.name} · Recipe ${revision(look.revision)}`}
+        title={approval ? "Appearance approval" : "Approve appearance"}
+        description={`${character?.name} · ${performer?.name}`}
       >
         <ApprovalOutput
           imageUrl={performer?.consent.granted ? targetPreview?.imageUrl : null}
@@ -608,54 +526,44 @@ function LookCanvas({
         />
         {approval ? (
           <div className="form-stack">
-            <Notice tone="success" title={`Approved by ${approval.approvedBy}`}>
-              {approval.rationale}
+            <Notice tone="success" title={displayApproval(approval).approvedBy}>
+              {displayApproval(approval).rationale}
             </Notice>
-            <p className="muted">
-              This decision references the exact output, performer and current
-              creative intent.
-            </p>
-            <Button onClick={() => setApproving(false)}>Close approval</Button>
+            <Button onClick={() => setApproving(false)}>Close</Button>
           </div>
         ) : (
           <form className="form-stack" onSubmit={approve}>
-            <Notice tone="warning">
-              Approves appearance only; fit is checked at fitting.
-            </Notice>
-            <Field label="Reviewer name or role">
+            <p className="muted approval-scope">
+              Appearance only — fit is checked at fitting.
+            </p>
+            <Field label="Reviewer">
               <input
                 value={author}
                 onChange={(event) => setAuthor(event.target.value)}
                 required
                 minLength={2}
                 maxLength={100}
-                placeholder="e.g. Alex · Costume designer"
+                placeholder="Alex · Costume designer"
               />
             </Field>
-            <Field
-              label="What did you approve?"
-              hint="Record important details and any limitations you will carry into the physical review."
-            >
+            <Field label="Note">
               <textarea
                 value={rationale}
                 onChange={(event) => setRationale(event.target.value)}
                 required
                 minLength={5}
                 maxLength={1200}
-                placeholder="The silhouette supports the character. Check the coat hem and closure at fitting…"
               />
             </Field>
             {outputChanged && (
               <Notice tone="warning">
-                A different output or creative intent is now current. Close this
-                dialog and inspect the current look before approving it. Your
-                written notes remain here.
+                The preview changed. Re-inspect before approving.
               </Notice>
             )}
             {error && <Notice tone="danger">{error}</Notice>}
             <div className="modal-actions">
               <Button type="button" onClick={() => setApproving(false)}>
-                Keep reviewing
+                Cancel
               </Button>
               <Button
                 variant="primary"
@@ -663,7 +571,7 @@ function LookCanvas({
                 disabled={outputChanged}
                 type="submit"
               >
-                Record appearance approval
+                Approve
                 <Check size={15} />
               </Button>
             </div>

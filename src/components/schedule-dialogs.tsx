@@ -58,8 +58,8 @@ export function OccurrenceDialog({
       onClose={() => {
         if (!busy) onClose();
       }}
-      title={existing ? "Revise the call" : "A new production call"}
-      description={`Enter times in ${project.timeZone}. Story chronology remains independent.`}
+      title={existing ? "Edit call" : "New call"}
+      description={`Times in ${project.timeZone}`}
     >
       <form className="form-stack" onSubmit={save}>
         <Field label="Script scene">
@@ -117,9 +117,7 @@ export function OccurrenceDialog({
         </Field>
         {error && <Notice tone="danger">{error}</Notice>}
         {!project.scenes.length && (
-          <Notice tone="warning">
-            Import a script scene before scheduling a call.
-          </Notice>
+          <Notice tone="warning">Import a script first.</Notice>
         )}
         <div className="modal-actions">
           <Button type="button" onClick={onClose}>
@@ -131,7 +129,7 @@ export function OccurrenceDialog({
             disabled={!project.scenes.length}
             busy={busy}
           >
-            Save scheduled call
+            Save call
           </Button>
         </div>
       </form>
@@ -178,8 +176,7 @@ export function TransitionDialog({
       onClose={() => {
         if (!busy) onClose();
       }}
-      title="Record a real change requirement"
-      description="Transitions are directional and performer-specific. Unknown time is never treated as zero."
+      title="Change transition"
     >
       <form className="form-stack" onSubmit={save}>
         <Field label="Performer">
@@ -194,7 +191,7 @@ export function TransitionDialog({
             ))}
           </select>
         </Field>
-        <Field label="From occurrence">
+        <Field label="From call">
           <select
             value={from}
             onChange={(event) => setFrom(event.target.value)}
@@ -206,7 +203,7 @@ export function TransitionDialog({
             ))}
           </select>
         </Field>
-        <Field label="To occurrence">
+        <Field label="To call">
           <select value={to} onChange={(event) => setTo(event.target.value)}>
             {project.occurrences.map((o) => (
               <option key={o.id} value={o.id}>
@@ -216,16 +213,17 @@ export function TransitionDialog({
           </select>
         </Field>
         <div className="field-grid">
-          <Field label="Required minutes (blank = unknown)">
+          <Field label="Minutes">
             <input
               type="number"
+              placeholder="Unknown"
               min="0"
               max="720"
               value={minutes}
               onChange={(event) => setMinutes(event.target.value)}
             />
           </Field>
-          <Field label="Evidence type">
+          <Field label="Source">
             <select
               value={evidence}
               onChange={(event) =>
@@ -233,12 +231,12 @@ export function TransitionDialog({
               }
             >
               <option value="unknown">Unknown</option>
-              <option value="estimate">Recorded estimate</option>
-              <option value="observed">Observed in rehearsal</option>
+              <option value="estimate">Estimate</option>
+              <option value="observed">Observed</option>
             </select>
           </Field>
         </div>
-        <Field label="Exclusive crew / station resource (optional)">
+        <Field label="Crew or station (optional)">
           <input
             value={crew}
             onChange={(event) => setCrew(event.target.value)}
@@ -246,13 +244,13 @@ export function TransitionDialog({
             placeholder="e.g. Dresser A / makeup chair 1"
           />
         </Field>
-        <Field label="Evidence, observer, and context">
+        <Field label="Notes">
           <textarea
             required
             value={note}
             onChange={(event) => setNote(event.target.value)}
             maxLength={1600}
-            placeholder="Record what was observed or how the estimate was made. Label synthetic exercises explicitly."
+            placeholder="Who observed it, and how"
           />
         </Field>
         {error && <Notice tone="danger">{error}</Notice>}
@@ -266,7 +264,7 @@ export function TransitionDialog({
             busy={busy}
             disabled={!from || !to || from === to}
           >
-            Record transition
+            Save transition
           </Button>
         </div>
       </form>

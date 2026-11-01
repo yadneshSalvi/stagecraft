@@ -60,34 +60,32 @@ async function command(
     body = await response.json();
   expect(response.ok(), JSON.stringify(body)).toBe(true);
   await expect(
-    page.getByText("All changes saved", { exact: true }),
+    page.getByRole("status").filter({ hasText: /^\s*Saved\s*$/ }),
   ).toBeVisible();
   return body.project;
 }
 async function visit(page: Page, suffix = "") {
   await page.goto(`/production/${projectId}${suffix}`);
-  await expect(page.getByRole("main")).toBeVisible();
+  await expect(
+    page.locator(".workspace-content").getByRole("heading", { level: 1 }),
+  ).toBeVisible();
 }
 async function approve(page: Page): Promise<Production> {
   await page
     .getByRole("button", { name: "Approve appearance", exact: true })
     .click();
   const dialog = page.getByRole("dialog", {
-    name: "Approve this exact appearance",
+    name: "Approve appearance",
     exact: true,
   });
+  await dialog.getByLabel("Reviewer").fill("Synthetic browser reviewer");
   await dialog
-    .getByLabel("Reviewer name or role")
-    .fill("Synthetic browser reviewer");
-  await dialog
-    .getByLabel("What did you approve?")
+    .getByLabel("Note")
     .fill(
       "A software-test decision on this exact recorded output for the fictional script. Physical fit and supplier availability remain unverified.",
     );
   const result = await command(page, "approve_look", () =>
-    dialog
-      .getByRole("button", { name: "Record appearance approval", exact: true })
-      .click(),
+    dialog.getByRole("button", { name: "Approve", exact: true }).click(),
   );
   await expect(dialog).not.toBeVisible();
   return result;
@@ -196,7 +194,7 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
       .getByRole("link", { name: "Import your script", exact: true })
       .click();
     const dialog = page.getByRole("dialog", {
-      name: "Bring in the script.",
+      name: "Import script",
       exact: true,
     });
     await expect(dialog).toBeVisible();
@@ -205,12 +203,12 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
       .getByLabel("Revision label")
       .fill("Original synthetic verification extract");
     await dialog
-      .getByLabel("Upload plain text or Fountain (optional)")
+      .getByLabel("Plain text or Fountain (optional)")
       .setInputFiles(scriptPath);
     await expect(dialog.getByLabel("Script text")).toHaveValue(scriptText);
     await dialog
       .getByRole("checkbox", {
-        name: /I have permission to use and process this script/,
+        name: /I have the rights to process this script with AI/,
       })
       .check();
     const extracting = page.waitForResponse(
@@ -273,11 +271,11 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
     );
     await page
       .getByRole("dialog", {
-        name: "The script, ready for your review.",
+        name: "Review breakdown",
         exact: true,
       })
       .getByRole("button", {
-        name: "Adopt as unreviewed breakdown",
+        name: "Adopt breakdown",
         exact: true,
       })
       .click();
@@ -299,7 +297,7 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
       p = await command(page, "review_scene", () =>
         page
           .getByRole("button", {
-            name: "Confirm this scene & its cues",
+            name: "Confirm scene",
             exact: true,
           })
           .click(),
@@ -337,7 +335,7 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
       .getByRole("button", { name: "Example library", exact: true })
       .click();
     const dialog = page.getByRole("dialog", {
-      name: "A small company. A considered wardrobe.",
+      name: "Example library",
       exact: true,
     });
     const cast = dialog.getByRole("article").filter({
@@ -350,16 +348,15 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
     expect(actor.id).not.toBe("performer-ada");
     expect(actor.librarySourceId).toBe("performer-ada");
     expect(actor.synthetic).toBe(true);
-    await dialog
+    const initialCasting = dialog.locator(".initial-casting");
+    await initialCasting
       .getByRole("combobox", {
-        name: "Assign this performer to an uncast character",
+        name: "Cast as",
         exact: true,
       })
       .selectOption(actorCharacter.id);
     p = await command(page, "adopt_repair", () =>
-      dialog
-        .getByRole("button", { name: "Record initial casting", exact: true })
-        .click(),
+      initialCasting.getByRole("button", { name: "Cast", exact: true }).click(),
     );
     expect(
       p.characters.find((character) => character.id === actorCharacter.id)
@@ -369,9 +366,7 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
       p.characters.find((character) => character.id === ownClothesCharacter.id)
         ?.performerId,
     ).toBe("");
-    await dialog
-      .getByRole("button", { name: "Garment references", exact: true })
-      .click();
+    await dialog.getByRole("button", { name: "Wardrobe", exact: true }).click();
     const coat = dialog.getByRole("article").filter({
       has: page.getByRole("heading", {
         name: "Oxblood velvet coat",
@@ -390,23 +385,23 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
     });
     await expect(previewPerformer).toHaveValue("performer-ada");
     await expect(
-      coat.getByText("Ready preview", { exact: true }),
+      coat.getByText("Preview ready", { exact: true }),
     ).toBeVisible();
-    await expect(olive.getByText("Ready preview", { exact: true })).toHaveCount(
+    await expect(olive.getByText("Preview ready", { exact: true })).toHaveCount(
       0,
     );
     await previewPerformer.selectOption("performer-jules");
     await expect(
-      olive.getByText("Ready preview", { exact: true }),
+      olive.getByText("Preview ready", { exact: true }),
     ).toBeVisible();
-    await expect(coat.getByText("Ready preview", { exact: true })).toHaveCount(
+    await expect(coat.getByText("Preview ready", { exact: true })).toHaveCount(
       0,
     );
     await previewPerformer.selectOption("performer-ada");
     await expect(
-      coat.getByText("Ready preview", { exact: true }),
+      coat.getByText("Preview ready", { exact: true }),
     ).toBeVisible();
-    await expect(olive.getByText("Ready preview", { exact: true })).toHaveCount(
+    await expect(olive.getByText("Preview ready", { exact: true })).toHaveCount(
       0,
     );
     expect(
@@ -431,22 +426,20 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
     expect(p.units).toHaveLength(2);
     expect(p.units[0].librarySourceId).toBe("unit-coat-oxblood");
     expect(p.units[1].librarySourceId).toBe("unit-jacket-olive");
-    await dialog
-      .getByRole("button", { name: "Return to production", exact: true })
-      .click();
+    await dialog.getByRole("button", { name: "Done", exact: true }).click();
   });
   await test.step("Create separate day looks with real recorded reuse across new identities", async () => {
     for (const [index, scene] of p.scenes.entries()) {
       await page.getByRole("button", { name: "New look", exact: true }).click();
       const dialog = page.getByRole("dialog", {
-        name: "A look for a story state",
+        name: "New look",
         exact: true,
       });
       await dialog
         .getByLabel("Look title")
         .fill(`The recurring coat · story day ${index + 1}`);
       await dialog.getByLabel("Character").selectOption(actorCharacter.id);
-      const garmentSelect = dialog.getByLabel("Physical garment unit");
+      const garmentSelect = dialog.getByLabel("Garment unit");
       if (index === 0) {
         const actorId = p.performers[0].id,
           coatId = p.units[0].id,
@@ -490,13 +483,10 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
           exact: true,
         });
         await expect(
-          options.getByText("No recording for this pairing", { exact: true }),
+          options.getByText("No preview for this pair", { exact: true }),
         ).toBeVisible();
         await expect(
-          options.getByText(
-            "Keep this performer and choose one of these recorded garments.",
-            { exact: true },
-          ),
+          options.getByText("Garments with saved previews", { exact: true }),
         ).toBeVisible();
         const suggested = options.getByRole("article").filter({
           has: page.getByRole("button", {
@@ -541,7 +531,7 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
       }
       // Automatic recorded attachment is gated by this resolved server check.
       await expect(
-        dialog.getByText("Ready preview", { exact: true }),
+        dialog.getByText("Saved preview ready", { exact: true }),
       ).toBeVisible();
       expect(previewRequests).toHaveLength(index);
       await dialog
@@ -600,14 +590,10 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
           ),
         }),
       ).toBeVisible();
-      await page
-        .getByText("03 / Accessories & preparation", { exact: true })
-        .click();
-      await page.getByLabel("Preparation estimate (minutes)").fill("20");
+      await page.getByText("Accessories & prep", { exact: true }).click();
+      await page.getByLabel("Prep time (min)").fill("20");
       p = await command(page, "update_look", () =>
-        page
-          .getByRole("button", { name: "Save recipe revision", exact: true })
-          .click(),
+        page.getByRole("button", { name: "Save recipe", exact: true }).click(),
       );
       expect(
         getCurrentPreview(
@@ -639,7 +625,7 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
       .getByRole("button", { name: "Draft calls from script", exact: true })
       .click();
     const dialog = page.getByRole("dialog", {
-      name: "Give the script a first call sheet.",
+      name: "Draft calls",
       exact: true,
     });
     await dialog.getByLabel("First production call").fill(`${date}T10:00`);
@@ -660,7 +646,7 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
       secondScene = p.scenes.find((scene) => scene.id === second.sceneId)!;
     const secondCall = page.getByRole("article").filter({
       has: page.getByText(
-        `SC ${secondScene.number} · STORY DAY ${secondScene.storyDay}`,
+        `SC ${secondScene.number} · Day ${secondScene.storyDay}`,
         { exact: true },
       ),
     });
@@ -672,22 +658,20 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
       })
       .click();
     const edit = page.getByRole("dialog", {
-      name: "Revise the call",
+      name: "Edit call",
       exact: true,
     });
     await edit.getByLabel("Starts").fill(`${date}T11:30`);
     await edit.getByLabel("Ends").fill(`${date}T12:10`);
     p = await command(page, "update_occurrence", () =>
-      edit
-        .getByRole("button", { name: "Save scheduled call", exact: true })
-        .click(),
+      edit.getByRole("button", { name: "Save call", exact: true }).click(),
     );
     expect(p.occurrences[0]).toEqual(first);
     expect(p.occurrences[1].start).not.toBe(second.start);
     expect(p.scenes.map((scene) => scene.storyDay)).toEqual(storyDays);
     p = await command(page, "solve_allocation", () =>
       page
-        .getByRole("button", { name: "Check the allocation", exact: true })
+        .getByRole("button", { name: "Check allocation", exact: true })
         .click(),
     );
     expect(p.allocationResult).toMatchObject({

@@ -15,7 +15,6 @@ export default async function Page({
   const refreshImpactOnOpen = query.impact === "refresh";
   return (
     <ProductionBoard
-      key={`${initialUnitId || ""}:${initialCharacterId || ""}:${initialReplacementId || ""}:${refreshImpactOnOpen}`}
       initialUnitId={initialUnitId}
       initialCharacterId={initialCharacterId}
       initialReplacementId={initialReplacementId}

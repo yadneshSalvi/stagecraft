@@ -1,0 +1,66 @@
+{
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "syntheticSoftwareCheck": true,
+  "freshProviderRequests": 0,
+  "measurements": [
+    {
+      "label": "First continuity row",
+      "x": 121,
+      "y": 323,
+      "width": 1006,
+      "height": 229
+    },
+    {
+      "label": "Appearance approval action",
+      "x": 926,
+      "y": 289,
+      "width": 170,
+      "height": 58
+    },
+    {
+      "label": "Full costume inspection image",
+      "x": 288,
+      "y": 408,
+      "width": 808,
+      "height": 468
+    },
+    {
+      "label": "Repair adoption action",
+      "x": 1005,
+      "y": 810,
+      "width": 170,
+      "height": 42
+    },
+    {
+      "label": "Inline alternative approval",
+      "x": 733,
+      "y": 584,
+      "width": 425,
+      "height": 42
+    },
+    {
+      "label": "Unrelated-decision recovery actions",
+      "x": 265,
+      "y": 161,
+      "width": 902,
+      "height": 98
+    },
+    {
+      "label": "Allocation status and cost",
+      "x": 145,
+      "y": 182,
+      "width": 81,
+      "height": 27
+    },
+    {
+      "label": "Allocation adoption action",
+      "x": 1185,
+      "y": 432,
+      "width": 198,
+      "height": 40
+    }
+  ]
+}

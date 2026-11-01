@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import "./round3.css";
+import "./round3-secondary.css";
 const sans = localFont({
   src: "../../public/fonts/IBMPlexSans-Variable.ttf",
   variable: "--font-sans",

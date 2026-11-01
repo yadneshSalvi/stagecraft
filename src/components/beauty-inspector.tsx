@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { ArrowRight, Check, Palette, Sparkles, UserRound } from "lucide-react";
 import type { BeautyRecipe, Look } from "@/lib/types";
+import { getCurrentBeautyPreview } from "@/lib/domain/selectors";
 import { useProduction } from "./production-context";
 import type { usePreviewJob } from "./use-preview-job";
 import { PreviewJobStatus } from "./preview-job-status";
@@ -9,12 +10,11 @@ import {
   BeautyRecipeFields,
   defaultBeautyRecipe,
 } from "./beauty-recipe-fields";
-import { Badge, Button, Notice, Photo } from "./ui";
+import { Button, Notice, Photo } from "./ui";
 import {
   PreviewAvailability,
   freshPreviewAvailable,
 } from "./preview-availability";
-import { ProvenanceChip } from "./provenance-chip";
 
 export function BeautyInspector({
   look,
@@ -30,6 +30,7 @@ export function BeautyInspector({
     (person) => person.id === look.performerId,
   );
   const face = performer?.faceCapture;
+  const preview = getCurrentBeautyPreview(look);
   const [recipe, setRecipe] = useState<BeautyRecipe>(
     look.beauty?.recipe || defaultBeautyRecipe,
   );
@@ -47,11 +48,12 @@ export function BeautyInspector({
     <aside className="recipe-inspector beauty-inspector">
       <section className="beauty-source-card">
         <div className="section-title">
-          <span className="eyebrow">THE FACE SOURCE</span>
-          <Badge>{face ? `Capture ${face.version}` : "Needed"}</Badge>
+          <h3>Face source</h3>
         </div>
         <div>
           <Photo
+            natural
+            aspectRatio={4 / 5}
             src={face?.consent.granted ? face.imageUrl : null}
             alt={
               face?.consent.granted
@@ -61,14 +63,9 @@ export function BeautyInspector({
           />
           <div>
             <strong>{performer?.name || "Assign a performer"}</strong>
-            {face && (
-              <ProvenanceChip kind={face.synthetic ? "synthetic" : "photo"} />
-            )}
             <Button variant="quiet" onClick={onSource}>
               <UserRound size={13} />
-              {face?.consent.granted
-                ? "Manage face source"
-                : "Add a face source"}
+              {face?.consent.granted ? "Manage face source" : "Add face source"}
             </Button>
           </div>
         </div>
@@ -77,25 +74,10 @@ export function BeautyInspector({
         <div className="section-title">
           <h2>
             <Palette size={16} />
-            The rendered palette
+            Makeup recipe
           </h2>
-          <span className="mono">MATTE / LIP + BLUSH</span>
         </div>
-        <p className="muted">
-          Choose digital colours and provider intensity. These settings are a
-          visual reference, not a calibrated physical product amount.
-        </p>
         <BeautyRecipeFields recipe={recipe} onChange={setRecipe} />
-        <div className="beauty-fixed-policy">
-          <span>
-            <Check size={13} />
-            Skin smoothing set to zero
-          </span>
-          <span>
-            <Check size={13} />
-            Lip reshaping set to zero
-          </span>
-        </div>
         {error && <Notice tone="danger">{error}</Notice>}
         <Button type="submit" busy={busy} disabled={!changed || pending}>
           <Check size={15} />
@@ -106,17 +88,23 @@ export function BeautyInspector({
         <div className="section-title">
           <h3>
             <Sparkles size={15} />
-            Bring the palette into focus
+            Preview
           </h3>
         </div>
-        <p>
-          Makeup VTO creates a separate face detail from this exact source.
-          Inspect lip edges, blush placement, colour, and unintended changes.
-        </p>
         {face?.consent.granted && face.imageUrl ? (
           <>
+            {(config?.recordedBeautyPreviews ?? 1) > 0 && (
+              <Button
+                variant={preview ? "default" : "primary"}
+                busy={state.recordedWorking || state.recordedPending}
+                disabled={changed || !!state.recordedIntent}
+                onClick={() => void state.generate("recorded")}
+              >
+                Use saved result
+                <ArrowRight size={13} />
+              </Button>
+            )}
             <Button
-              variant="primary"
               busy={pending}
               disabled={
                 changed || !!state.intent || !freshPreviewAvailable(config)
@@ -124,50 +112,23 @@ export function BeautyInspector({
               onClick={() => void state.generate("live")}
             >
               <Sparkles size={15} />
-              Generate a fresh makeup detail
+              Generate preview
             </Button>
-            <span className="generation-cost">
-              Est. 1 YouCam unit · shares the production’s generation limits
-            </span>
-            {(config?.recordedBeautyPreviews ?? 1) > 0 && (
-              <Button
-                busy={state.recordedWorking || state.recordedPending}
-                disabled={changed || !!state.recordedIntent}
-                onClick={() => void state.generate("recorded")}
-              >
-                Use matching recorded makeup
-                <ArrowRight size={13} />
-              </Button>
-            )}
-            {changed && (
-              <p className="text-warning">
-                Save the makeup recipe before generating.
-              </p>
-            )}
+            <span className="generation-cost">1 unit</span>
+            {changed && <p className="text-warning">Save the recipe first.</p>}
             <PreviewAvailability config={config} />
           </>
-        ) : (
-          <Notice tone="warning">
-            Add a separately permitted face source before generating a makeup
-            detail.
-          </Notice>
-        )}
+        ) : null}
         <PreviewJobStatus state={state} />
       </section>
       <details className="beauty-crew-direction">
-        <summary>Makeup, hair & application notes</summary>
-        <p>{look.makeup.notes || "No makeup application notes yet."}</p>
+        <summary>Crew notes</summary>
+        <p>{look.makeup.notes || "—"}</p>
         <p>
-          <strong>Hair.</strong> {look.hair || "No hair direction yet."}
+          <strong>Hair.</strong> {look.hair || "—"}
         </p>
         <p>
-          <strong>Accessories.</strong>{" "}
-          {look.accessories || "No accessory direction yet."}
-        </p>
-        <p className="muted">
-          This result renders the lip and blush settings above. Other makeup
-          details, hair, accessories, lighting and physical application remain
-          separate crew direction.
+          <strong>Accessories.</strong> {look.accessories || "—"}
         </p>
       </details>
     </aside>

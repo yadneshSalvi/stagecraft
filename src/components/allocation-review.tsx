@@ -8,13 +8,13 @@ import {
   getAllocationStatus,
 } from "@/lib/domain/allocation-context";
 import { getAllocationAdoptionReview } from "@/lib/domain/allocation-review";
-import { money, revision, time } from "@/lib/format";
+import { money, time } from "@/lib/format";
 import { useProduction } from "./production-context";
 import { Badge, Button, Notice } from "./ui";
 import { FindingSummary } from "./finding-summary";
 import { AllocationChoices } from "./allocation-choices";
 import { ExampleDecisions } from "./example-decisions";
-import { DirectionRepair } from "./direction-repair";
+import { DirectionRepair, DirectionAcknowledgement } from "./direction-repair";
 
 export function AllocationReview({
   result,
@@ -58,12 +58,15 @@ export function AllocationReview({
     if (!focusRequest && !localFocus) return;
     const frame = requestAnimationFrame(() => {
       ref.current?.focus({ preventScroll: true });
-      ref.current?.scrollIntoView({
-        block: "start",
-        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
-      });
+      const top = ref.current?.getBoundingClientRect().top;
+      if (top !== undefined && (top < 80 || top > window.innerHeight - 80)) {
+        ref.current?.scrollIntoView({
+          block: "start",
+          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+        });
+      }
     });
     return () => cancelAnimationFrame(frame);
   }, [focusRequest, localFocus]);
@@ -89,92 +92,71 @@ export function AllocationReview({
       aria-live="polite"
       aria-label="Allocation result"
     >
-      <header>
-        <div>
-          <p className="eyebrow">
-            ALLOCATION {adopted ? "ADOPTED" : "PROPOSAL"} /{" "}
-            {revision(result.adoptionRevision || result.sourceRevision)}
-          </p>
-          <h2>
-            {decisionsNeeded
-              ? decisions.missingLookIds.length
-                ? "A few appearance decisions come first."
-                : "The appearances are reviewed. Recheck the plan."
-              : status === "INFEASIBLE"
-                ? "These commitments conflict."
-                : status === "INVALID_INPUT"
-                  ? "The schedule needs a correction."
-                  : status === "UNKNOWN" || status === "TIME_LIMIT"
-                    ? "The search has not established feasibility."
-                    : adopted
-                      ? "The assignments are in the working book."
-                      : "The physical assignments can work."}
-          </h2>
-        </div>
-        <Badge
-          tone={
-            status === "INFEASIBLE" || status === "INVALID_INPUT"
-              ? "danger"
-              : decisionsNeeded
-                ? "warning"
-                : result.constraintChecked || result.independentlyChecked
-                  ? "success"
-                  : "warning"
-          }
+      <header className="allocation-status-row">
+        <span
+          role="status"
+          aria-label={`Allocation status: ${adopted ? "ADOPTED" : status}`}
         >
-          {decisionsNeeded && !decisions.missingLookIds.length
-            ? "RECHECK NEEDED"
-            : status.replaceAll("_", " ")}
-        </Badge>
-      </header>
-      {decisionsNeeded ? (
-        <div className="allocation-decision-prompt">
-          <p>
-            {decisions.missingLookIds.length ? (
-              <>
-                <strong>
-                  {decisions.missingLookIds.length} of {decisions.looksTotal}{" "}
-                  looks
-                </strong>{" "}
-                need an approved appearance before allocation.
-              </>
-            ) : (
-              <>
-                All {decisions.looksTotal} scheduled looks have an approved
-                appearance. Recompute against the current revision to check the
-                physical commitments.
-              </>
-            )}
-          </p>
-          {decisions.missingLookIds.length > 0 && (
-            <p>
-              Review the exact outputs for the scheduled looks. The wardrobe
-              choices will be checked again after your decisions.
-            </p>
-          )}
-        </div>
-      ) : (
-        <div className="allocation-result-meta">
-          <span>
-            {result.assignments.length} {adopted ? "saved" : "proposed"}{" "}
-            assignments
-          </span>
-          <span>
-            {money(result.totalCostCents, project.currency)} /{" "}
-            {money(project.budgetCents, project.currency)} budget
-          </span>
-          <span
-            className={
-              result.constraintChecked || result.independentlyChecked
-                ? "text-success"
-                : ""
+          <Badge
+            tone={
+              status === "INFEASIBLE" || status === "INVALID_INPUT"
+                ? "danger"
+                : decisionsNeeded
+                  ? "warning"
+                  : result.constraintChecked || result.independentlyChecked
+                    ? "success"
+                    : "warning"
             }
           >
-            {result.constraintChecked || result.independentlyChecked
-              ? "Constraint check passed"
-              : "Constraint check incomplete"}
-          </span>
-        </div>
+            {adopted
+              ? "Adopted"
+              : decisionsNeeded
+                ? decisions.missingLookIds.length
+                  ? "Decisions needed"
+                  : "Recheck needed"
+                : status === "INFEASIBLE"
+                  ? "Conflicts found"
+                  : status === "INVALID_INPUT"
+                    ? "Schedule needs fixing"
+                    : status === "UNKNOWN" || status === "TIME_LIMIT"
+                      ? "Not proven feasible"
+                      : status === "OPTIMAL"
+                        ? "Optimal"
+                        : "Feasible"}
+          </Badge>
+        </span>
+        {!decisionsNeeded && (
+          <div className="allocation-result-meta">
+            <span>{result.assignments.length} assignments</span>
+            <span>
+              {money(result.totalCostCents, project.currency)} of{" "}
+              {money(project.budgetCents, project.currency)}
+            </span>
+            <span
+              className={
+                result.constraintChecked || result.independentlyChecked
+                  ? "text-success"
+                  : ""
+              }
+            >
+              {result.constraintChecked || result.independentlyChecked ? (
+                <>
+                  <Check size={14} aria-hidden="true" /> Checked
+                </>
+              ) : (
+                "Check incomplete"
+              )}
+            </span>
+          </div>
+        )}
+      </header>
+      {decisionsNeeded && decisions.missingLookIds.length > 0 && (
+        <p className="allocation-decision-prompt">
+          <strong>
+            {decisions.missingLookIds.length} of {decisions.looksTotal} looks
+          </strong>{" "}
+          need approval.
+        </p>
       )}
       {currentDecisions.missingLookIds.length > 0 && (
         <div className="allocation-decision-actions">
@@ -186,6 +168,9 @@ export function AllocationReview({
       )}
       <AllocationChoices project={project} result={result} />
       <FindingSummary
+        hiddenGroupCodes={
+          decisionsNeeded ? ["APPEARANCE_APPROVAL_REQUIRED"] : []
+        }
         findings={result.findings.map((finding) =>
           finding.code === "APPEARANCE_APPROVAL_REQUIRED"
             ? { ...finding, severity: "unverified" as const }
@@ -194,7 +179,7 @@ export function AllocationReview({
       />
       {result.assignments.length > 0 && (
         <details className="assignment-details">
-          <summary>Inspect every proposed unit assignment</summary>
+          <summary>Assignments ({result.assignments.length})</summary>
           <div className="table-scroll">
             <table>
               <thead>
@@ -254,18 +239,11 @@ export function AllocationReview({
           <div className="section-title">
             <h3>
               {!review.swaps.length
-                ? "Creative direction to reconcile"
+                ? "Direction to update"
                 : adopted
-                  ? "The garment changes you adopted"
-                  : "These assignments also change the looks"}
+                  ? "Adopted swaps"
+                  : "Garment swaps"}
             </h3>
-            <Badge tone={adopted ? "neutral" : "warning"}>
-              {!review.swaps.length
-                ? "Direction review"
-                : adopted
-                  ? "Recorded changes"
-                  : "Explicit confirmation required"}
-            </Badge>
           </div>
           <ul className="allocation-swap-list">
             {review.swaps.map((swap) => (
@@ -308,8 +286,8 @@ export function AllocationReview({
           {review.creativeFlags.length > 0 && (
             <div className="allocation-direction-flags">
               <h4>
-                <TriangleAlert size={16} /> The old garment is still in the
-                direction.
+                <TriangleAlert size={16} /> Direction still names the old
+                garment
               </h4>
               <ul>
                 {review.creativeFlags.map((flag) => (
@@ -325,11 +303,6 @@ export function AllocationReview({
                   </li>
                 ))}
               </ul>
-              <p>
-                {adopted || !review.swaps.length
-                  ? "Edit these references here, or keep them as a deliberate creative choice."
-                  : "Review these references before confirming the swap. You can reconcile the direction after adoption."}
-              </p>
               {(adopted || !review.swaps.length) &&
                 [
                   ...new Set(
@@ -341,13 +314,20 @@ export function AllocationReview({
                   );
                   return character ? (
                     <DirectionRepair
-                      key={id}
+                      key={`${id}:${character.direction.revision}`}
                       character={character}
                       busy={busy}
                       onSave={saveDirection}
                     />
                   ) : null;
                 })}
+              {review.creativeFlags.map((flag) => (
+                <DirectionAcknowledgement
+                  key={`${flag.characterId}:${flag.unitId}`}
+                  characterId={flag.characterId}
+                  unitId={flag.unitId}
+                />
+              ))}
             </div>
           )}
           {review.confirmationRequired && isCurrent && (
@@ -362,10 +342,7 @@ export function AllocationReview({
                   )
                 }
               />
-              <span>
-                I have reviewed these exact garment changes and direction
-                references. Adopt this proposal.
-              </span>
+              <span>I’ve reviewed these garment swaps.</span>
             </label>
           )}
         </section>
@@ -373,17 +350,17 @@ export function AllocationReview({
       {adopted && currentDecisions.missingLookIds.length > 0 && (
         <Notice tone="warning">
           {currentDecisions.missingLookIds.length} current look
-          {currentDecisions.missingLookIds.length === 1 ? " needs" : "s need"} a
-          new appearance decision. Review the existing outputs, then check the
-          allocation again.
+          {currentDecisions.missingLookIds.length === 1
+            ? " needs"
+            : "s need"}{" "}
+          reapproval.
         </Notice>
       )}
       <div className="allocation-adopt">
         <details className="allocation-policy">
-          <summary>How the allocator decides</summary>
+          <summary>Method</summary>
           <p>
-            {result.policy}
-            <span className="mono">{result.solver}</span>
+            Hard constraints first, then lowest cost, then fewest changeovers.
           </p>
         </details>
         {!isCurrent ? (
@@ -394,9 +371,7 @@ export function AllocationReview({
                 setLocalFocus((value) => value + 1);
             }}
           >
-            {adopted
-              ? "Check the allocation again"
-              : "Recompute against current revision"}
+            {adopted ? "Recheck" : "Recompute"}
           </Button>
         ) : !decisionsNeeded && !adopted ? (
           <Button
