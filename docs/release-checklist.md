@@ -4,7 +4,7 @@ This checklist separates current review-round checks from the preceding deployed
 
 Review round two starts from repository commit `4bc1176`, whose application is `deaf490`. It adds decisions-needed allocation guidance, exact garment-swap confirmation, verified recorded-pair suggestions, comparative choices and a refreshed change-review return. No new YouCam submissions, recordings, schema migrations or environment changes are part of this round. The canonical application is [stagecraft-swart.vercel.app](https://stagecraft-swart.vercel.app).
 
-## Review round two — current gate
+## Review round two — released and verified
 
 - [x] Focused domain checks: 95 tests across five files, including 18 new round-two regressions and the existing independent allocation oracle.
 - [x] Focused backend checks: 53 tests across six files, including 19 library cases covering trusted identities, altered source evidence, owner isolation and recorded-only completion while fresh generation rests.
@@ -15,7 +15,9 @@ Review round two starts from repository commit `4bc1176`, whose application is `
 - [x] Full Chromium gate against the corrected optimized build: **19/19 in 201.813 seconds**, zero failures, skips or retries. It includes both-approved repair selection and preserved exact evidence, recorded-only own-script completion, confirmation races, both same-production repaired-coat recasts and all existing accessibility, private ownership, recovery, sourcing and handoff cases. [Correction record](evidence/review-round2-repair-verification.json). The earlier local 226/18 gate and canonical 18/18 gate are retained as baseline history, not coverage of the newly found combination.
 - [x] Regenerated crew PDF: 19 A4 pages, 27 loaded images, keyboard/ARIA readiness disclosure and automatic printing of every frozen requirement. No PDF layout source changed in this round.
 - [x] Root rebuilt source/client scan: 285 text files including 33 client chunks, 27 configured secret values, zero findings before final documentation. The earlier dry deployment inventory and complete library-route trace are retained in the baseline record; final staged inventory is checked separately.
-- [ ] Final staged publication review, deployment and fresh canonical acceptance.
+- [x] Final staged source/client review: 286 text files including 33 client chunks, 27 configured secret values, zero findings. Vercel dry inventory: 317 entries, zero private files. Application `8310862` is READY as `dpl_3QZ2BZEaVKZjnYPF5ypXQZ5eoyRs`.
+- [x] Fresh canonical full run: 18 passed and one test-locator failure in 389.870 seconds. Two valid extracted scenes shared a title; the test selector was scoped to scene number/story day. The failed own-script case then passed independently in 29.878 seconds on the same deployment. All 19 distinct cases are covered across the full run and focused follow-up, with no skips, automatic retries or paid YouCam submissions. Both attempts remain recorded.
+- [x] Independent production IAB: the retained both-approved repair now offers both coats; Burgundy adoption preserves its reviewed appearances and reports two looks, three scenes, three calls and twelve preserved costume/detail approvals. A later £465 Charcoal allocation lists its exact swap and requires new explicit confirmation. [Production acceptance](evidence/review-round2-production-verification.json).
 
 Optional balance-lock optimization, provider-checked orphan reconciliation and long-script chunking remain deferred with their safety and scope reasons in [operations](operations.md#optional-follow-up-work-assessed-in-review-round-two).
 

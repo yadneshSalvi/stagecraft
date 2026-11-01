@@ -1,0 +1,76 @@
+{
+  "applicationSourceCommit": "8310862fb13be94f3748916963293fa41e45b215",
+  "fullSuite": {
+    "passed": 18,
+    "failed": 1,
+    "skipped": 0,
+    "retries": 0,
+    "durationSeconds": 389.87,
+    "bothApprovedRepairPassed": true
+  },
+  "focusedFollowup": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "durationSeconds": 29.878
+  },
+  "coverage": {
+    "distinctCasesPassedAfterTestOnlyCorrection": 19,
+    "applicationDeploymentUnchanged": true,
+    "passingFullSuiteRepeated": false,
+    "freshYouCamSubmissions": 0
+  },
+  "note": "The full19-case attempt had18passes and1test-locator failure from duplicate valid scene titles. Only the approved test selector was changed; the failed own-script case then passed independently on the same deployment. Both original reports are retained.",
+  "version": 1,
+  "verifiedAt": "2026-11-01T05:07:33.843997+00:00",
+  "scope": "STAGECRAFT review round two production acceptance",
+  "canonicalUrl": "https://stagecraft-swart.vercel.app",
+  "deploymentId": "dpl_3QZ2BZEaVKZjnYPF5ypXQZ5eoyRs",
+  "deploymentUrl": "https://stagecraft-bcjzju36b-yadneshsalvis-projects.vercel.app",
+  "deploymentState": "READY",
+  "testCorrection": {
+    "file": "tests/e2e/own-script.spec.ts",
+    "reason": "Two valid Gemini scene titles matched the same edit-button label. Scope the button to its unique scene number and story day and assert one call.",
+    "applicationChange": false,
+    "staticChecks": "Scoped formatting, lint and TypeScript passed",
+    "followupExtraction": "4/4 grounded cues; two approved recorded looks and two adopted allocations; zero fresh requests"
+  },
+  "independentInAppBrowser": {
+    "preReleaseFinding": "Both coats were approved, but the original repair comparison incorrectly disabled Burgundy after its scratch solve preferred cheaper Charcoal.",
+    "correctedSameSavedProduction": "Reload refreshed the impact: both coats became reviewable. Explicit Burgundy adoption retained approved appearances across all three Nora story-day cards.",
+    "impactReceipt": {
+      "looks": 2,
+      "scenes": 3,
+      "calls": 3,
+      "preservedAppearanceApprovals": 6,
+      "preservedMakeupApprovals": 2,
+      "preservedHairOrAccessoryApprovals": 4,
+      "preservedTotal": 12
+    },
+    "subsequentOrdinaryAllocation": "OPTIMAL GBP465 proposes C033 Burgundy to C021 Charcoal for two looks and three calls. Exact swaps and old direction references are visible; Adopt is disabled unchecked, enabled checked, disabled after clearing. This later proposal was not adopted.",
+    "earlierRoundTwoAcceptance": "Amber eight-of-eight decision guidance and explicit sample decisions to FEASIBLE GBP500; unsupported Ada garment suggestions and recorded-ready badges verified locally at desktop and actual390x844 with no document overflow. Production legacy proposal received new confirmation guards."
+  },
+  "publicationChecks": {
+    "textFiles": 286,
+    "clientFiles": 33,
+    "configuredSecretValuesChecked": 27,
+    "secretFindings": 0,
+    "sourceManifestEntries": 317,
+    "sourceBytes": 30034815,
+    "privateFiles": 0,
+    "note": "Pre-application-commit source/client and Vercel dry inventory; final documentation-only scan is separate."
+  },
+  "providerBudget": {
+    "roundTwoPaidTasks": 0,
+    "newRecordings": 0,
+    "unchangedRecordedOutputs": 20,
+    "balance": 962,
+    "balanceCheckedAt": "2026-11-01T05:05:30.321Z"
+  },
+  "limits": [
+    "Synthetic production and agent-operated software checks; no practitioner study, physical fitting or supplier result.",
+    "Automated Chromium/accessibility checks do not certify every device or assistive technology.",
+    "Optional balance-lock optimization, provider-checked orphan cleanup and long-script chunking remain deferred with reasons in operations.md."
+  ]
+}

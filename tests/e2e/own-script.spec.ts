@@ -658,7 +658,14 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
     const first = structuredClone(p.occurrences[0]),
       second = p.occurrences[1],
       secondScene = p.scenes.find((scene) => scene.id === second.sceneId)!;
-    await page
+    const secondCall = page.getByRole("article").filter({
+      has: page.getByText(
+        `SC ${secondScene.number} · STORY DAY ${secondScene.storyDay}`,
+        { exact: true },
+      ),
+    });
+    await expect(secondCall).toHaveCount(1);
+    await secondCall
       .getByRole("button", {
         name: `Edit ${secondScene.title} call`,
         exact: true,

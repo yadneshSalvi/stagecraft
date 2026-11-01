@@ -66,3 +66,7 @@ Fresh generation is deliberate: a garment estimates 2 units; makeup, hair colour
 There are 20 recorded outputs across four provider operations, not 20 participant outcomes. [Source and image provenance](asset-licenses.md), [AI visual review](evaluation-ai.md), [full Act I import observations](evidence/script-import-review.json), [domain verification](evaluation.md) and [release checks](release-checklist.md) state the denominators and limits.
 
 The public-domain Act I test retained its initial 6/9 grounding result and the improved 8/8 result. Pure-engine timings measure software work only. No human study, fitting, real supplier transaction, time saving, environmental benefit or identity guarantee is claimed.
+
+## Round-two release evidence
+
+The live application is `8310862`. Local gates passed 232 unit/database tests and 19 browser cases. Production acceptance covered all 19 cases across an 18-pass full run and a corrected scene-selector follow-up on the same deployment; the original test failure is retained. Independent in-app review confirmed exact coat repair, the computed preservation receipt and subsequent explicit swap confirmation. No new YouCam unit was spent. [Production verification](evidence/review-round2-production-verification.json).
