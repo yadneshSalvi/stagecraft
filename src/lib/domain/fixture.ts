@@ -300,8 +300,7 @@ export function createExampleProduction(
       ],
     },
   ];
-  let scriptText =
-    "THE LAST LIGHT\nAn original synthetic short-film extract for STAGECRAFT.\nAll characters are fictional adults.\n\n";
+  let scriptText = "";
   production.scenes = blocks.map((block): Scene => {
     const start = scriptText.length;
     const segment = `SCENE ${block.number} - STORY DAY ${block.day}\n${block.heading}\n\n${block.cues.join("\n")}\n\n`;

@@ -1245,16 +1245,18 @@ test("a recorded charcoal repair survives a refreshed impact and a Celeste recas
     `${refreshedImpact.sceneIds.length} scenes · ${refreshedImpact.occurrenceIds.length} calls`,
   );
   const preserved = dialog.locator(".impact-preserved");
-  for (const [label, count] of [
-    ["look approvals", refreshedImpact.preservedApprovalIds.length],
-    ["makeup approvals", refreshedImpact.preservedBeautyApprovalIds!.length],
+  for (const [noun, count] of [
+    ["look approval", refreshedImpact.preservedApprovalIds.length],
+    ["makeup approval", refreshedImpact.preservedBeautyApprovalIds!.length],
     [
-      "hair & necklace approvals",
+      "hair & necklace approval",
       refreshedImpact.preservedDetailApprovalIds!.length,
     ],
   ] as const) {
     expect(count).toBeGreaterThan(0);
-    await expect(preserved).toContainText(`${count} ${label}`);
+    await expect(preserved).toContainText(
+      `${count} ${noun}${count === 1 ? "" : "s"}`,
+    );
   }
   for (const look of p.looks.filter(
     (item) => item.characterId === "char-nora",

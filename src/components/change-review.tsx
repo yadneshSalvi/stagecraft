@@ -33,6 +33,8 @@ type ChangeReviewProps = {
   refreshImpactOnOpen?: boolean;
 };
 
+const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+
 export function ChangeReview(props: ChangeReviewProps) {
   return props.open ? <ChangeReviewSession {...props} /> : null;
 }
@@ -602,19 +604,26 @@ function ChangeReviewSession({
               <ul>
                 {proposal.impact.preservedApprovalIds.length > 0 && (
                   <li>
-                    {proposal.impact.preservedApprovalIds.length} look approvals
+                    {count(
+                      proposal.impact.preservedApprovalIds.length,
+                      "look approval",
+                    )}
                   </li>
                 )}
                 {!!proposal.impact.preservedBeautyApprovalIds?.length && (
                   <li>
-                    {proposal.impact.preservedBeautyApprovalIds.length} makeup
-                    approvals
+                    {count(
+                      proposal.impact.preservedBeautyApprovalIds.length,
+                      "makeup approval",
+                    )}
                   </li>
                 )}
                 {!!proposal.impact.preservedDetailApprovalIds?.length && (
                   <li>
-                    {proposal.impact.preservedDetailApprovalIds.length} hair &
-                    necklace approvals
+                    {count(
+                      proposal.impact.preservedDetailApprovalIds.length,
+                      "hair & necklace approval",
+                    )}
                   </li>
                 )}
                 <li>Script & chronology</li>
@@ -638,27 +647,40 @@ function ChangeReviewSession({
                 </li>
                 {proposal.impact.invalidatedApprovalIds.length > 0 && (
                   <li>
-                    {proposal.impact.invalidatedApprovalIds.length} look{" "}
-                    {adopted ? "decisions" : "approvals"}
+                    {count(
+                      proposal.impact.invalidatedApprovalIds.length,
+                      adopted ? "look decision" : "look approval",
+                    )}
                   </li>
                 )}
                 {!!proposal.impact.invalidatedBeautyApprovalIds?.length && (
                   <li>
-                    {proposal.impact.invalidatedBeautyApprovalIds.length} makeup{" "}
-                    {adopted ? "decisions" : "approvals"}
+                    {count(
+                      proposal.impact.invalidatedBeautyApprovalIds.length,
+                      adopted ? "makeup decision" : "makeup approval",
+                    )}
                   </li>
                 )}
                 {!!proposal.impact.invalidatedDetailApprovalIds?.length && (
                   <li>
-                    {proposal.impact.invalidatedDetailApprovalIds.length} hair &
-                    necklace {adopted ? "decisions" : "approvals"}
+                    {count(
+                      proposal.impact.invalidatedDetailApprovalIds.length,
+                      adopted
+                        ? "hair & necklace decision"
+                        : "hair & necklace approval",
+                    )}
                   </li>
                 )}
                 {proposal.impact.sourcingIds.length > 0 && (
-                  <li>{proposal.impact.sourcingIds.length} sourcing records</li>
+                  <li>
+                    {count(
+                      proposal.impact.sourcingIds.length,
+                      "sourcing record",
+                    )}
+                  </li>
                 )}
                 {proposal.impact.packIds.length > 0 && (
-                  <li>{proposal.impact.packIds.length} crew packs</li>
+                  <li>{count(proposal.impact.packIds.length, "crew pack")}</li>
                 )}
               </ul>
             </section>

@@ -210,12 +210,12 @@ export function ScriptBreakdown() {
               aria-label="Original script source"
               tabIndex={0}
             >
-              <header>
-                <span className="mono">
-                  {displayFixtureText(project.script.label, project.fixture)}
-                </span>
-              </header>
-              <h2>{project.script.title}</h2>
+              {!project.script.text
+                .trimStart()
+                .toLowerCase()
+                .startsWith(project.script.title.trim().toLowerCase()) && (
+                <h2>{project.script.title}</h2>
+              )}
               <pre>
                 {highlight &&
                 highlight.start >= 0 &&

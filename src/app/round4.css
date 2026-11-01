@@ -145,3 +145,24 @@ aside.recipe-inspector .recipe-form .section-title {
 .allocation-result .allocation-adopt > .button {
   align-self: flex-end;
 }
+
+/* Script: the paper opens with the title once. */
+.script-paper > h2:first-child {
+  margin-top: 8px;
+}
+
+/* Handoff: Crew packs uses the same section heading as Sourcing. */
+.packs-section .section-title h2 {
+  font:
+    500 28px var(--font-sans),
+    sans-serif;
+  letter-spacing: 0;
+}
+
+/* Landing: costume and makeup share one smaller height. */
+@media (min-width: 701px) {
+  .look-pair-images .photo,
+  .look-pair-images figure:nth-child(2) .photo {
+    height: clamp(240px, 20vw, 288px);
+  }
+}

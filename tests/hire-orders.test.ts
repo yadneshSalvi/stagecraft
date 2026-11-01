@@ -64,7 +64,7 @@ describe("supplier hire-order exports", () => {
     });
     const csv = hireOrderCsv(project, record.supplier);
     expect(csv).toContain('"cancelled","Needs renewed review"');
-    expect(csv).toContain('"Synthetic sample"');
+    expect(csv).toContain('"Example"');
     expect(csv).toContain('"Quote ""A"", 12"');
     expect(csv).toContain('"First line\nSecond line"');
     expect(csv).toContain(record.from);

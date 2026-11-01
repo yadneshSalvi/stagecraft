@@ -211,7 +211,7 @@ export function CastManager({
                   checked={synthetic}
                   onChange={(event) => setSynthetic(event.target.checked)}
                 />
-                Synthetic reference
+                Example reference
               </label>
             </>
           ) : (

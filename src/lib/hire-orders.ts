@@ -90,9 +90,7 @@ export function hireOrderCsv(project: Production, supplier: string): string {
       (request.quoteCents / 100).toFixed(2),
       project.currency,
       request.quoteValidUntil,
-      request.provenance === "synthetic"
-        ? "Synthetic sample"
-        : "Manually recorded",
+      request.provenance === "synthetic" ? "Example" : "Manually recorded",
       request.operator || "",
       request.externalReference || "",
       request.evidence || "",

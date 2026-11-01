@@ -161,13 +161,16 @@ export function WardrobeWorkspace() {
                       : "Unused"}
                   </p>
                   <small>
-                    {looks
-                      .map(
-                        (look) =>
-                          project.characters.find(
-                            (c) => c.id === look.characterId,
-                          )?.name,
-                      )
+                    {[
+                      ...new Set(
+                        looks.map(
+                          (look) =>
+                            project.characters.find(
+                              (c) => c.id === look.characterId,
+                            )?.name,
+                        ),
+                      ),
+                    ]
                       .filter(Boolean)
                       .join(" / ")}
                   </small>

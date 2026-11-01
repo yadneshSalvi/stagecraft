@@ -12,7 +12,10 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { Occurrence, Production, ProductionMode } from "@/lib/types";
-import { getAllocationDecisionSummary } from "@/lib/domain/allocation-context";
+import {
+  getAllocationDecisionSummary,
+  getAllocationStatus,
+} from "@/lib/domain/allocation-context";
 import { day, time, money } from "@/lib/format";
 import { useProduction } from "./production-context";
 import { Badge, Button, EmptyState, Notice, PageHeading } from "./ui";
@@ -137,9 +140,12 @@ export function ScheduleWorkspace() {
           <Clock3 size={13} />
           {project.timeZone}
         </span>
-        <span className="mono">
-          Budget {money(project.budgetCents, project.currency)}
-        </span>
+        {(!result ||
+          getAllocationStatus(project, result) === "DECISIONS_NEEDED") && (
+          <span className="mono">
+            Budget {money(project.budgetCents, project.currency)}
+          </span>
+        )}
       </div>
       {mode === "live_performance" && (
         <Notice tone="warning">

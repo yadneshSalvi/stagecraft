@@ -179,7 +179,7 @@ export function AllocationReview({
       />
       {result.assignments.length > 0 && (
         <details className="assignment-details">
-          <summary>Assignments ({result.assignments.length})</summary>
+          <summary>Assignments</summary>
           <div className="table-scroll">
             <table>
               <thead>

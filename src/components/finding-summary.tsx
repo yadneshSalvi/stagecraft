@@ -69,12 +69,14 @@ export function FindingSummary({
                     {labels[entries[0].code] || entries[0].message}
                   </strong>
                   <span>
-                    {units.size
-                      ? `${units.size} unit${units.size === 1 ? "" : "s"}`
-                      : ""}
-                    {calls.size
-                      ? ` · ${calls.size} call${calls.size === 1 ? "" : "s"}`
-                      : ""}
+                    {[
+                      units.size &&
+                        `${units.size} unit${units.size === 1 ? "" : "s"}`,
+                      calls.size &&
+                        `${calls.size} call${calls.size === 1 ? "" : "s"}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </span>
                 </div>
               </div>

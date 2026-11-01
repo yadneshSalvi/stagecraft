@@ -235,7 +235,7 @@ export function SourcingDialog({
     const lines = [
       `STAGECRAFT · ${project.title}`,
       `SOURCING ${request.status.toUpperCase()} · ${revision(request.sourceRevision)}`,
-      `Provenance: ${request.provenance === "synthetic" ? "SYNTHETIC EXERCISE — NO REAL TRANSACTION" : "MANUALLY RECORDED"}`,
+      `Provenance: ${request.provenance === "synthetic" ? "Example" : "MANUALLY RECORDED"}`,
       `Supplier: ${request.supplier}`,
       `Window: ${request.from} to ${request.to}`,
       ...request.unitIds.map((id) => {
