@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -38,6 +38,7 @@ export function ProductionBoard({
 }) {
   const { project } = useProduction();
   const router = useRouter();
+  const consumedReturn = useRef(false);
   const [intent, setIntent] = useState({
     initialUnitId,
     initialCharacterId,
@@ -64,12 +65,23 @@ export function ProductionBoard({
   );
   const base = `/production/${project.id}`;
   useEffect(() => {
-    if (!initialUnitId && !initialCharacterId && !refreshImpactOnOpen) return;
+    if (
+      consumedReturn.current ||
+      (!initialUnitId && !initialCharacterId && !refreshImpactOnOpen) ||
+      window.location.pathname !== base
+    )
+      return;
     const params = new URLSearchParams(window.location.search);
-    for (const key of ["impact", "change", "recast", "performer"])
-      params.delete(key);
+    const keys = ["impact", "change", "recast", "performer"];
+    if (!keys.some((key) => params.has(key))) return;
+    // A consumed return must not replace a later sidebar navigation.
+    consumedReturn.current = true;
+    for (const key of keys) params.delete(key);
     const query = params.toString();
-    router.replace(`${base}${query ? `?${query}` : ""}`, { scroll: false });
+    router.replace(
+      `${base}${query ? `?${query}` : ""}${window.location.hash}`,
+      { scroll: false },
+    );
   }, [base, initialUnitId, initialCharacterId, refreshImpactOnOpen, router]);
   if (!project.scenes.length && !project.characters.length)
     return (

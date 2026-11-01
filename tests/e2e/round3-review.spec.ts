@@ -492,6 +492,24 @@ for (const viewport of [
             .click(),
         );
         project = await result(refreshed);
+        // Re-enter through the real return link without reloading before adoption.
+        // The earlier reload assertion must not mask stale return navigation.
+        await dialog
+          .getByRole("link", { name: "Compare alternatives", exact: true })
+          .click();
+        await expect(
+          page.getByRole("heading", { name: "Looks", exact: true }),
+        ).toBeVisible();
+        const resumedForAdoption = nextCommand(page, "propose_change");
+        await page
+          .getByRole("link", { name: "Return to change review", exact: true })
+          .click();
+        project = await result(resumedForAdoption);
+        await expect(page).toHaveURL(new RegExp(`/production/${id}$`));
+        dialog = page.getByRole("dialog", {
+          name: "Change impact",
+          exact: true,
+        });
         const readyOption = project.proposals
           .at(-1)!
           .options.find(
@@ -607,7 +625,21 @@ for (const viewport of [
         await reopened
           .getByRole("button", { name: "Cancel", exact: true })
           .click();
-        await visitWorkspace(page, `/production/${id}/schedule`);
+        await expect(
+          page.getByRole("status").filter({ hasText: /^\s*Saved\s*$/ }),
+        ).toBeVisible();
+        expect((await snapshot(page, id)).revision).toBe(project.revision);
+        await page
+          .getByRole("navigation", {
+            name: "Production navigation",
+            exact: true,
+          })
+          .getByRole("link", { name: "Schedule", exact: true })
+          .click();
+        await expect(page).toHaveURL(new RegExp(`/production/${id}/schedule$`));
+        await expect(
+          page.getByRole("heading", { name: "Schedule", exact: true }),
+        ).toBeVisible();
         project = await command(page, "solve_allocation", () =>
           page
             .getByRole("button", { name: "Check allocation", exact: true })
