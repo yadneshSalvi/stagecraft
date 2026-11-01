@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "completedAt": "2026-11-01T04:36:31Z",
+  "scope": "STAGECRAFT review round two: local optimized-build verification, with separate independent local browser acceptance",
+  "baselineCommit": "4bc117664d2d4d2fa02b41d72e68bfb00c8ca152",
+  "environment": {
+    "node": "22.22.3",
+    "next": "16.4.3",
+    "browser": "Playwright Chromium",
+    "database": "isolated local PostgreSQL"
+  },
+  "staticChecks": {
+    "formatting": "passed",
+    "eslint": "passed",
+    "typescript": "passed",
+    "optimizedBuild": "passed",
+    "diffWhitespace": "passed"
+  },
+  "unitIntegration": {
+    "command": "pnpm test",
+    "files": 21,
+    "passed": 226,
+    "failed": 0,
+    "skipped": 0,
+    "durationSeconds": 16.73,
+    "providerCalls": "Transport doubles; no paid YouCam submission"
+  },
+  "browser": {
+    "command": "pnpm exec playwright test --workers=1 --retries=0",
+    "optimizedBuild": true,
+    "workers": 1,
+    "retries": 0,
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "startedAt": "2026-11-01T04:32:22.765Z",
+    "durationSeconds": 199.939,
+    "coverage": [
+      "Eleven workspace surfaces at desktop and 390px: automated WCAG checks, contained scene-list scrolling and dialog focus restoration",
+      "Public landing and evidence accessibility and narrow-viewport overflow",
+      "Exact-output and creative-intent approval races preserve entered review notes and original targets",
+      "Supplier CSV and printable PDF preserve quotation evidence without changing the production",
+      "Actual Gemini script import, grounded original source spans, Own clothes scope, performer-specific Ready preview badges and unsupported-pair suggestions",
+      "Explicit same-performer garment selection, recorded auto-attachment, exact approval, editable drafted calls and adopted allocation without fresh generation",
+      "Private direct upload persistence, other-owner denial and permission withdrawal",
+      "Same-production burgundy repair, direction reapproval using unchanged pixels, sourcing, Celeste recast, independent detail approvals and frozen handoff",
+      "Losing-original recipe and unique-unit production-cost comparison, visible swaps and creative-reference flags before adoption",
+      "Recomputed identical allocation invalidates confirmation; the stale confirmation API request is rejected without mutation",
+      "Schedule first shows amber eight-of-eight decisions needed; explicit sample decisions automatically recheck a FEASIBLE GBP 500 plan",
+      "Same-production charcoal repair and Celeste recast preserve exact reviewed outputs and unrelated approvals; both allocations reach GBP 465",
+      "Returning to the same change refreshes its impact; an injected transient failure exposes a retry instead of showing a misleading chooser",
+      "Rate-limited session reads preserve browser ownership and saved request identity",
+      "Stale revisions are explained inside the approval dialog and permit an explicit retry",
+      "Interrupted recorded receipt recovers using GET without another POST",
+      "Deterministic fresh refusal clears pending intent while recorded replay stays available",
+      "Uncertain fresh receipt retains its identity; status-only recovery and recorded reuse remain independent",
+      "Unavailable fresh-availability response does not hide recorded reuse"
+    ],
+    "youcamSpend": "Zero paid YouCam submissions; fresh-response simulations are intercepted before the application",
+    "otherExternalCalls": "One actual short Gemini extraction in the final full run; private upload verification uses the configured private Blob store"
+  },
+  "focusedAttempts": {
+    "domain": {
+      "passed": 95,
+      "files": 5,
+      "newRoundTwoCases": 18,
+      "durationSeconds": 4.35
+    },
+    "backend": {
+      "passed": 53,
+      "files": 6,
+      "libraryCases": 19,
+      "durationSeconds": 5.29
+    },
+    "scheduleFirst": {
+      "passed": 1,
+      "durationSeconds": 9.4
+    },
+    "ownScript": {
+      "initialAttempt": "Failed only on an exact-label test locator; application state and recorded-ready badges were correct. Diagnostics retained privately.",
+      "correctedAttempt": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "durationSeconds": 17.145,
+        "groundedCues": 4,
+        "proposedCues": 4,
+        "droppedCues": 0,
+        "recordedAttachments": 2,
+        "freshRequests": 0,
+        "adoptedAssignments": 2,
+        "uniqueUnitQuoteGbp": 145
+      }
+    },
+    "confirmationAndCharcoalRecast": {
+      "passed": 2,
+      "durationSeconds": 20.6
+    }
+  },
+  "independentLocalBrowser": {
+    "operator": "Root orchestration agent using the in-app browser",
+    "scheduleFirst": "Amber 8/8 missing approvals; explicit example decisions yielded FEASIBLE GBP 500",
+    "confirmedSwap": "With oxblood available, approved burgundy yielded OPTIMAL GBP 485, two changed looks, three scenes and a visible direction concern. Recompute cleared confirmation; adoption saved seventeen assignments. A later solve retained the direction concern.",
+    "recordedGuidance": "Ada plus an unsupported dress offered three verified garments for Ada; selecting C-033 yielded Ready preview. Creation was disabled while checking.",
+    "viewport": "1280 by 720 desktop; actual 390 by 844 mobile had document width 390",
+    "paidProviderTasks": 0
+  },
+  "crewPdf": {
+    "regenerated": true,
+    "pages": 19,
+    "paper": "A4",
+    "loadedImages": 27,
+    "onlineRequirements": "Collapsed by default; keyboard and ARIA expansion checked without revision mutation",
+    "printRequirements": "All frozen requirements automatically visible even when collapsed online",
+    "visualInspection": "No new PDF layout change in this round. The previous release records visual inspection of the unchanged makeup, hair and necklace sections; this round regenerated the PDF and checked its page count and loaded images."
+  },
+  "independentPublicationChecks": {
+    "sourceAndClientTextFiles": 283,
+    "clientFiles": 33,
+    "configuredSecretValuesChecked": 27,
+    "secretFindings": 0,
+    "deploymentSourceFiles": 314,
+    "deploymentSourceBytes": 29997955,
+    "forbiddenPrivatePaths": 0,
+    "libraryTrace": {
+      "recordingManifests": 5,
+      "transportManifests": 2,
+      "transports": 17,
+      "garmentOutputs": 12,
+      "castSources": 9,
+      "garmentReferences": 7,
+      "allTracedFilesExist": true
+    },
+    "scope": "Root inspected the optimized source/client output and deployment dry manifest before final verification documentation was added; staged publication review remains a separate release step."
+  },
+  "unchangedProviderEvidence": {
+    "recordedOutputs": 20,
+    "operations": 4,
+    "newYouCamSubmissionsThisRound": 0,
+    "newRecordingsThisRound": 0,
+    "originalFixtureHashes": "unchanged"
+  },
+  "optionalDeferrals": [
+    "Balance GET relocation requires a validated snapshot plus locked reservation recalculation at enqueue and submission; existing atomic floor checks remain unchanged.",
+    "Ambiguous/orphan reservations are not expired from age alone: lost task identity can prevent provider verification.",
+    "Script chunking requires cross-chunk identity and exact-offset merging; the bounded 60000-character document and 32000-token output path remains explicit."
+  ],
+  "scopeLimits": [
+    "Synthetic productions, source artwork and explicit software-test decisions",
+    "No practitioner study, physical fitting, real supplier outcome, human time saving or environmental result",
+    "Automated accessibility and Chromium checks do not certify all assistive technologies or browsers",
+    "Canonical deployment and acceptance are separate release steps, not inferred from this local run"
+  ]
+}

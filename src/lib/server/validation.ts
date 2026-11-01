@@ -415,6 +415,15 @@ export const commandSchema = z.discriminatedUnion("type", [
     .object({
       type: z.literal("adopt_allocation"),
       inputHash: z.string().regex(/^[a-f0-9]{64}$/),
+      confirmation: z
+        .object({
+          proposalId: identifier,
+          inputHash: z.string().regex(/^[a-f0-9]{64}$/),
+          sourceRevision: nonnegative,
+          reviewHash: z.string().regex(/^[a-f0-9]{64}$/),
+        })
+        .strict()
+        .optional(),
     })
     .strict(),
   z

@@ -2,7 +2,27 @@
 
 This reports software verification on explicitly synthetic productions. No practitioner study, real-performer fitting, physical realization, supplier reservation or human time saving is claimed. Actual provider-image review is documented separately in [evaluation-ai.md](evaluation-ai.md).
 
-## Observed review-round verification
+## Review round 2 integrated checks
+
+On 1 November 2026, full formatting, ESLint, TypeScript and the optimized build passed. The serial unit/PostgreSQL suite passed **226 tests across 21 files in 16.73 seconds**, with zero skips. The optimized local Chromium suite then passed **18/18 in 199.939 seconds**, with zero failures, skips or retries. It includes all earlier accessibility, ownership, recovery, sourcing and independent-detail journeys plus Schedule-first decision guidance, exact swap-confirmation invalidation, same-production charcoal repair → Celeste recast and recorded-pair suggestions through adopted allocation. The crew PDF regenerated as 19 A4 pages with 27 loaded images and every frozen requirement available in print. [Sanitized round-two record](evidence/review-round2-local-verification.json).
+
+The own-script browser test makes an actual short Gemini extraction; recorded YouCam journeys submit no fresh task. A focused version of that path initially failed only on a test label locator. After correcting the locator, it passed with 4/4 grounded proposed cues, two recorded approvals and two adopted assignments at the £145 unique-unit quote. The initial test diagnostics are retained privately; this does not measure human completion time or total cue recall.
+
+Nineteen new library checks verify source/transport/output identities, category and trusted imports; reject forged or changed lineage; enforce owner and capture permission; and complete a recorded-only allocation while fresh generation is paused. The full suite also retains the existing server recovery and budget checks. Root separately inspected the local app at 1280×720 and actual 390×844, verified the amber £500 path and confirmed £485 burgundy swaps, and found no document overflow. Canonical deployment acceptance remains a separate release step.
+
+## Review round 2 domain checks
+
+The following focused command completed with **95 tests across five files passing in 4.35 seconds** on 1 November 2026:
+
+```sh
+pnpm exec vitest run tests/domain-r2.test.ts tests/domain-review.test.ts tests/allocation.test.ts tests/domain.test.ts tests/domain-beauty.test.ts --reporter=dot
+```
+
+The 18 new round-two cases verify unique scheduled dressed-look decision counts; own-clothes and unscheduled exclusions; a scoped approval covering both Nora looks; genuine overlap, unavailable stock and hard-budget failures despite missing approvals; compatible legacy readers and no-swap adoption; exact proposal/revision/input/review confirmation; stale recompute, fact, intent, candidate scope and revocation races; preserved approved identities and frozen snapshots; removed-reference flags through adoption/recompute and explicit restoration; multi-unit recipe slot preservation; and actual losing-choice costs, overlaps, availability, budget and changeovers. The existing separate brute-force oracle still covers 192 generated physical resource/budget cases.
+
+These are pure software checks using explicit schema-valid test outputs. No provider, database, browser, build, supplier or physical operation was run for this focused domain gate. The integrated observations above cover the full local application; deployment verification is separate.
+
+## Review round 1 integrated observations
 
 The integrated local gate completed on 31 October 2026 UTC (1 November IST): **188 tests across 19 files passed in 13.71 seconds**, followed by **16/16 Chromium browser tests against the optimized build**, with no failures or skips, in 3.2 minutes as reported by Playwright. The browser suite includes actual short Gemini extraction through allocation, exact recorded-only YouCam journeys, both approval races, identity-preserving session recovery, private uploads, and 11 desktop/390px workspace surfaces. The frozen crew PDF has 19 A4 pages and 27 loaded images; its separate makeup, hair and necklace sections were visually inspected. [Sanitized integrated record](evidence/review-local-verification.json).
 

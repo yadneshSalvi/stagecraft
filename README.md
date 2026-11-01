@@ -2,6 +2,8 @@
 
 **A story in every look.** The working book for costume, makeup and the physical details a crew needs.
 
+For community theatre, student and indie film, and costume hire houses keeping creative decisions, scarce garments and crew instructions together.
+
 [Open STAGECRAFT](https://stagecraft-swart.vercel.app) · [Guided walkthrough](docs/judging.md) · [Evidence & limits](https://stagecraft-swart.vercel.app/evidence)
 
 Follow a permitted script through a reviewed breakdown, a visual continuity wall, actor-specific YouCam previews, exact appearance decisions, approved physical-unit allocation, sourcing and frozen crew documents. When the recurring coat becomes unavailable, compare two real alternatives on the actor. Approving a different coat changes what the allocator can choose. Recast that same production and review the replacement performer’s own evidence.
@@ -12,7 +14,11 @@ Follow a permitted script through a reviewed breakdown, a visual continuity wall
 
 No decision is preapproved. Inspect Nora and Mae first, then either continue individual reviews or explicitly **Record example decisions**. That reversible action records exact-output approvals attributed to **Example reviewer (sample decision)**; unseen alternatives still need their own review. The same book supports coat repair, creative-direction reconciliation, Celeste’s recast and a frozen handoff.
 
+Exploring **Schedule** first is supported: the fresh example shows amber **DECISIONS NEEDED**, with the exact scheduled-look count, **Review looks** and **Record example decisions**. Recording those decisions rechecks the allocation. Physical conflicts remain red and distinct from decisions awaiting review.
+
 The public library contains **20 genuine recorded YouCam outputs across four operations**: 12 garments, 4 makeup details, 2 hair-colour studies and 2 necklaces. Original and replacement body/face sources are synthetic. Exact matching makes recorded reuse available without another provider submission; it also works for compatible library sources in a custom production.
+
+The **Example library** marks verified performer–garment pairs **Ready preview**. Its 18 physical-unit bindings reuse the 12 garment recordings; separate ivory units share identical submitted reference artwork. An unsupported pair suggests recorded garments for the selected performer first. You can import, approve and allocate a supported library pairing without a fresh generation.
 
 ## What the book does
 
@@ -20,7 +26,7 @@ The public library contains **20 genuine recorded YouCam outputs across four ope
 - **Continuity you can see:** character × story-day cells connect real wardrobe outputs to separately reviewed makeup or hair. One look cannot silently cover contradictory day variants.
 - **Four independent views:** Clothes V4, zero-smoothing lip/blush Makeup VTO, hair colour and necklace VTO retain separate inputs, recipes, outputs and approvals. No body/face composite is fabricated.
 - **Approved alternatives that matter:** a candidate binds actor, capture, physical unit/reference, exact output, scene scope and creative intent. Changing an approval changes admissibility. Revoking an adopted candidate cannot turn it into an unreviewed base recipe.
-- **Physical allocation:** one coherent choice per continuity look across calls; each physical unit is costed once. Budget, overlaps, prep, changeovers and crew limits constrain the bounded search. Findings distinguish mathematical feasibility from missing fitting or supplier evidence.
+- **Physical allocation:** one coherent choice per continuity look across calls; each physical unit is costed once. Budget, overlaps, prep, changeovers and crew limits constrain the bounded search. A proposal lists any garment swaps and removed-item direction references before adoption. Explicit confirmation belongs to that exact solution and revision; recomputing requires a new confirmation. Losing choices show their recorded quote and constraint tradeoffs.
 - **Repair without starting over:** garment changes preserve independent face evidence; recasts invalidate actor-specific decisions. Creative references to removed items are flagged. Editing direction requires reapproval while unchanged provider pixels remain reusable.
 - **Crew handoff:** record supplier stages with evidence, export quotation-level hire-order CSV/PDF, and freeze exact costume/makeup/hair/accessory evidence into source-revision packs. Later changes mark online copies superseded.
 
@@ -50,7 +56,7 @@ pnpm test:e2e
 
 Database tests accept only explicitly configured local `stagecraft_dev` or `stagecraft_test` databases. Unit/integration suites replace paid provider calls; recorded browser journeys reject live YouCam requests before the application. The own-script browser journey performs one actual short Gemini extraction. Private-upload checks use the configured private Blob store. Live YouCam smoke tests are separate deliberate operations.
 
-The review round passes **188 unit/integration tests and all 16 browser tests** locally, plus **16/16 on both protected and canonical deployments**. Two bounded fresh production tasks also passed private storage, approval lineage and ownership checks. The 19-page frozen crew PDF retains all 27 images and its complete requirements when printed. [Local verification](docs/evidence/review-local-verification.json) and [production verification](docs/evidence/review-production-verification.json) record software evidence separately from physical outcomes.
+The second review passed **226 unit/integration tests across 21 files** and **18/18 browser tests against the optimized local build**, with no failures, skips or retries. The browser gate took 199.939 seconds and used no paid YouCam tasks. It regenerated the 19-page crew PDF with all 27 images and complete printed requirements. [Current local verification](docs/evidence/review-round2-local-verification.json) records exact scope and attempts; the [release checklist](docs/release-checklist.md) tracks deployment separately. The [preceding production verification](docs/evidence/review-production-verification.json) preserves its protected/canonical browser checks and two bounded fresh workflow smokes.
 
 ## Saved work and provider limits
 
@@ -68,7 +74,7 @@ Synthetic inputs, actual provider outputs, manual decisions, AI critiques and so
 
 Clothes V4 handles one garment reference per output. Makeup renders lip/blush with smoothing and reshaping fixed at zero. Hair colour renders a requested preset, not a physical dye or wig specification; one requested brown result visibly reads plum. Necklace VTO is appearance evidence, not a fit measurement. Every output needs inspection.
 
-Allocation uses bounded exact TypeScript search. Its production **Constraint check** shares interval construction with the solver; a separate brute-force oracle checks small synthetic problems in tests. `FEASIBLE` means a valid available choice was found; `OPTIMAL` requires an exhausted search with genuine alternatives under the implemented objective. Missing physical evidence remains unresolved. Printed documents cannot update themselves.
+Allocation uses bounded exact TypeScript search. Its production **Constraint check** shares interval construction with the solver; a separate brute-force oracle checks small synthetic problems in tests. `DECISIONS_NEEDED` identifies missing exact appearance approvals; it does not assign unapproved garments. `FEASIBLE` means a valid available choice was found; `OPTIMAL` requires an exhausted search with genuine alternatives under the implemented objective. Actual physical conflicts remain `INFEASIBLE`. Missing physical evidence remains unresolved. Printed documents cannot update themselves.
 
 ## Documentation
 
@@ -84,7 +90,8 @@ Allocation uses bounded exact TypeScript search. Its production **Constraint che
 - [Original production release observations](docs/evidence/production-review.json)
 - [Operations and deployment](docs/operations.md)
 - [Current release checks](docs/release-checklist.md)
-- [Integrated local verification](docs/evidence/review-local-verification.json)
+- [Current integrated local verification](docs/evidence/review-round2-local-verification.json)
+- [Preceding local verification](docs/evidence/review-local-verification.json)
 - [Asset provenance and licenses](docs/asset-licenses.md)
 
 Private plans, credentials, provider task IDs, private uploads and execution artifacts are excluded from publication and deployment.

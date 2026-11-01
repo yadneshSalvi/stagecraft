@@ -83,6 +83,10 @@ export default function HomePage() {
             intent to exact garments, scene commitments, and the people
             preparing them. When something changes, you can see what needs
             attention—and what still holds.
+            <span className="landing-audience">
+              For community theatre, student and indie film, and costume hire
+              houses keeping a production together.
+            </span>
           </p>
         </section>
         <section className="landing-workbook" aria-labelledby="sample-title">

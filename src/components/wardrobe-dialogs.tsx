@@ -301,10 +301,9 @@ export function UnitDialog({
           )}
           {tab === "fitting" && (
             <form className="form-stack unit-evidence-form" onSubmit={saveFit}>
-              <Notice tone="warning">
-                YouCam does not establish physical fit, movement, comfort, or
-                alteration needs. Record the source and context of any fitting
-                decision.
+              <Notice>
+                Record who observed the fitting, for which performer, and when.
+                Include movement or alteration notes in the evidence.
               </Notice>
               <Field label="Performer">
                 <select

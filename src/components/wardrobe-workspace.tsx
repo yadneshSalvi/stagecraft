@@ -221,13 +221,10 @@ export function WardrobeWorkspace() {
       <div className="wardrobe-footnote">
         <SlidersHorizontal size={17} />
         <div>
-          <strong>
-            Availability, measurements, and appearance are different evidence.
-          </strong>
+          <strong>Every physical unit keeps its own evidence.</strong>
           <p>
-            A generated preview never confirms physical fit, movement range,
-            condition, or a supplier booking. Provenance remains visible in
-            every unit record.
+            Open a unit to inspect dated availability, measurements, condition
+            and performer-specific fitting records.
           </p>
         </div>
       </div>

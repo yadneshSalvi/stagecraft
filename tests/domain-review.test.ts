@@ -9,6 +9,7 @@ import {
   createExampleProduction,
   detailInputHash,
   getApprovedAppearanceChoices,
+  getAllocationAdoptionReview,
   getCurrentApproval,
   getCurrentBeautyApproval,
   getCurrentCandidateApproval,
@@ -41,6 +42,7 @@ const allocate = (p: Production) => {
   return command(solved, {
     type: "adopt_allocation",
     inputHash: solved.allocationResult!.inputHash,
+    confirmation: getAllocationAdoptionReview(solved, solved.allocationResult!),
   });
 };
 function candidate(
@@ -128,7 +130,7 @@ describe("reviewed appearance candidates and admissibility", () => {
   });
   it("never assigns an unapproved original or a merely listed substitute, even with a current preview", () => {
     expect(solveAllocation(example(), { now: TEST_NOW })).toMatchObject({
-      status: "INFEASIBLE",
+      status: "DECISIONS_NEEDED",
       assignments: [],
     });
     let p = approveManaged(example());
@@ -150,10 +152,19 @@ describe("reviewed appearance candidates and admissibility", () => {
       candidateId: c.id,
       preview,
     });
-    expect(solveAllocation(p, { now: TEST_NOW })).toMatchObject({
+    const unavailable = solveAllocation(p, { now: TEST_NOW });
+    expect(unavailable).toMatchObject({
       status: "INFEASIBLE",
       assignments: [],
     });
+    expect(
+      unavailable.findings.some((item) => item.code === "UNIT_UNAVAILABLE"),
+    ).toBe(true);
+    expect(
+      unavailable.findings.some(
+        (item) => item.code === "CONTINUITY_APPROVAL_LINEAGE",
+      ),
+    ).toBe(false);
     p = command(p, {
       type: "approve_candidate",
       candidateId: c.id,
@@ -270,7 +281,7 @@ describe("reviewed appearance candidates and admissibility", () => {
     expect(getCurrentApproval(nora(revoked))).toBeUndefined();
     expect(getApprovedAppearanceChoices(revoked, nora(revoked))).toEqual([]);
     expect(solveAllocation(revoked, { now: TEST_NOW })).toMatchObject({
-      status: "INFEASIBLE",
+      status: "DECISIONS_NEEDED",
       assignments: [],
     });
     expect(

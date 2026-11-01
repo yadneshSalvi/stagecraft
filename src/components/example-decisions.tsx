@@ -10,8 +10,15 @@ import {
   getCurrentBeautyApproval,
 } from "@/lib/domain/selectors";
 import { getCurrentDetailApproval } from "@/lib/domain/details";
+import type { Production } from "@/lib/types";
 
-export function ExampleDecisions() {
+export function ExampleDecisions({
+  compact = false,
+  onRecorded,
+}: {
+  compact?: boolean;
+  onRecorded?: (project: Production) => void;
+}) {
   const { project, send, busy, error, clearError } = useProduction();
   const [open, setOpen] = useState(false);
   if (!project.fixture) return null;
@@ -46,49 +53,60 @@ export function ExampleDecisions() {
   ];
   async function record(enabled: boolean) {
     const next = await send({ type: "set_example_decisions", enabled });
-    if (next) setOpen(false);
+    if (next) {
+      setOpen(false);
+      if (enabled) onRecorded?.(next);
+    }
   }
+  const action = (
+    <Button
+      variant={compact ? "default" : "quiet"}
+      disabled={busy}
+      onClick={() => {
+        clearError();
+        setOpen(true);
+      }}
+    >
+      {savedDecisions.length && !compact ? (
+        <RotateCcw size={15} />
+      ) : (
+        <CheckCheck size={15} />
+      )}
+      {savedDecisions.length && !compact
+        ? "Manage example decisions"
+        : "Record example decisions"}
+    </Button>
+  );
   return (
     <>
-      <div className="example-decisions">
-        <span className="eyebrow">REHEARSE THE DECISIONS</span>
-        <div>
-          <ProvenanceChip kind="sample-decision" />
-          <p>
-            {decisions.length
-              ? `${decisions.length} current sample decisions are in this working book.`
-              : savedDecisions.length
-                ? "Sample decisions are saved; the current outputs still need review."
-                : "Inspect and approve individual looks, or rehearse the complete allocation with explicit sample decisions."}
-          </p>
-        </div>
-        {!project.proposals.length && decisions.length < 2 && (
-          <div className="example-review-links">
-            <Link href={`/production/${project.id}/looks?look=look-nora`}>
-              Review Nora →
-            </Link>
-            <Link href={`/production/${project.id}/looks?look=look-mae`}>
-              Review Mae →
-            </Link>
+      {compact ? (
+        action
+      ) : (
+        <div className="example-decisions">
+          <span className="eyebrow">REHEARSE THE DECISIONS</span>
+          <div>
+            <ProvenanceChip kind="sample-decision" />
+            <p>
+              {decisions.length
+                ? `${decisions.length} current sample decisions are in this working book.`
+                : savedDecisions.length
+                  ? "Sample decisions are saved; the current outputs still need review."
+                  : "Inspect and approve individual looks, or rehearse the complete allocation with explicit sample decisions."}
+            </p>
           </div>
-        )}
-        <Button
-          variant="quiet"
-          onClick={() => {
-            clearError();
-            setOpen(true);
-          }}
-        >
-          {savedDecisions.length ? (
-            <RotateCcw size={15} />
-          ) : (
-            <CheckCheck size={15} />
+          {!project.proposals.length && decisions.length < 2 && (
+            <div className="example-review-links">
+              <Link href={`/production/${project.id}/looks?look=look-nora`}>
+                Review Nora →
+              </Link>
+              <Link href={`/production/${project.id}/looks?look=look-mae`}>
+                Review Mae →
+              </Link>
+            </div>
           )}
-          {savedDecisions.length
-            ? "Manage example decisions"
-            : "Record example decisions"}
-        </Button>
-      </div>
+          {action}
+        </div>
+      )}
       <Modal
         open={open}
         onClose={() => {

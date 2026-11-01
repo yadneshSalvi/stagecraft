@@ -738,6 +738,11 @@ td strong {
   color: var(--muted);
   max-width: 520px;
 }
+.landing-audience {
+  display: block;
+  margin-top: 18px;
+  color: var(--text);
+}
 .landing-workbook {
   margin: 0 5.5vw;
   border: 1px solid var(--line);

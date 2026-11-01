@@ -5,6 +5,7 @@ import {
   createExampleProduction,
   solveAllocation as runSolver,
   getCurrentCandidateApproval,
+  getAllocationAdoptionReview,
   validateAllocation,
 } from "@/lib/domain";
 
@@ -191,6 +192,10 @@ describe("physical-unit feasibility and the constraint checker", () => {
       {
         type: "adopt_allocation",
         inputHash: solved.allocationResult!.inputHash,
+        confirmation: getAllocationAdoptionReview(
+          solved,
+          solved.allocationResult!,
+        ),
       },
       { actor: "test", now: NOW },
     );

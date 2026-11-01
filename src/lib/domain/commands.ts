@@ -12,6 +12,7 @@ import {
   allocationDemandIntervals,
   solveAllocation,
   validateAllocation,
+  getAllocationAdoptionReview,
 } from "./allocation";
 import {
   affectedLookIds,
@@ -1010,6 +1011,7 @@ export function applyCommand(
     case "create_look": {
       requireNew(draft.looks, command.look.id, "Look");
       const look = structuredClone(command.look);
+      delete look.removedUnitIds;
       const character = findRecord(
         draft.characters,
         look.characterId,
@@ -1119,6 +1121,10 @@ export function applyCommand(
         );
         for (const unitId of command.unitIds)
           findRecord(draft.units, unitId, "Look physical unit");
+        look.removedUnitIds = unique([
+          ...(look.removedUnitIds ?? []),
+          ...look.unitIds.filter((id) => !command.unitIds!.includes(id)),
+        ]).filter((id) => !command.unitIds!.includes(id));
         look.unitIds = [...command.unitIds];
       }
       if (command.category !== undefined) look.category = command.category;
@@ -1392,6 +1398,7 @@ export function applyCommand(
       draft.allocationResult = solveAllocation(draft, {
         now,
         sourceRevision: draft.revision,
+        proposalId: makeId("allocation"),
       });
       summary = `Computed ${draft.allocationResult.status.toLowerCase()} allocation using the bounded deterministic engine${draft.allocationResult.constraintChecked ? " and constraint check" : ""}.`;
       break;
@@ -1414,6 +1421,24 @@ export function applyCommand(
         "Only a feasible allocation that passed its constraint check can be adopted.",
         409,
       );
+      const review = getAllocationAdoptionReview(production, result);
+      requireFact(
+        !review.confirmationRequired || !!command.confirmation,
+        "ALLOCATION_SWAP_CONFIRMATION_REQUIRED",
+        "Review the listed garment changes and current direction references, then explicitly confirm this exact allocation proposal.",
+        409,
+      );
+      if (command.confirmation)
+        requireFact(
+          command.confirmation.proposalId === review.proposalId &&
+            command.confirmation.inputHash === review.inputHash &&
+            command.confirmation.sourceRevision === review.sourceRevision &&
+            command.confirmation.sourceRevision === previousRevision &&
+            command.confirmation.reviewHash === review.reviewHash,
+          "STALE_ALLOCATION_CONFIRMATION",
+          "This confirmation belongs to another proposal, revision, candidate or creative intent. Review and confirm the current garment changes again.",
+          409,
+        );
       const check = validateAllocation(draft, result.assignments, { now });
       requireFact(
         check.valid,
@@ -1457,6 +1482,10 @@ export function applyCommand(
         reason: null,
         sourceRevision: draft.revision,
       }));
+      result.adoptedAt = now;
+      result.adoptionRevision = draft.revision;
+      if (command.confirmation)
+        result.acceptedConfirmation = structuredClone(command.confirmation);
       for (const pack of draft.packs) pack.state = "superseded";
       summary = `Adopted ${draft.allocations.length} checked physical-unit assignments. Outstanding fitting, timing and supplier evidence remains visible.`;
       break;

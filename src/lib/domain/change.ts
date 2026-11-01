@@ -14,6 +14,7 @@ import {
 } from "./lineage";
 import { adoptAppearanceCandidate } from "./candidates";
 import { invalidateDetails } from "./details";
+import { getCreativeReferenceFlags } from "./direction";
 
 export interface ChangeRequest {
   kind: RepairProposal["kind"];
@@ -136,42 +137,7 @@ export function previewChange(
     );
   const creativeFlags =
     request.kind === "garment_unavailable"
-      ? production.characters
-          .filter((character) =>
-            looks.some((look) => look.characterId === character.id),
-          )
-          .flatMap((character) => {
-            const removed = findRecord(
-              production.units,
-              request.subjectId,
-              "Physical unit",
-            );
-            const text = [
-              character.direction.text,
-              ...character.direction.essential,
-              ...character.direction.palette,
-            ]
-              .join(" ")
-              .toLowerCase();
-            const references = [
-              removed.name,
-              removed.code,
-              removed.color,
-              removed.material,
-            ].filter(
-              (value) =>
-                value.trim().length > 2 && text.includes(value.toLowerCase()),
-            );
-            return references.length
-              ? [
-                  {
-                    characterId: character.id,
-                    unitId: removed.id,
-                    references: unique(references),
-                  },
-                ]
-              : [];
-          })
+      ? getCreativeReferenceFlags(production, lookIds, [request.subjectId])
       : [];
   const subjectName =
     request.kind === "garment_unavailable"
@@ -334,6 +300,10 @@ export function simulateRepair(
     for (const look of draft.looks.filter((look) =>
       lookIds.includes(look.id),
     )) {
+      look.removedUnitIds = unique([
+        ...(look.removedUnitIds ?? []),
+        request.subjectId,
+      ]).filter((id) => id !== replacementId);
       look.unitIds = look.unitIds.map((id) =>
         id === request.subjectId ? replacementId : id,
       );

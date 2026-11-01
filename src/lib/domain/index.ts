@@ -26,7 +26,18 @@ export {
   getCurrentCandidateApproval,
   getApprovedAppearanceChoices,
 } from "./lineage";
-export { solveAllocation, validateAllocation } from "./allocation";
+export {
+  solveAllocation,
+  validateAllocation,
+  getAllocationStatus,
+  getAllocationDecisionSummary,
+  getAllocationSwaps,
+  getAllocationAdoptionReview,
+} from "./allocation";
+export {
+  getCreativeReferenceFlags,
+  getCurrentCreativeReferenceFlags,
+} from "./direction";
 export {
   detailInputHash,
   detailIntentHash,

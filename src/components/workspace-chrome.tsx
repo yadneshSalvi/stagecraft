@@ -161,7 +161,7 @@ export function WorkspaceChrome({ children }: { children: ReactNode }) {
               : "Private production · Access belongs to this browser"}
           </span>
           <Link href="/evidence">
-            Preview ≠ physical fit <span aria-hidden="true">↗</span>
+            Evidence &amp; limits <span aria-hidden="true">↗</span>
           </Link>
         </footer>
       </div>

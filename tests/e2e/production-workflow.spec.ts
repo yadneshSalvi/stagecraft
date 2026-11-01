@@ -10,6 +10,7 @@ import {
 } from "../../src/lib/domain/lineage";
 import { authenticate } from "./helpers";
 import { getReadiness } from "../../src/lib/domain/selectors";
+import { getAllocationAdoptionReview } from "../../src/lib/domain/allocation-review";
 
 // Real browser → authenticated API → database. All provider requests are recorded
 // replays; a guard rejects every fresh request before it reaches the application.
@@ -220,6 +221,19 @@ async function allocate(
     page.getByRole("region", { name: "Allocation result", exact: true }),
   ).toBeFocused();
   if (!adopt) return solved;
+  const confirmation = page.getByRole("checkbox", {
+    name: "I have reviewed these exact garment changes and direction references. Adopt this proposal.",
+    exact: true,
+  });
+  if (await confirmation.count()) {
+    await expect(
+      page.getByRole("button", {
+        name: "Adopt these assignments",
+        exact: true,
+      }),
+    ).toBeDisabled();
+    await confirmation.check();
+  }
   return command(page, "adopt_allocation", () =>
     page
       .getByRole("button", { name: "Adopt these assignments", exact: true })
@@ -258,6 +272,20 @@ async function impact(page: Page): Promise<Production> {
       .getByRole("button", { name: "Preview the impact", exact: true })
       .click(),
   );
+}
+async function returnToImpact(page: Page): Promise<Production> {
+  const result = await command(page, "propose_change", () =>
+    page
+      .getByRole("link", { name: "Return to change review", exact: true })
+      .click(),
+  );
+  await expect(
+    page.getByRole("dialog", { name: "Follow the change.", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Which physical unit is unavailable?"),
+  ).not.toBeVisible();
+  return result;
 }
 async function adoptRepair(page: Page, code?: string): Promise<Production> {
   const dialog = page.getByRole("dialog", {
@@ -551,10 +579,7 @@ test("one production carries approved coat repair through recast, independent de
       .click();
     const burgundy = p.units.find((unit) => unit.id === "unit-coat-burgundy")!;
     p = await candidateDecision(page, id, burgundy.name);
-    await page
-      .getByRole("link", { name: "Return to change review", exact: true })
-      .click();
-    p = await impact(page);
+    p = await returnToImpact(page);
     const reviewed = p.appearanceCandidates!.find(
       (item) => item.id === "candidate-nora-burgundy",
     )!;
@@ -779,10 +804,7 @@ test("one production carries approved coat repair through recast, independent de
       p.characters.find((character) => character.id === "char-nora")!
         .performerId,
     ).toBe("performer-ada");
-    await page
-      .getByRole("link", { name: "Return to change review", exact: true })
-      .click();
-    p = await impact(page);
+    p = await returnToImpact(page);
     p = await adoptRepair(page);
     expect(
       p.characters.find((character) => character.id === "char-nora")!
@@ -876,7 +898,75 @@ test("approval changes solver admissibility and revocation cannot become an adop
   const unitName = (id: string) => p.units.find((unit) => unit.id === id)!.name;
   await visit(page, id, "/looks?look=look-nora&detail=alternatives");
   p = await candidateDecision(page, id, unitName("unit-coat-burgundy"));
-  p = await allocate(page, id);
+  p = await allocate(page, id, false);
+  const review = page.getByRole("region", {
+    name: "Garment changes in this allocation",
+    exact: true,
+  });
+  await expect(review).toContainText("C-014 Oxblood velvet coat");
+  await expect(review).toContainText("C-033 Burgundy wool coat");
+  await expect(review).toContainText("SC 01 / 04 / 07");
+  await expect(review).toContainText(
+    "The old garment is still in the direction.",
+  );
+  expect(p.units.find((unit) => unit.id === "unit-coat-oxblood")!.status).toBe(
+    "available",
+  );
+  const adoption = page.getByRole("button", {
+    name: "Adopt these assignments",
+    exact: true,
+  });
+  const confirmation = review.getByRole("checkbox", {
+    name: "I have reviewed these exact garment changes and direction references. Adopt this proposal.",
+    exact: true,
+  });
+  await expect(confirmation).not.toBeChecked();
+  await expect(adoption).toBeDisabled();
+  await page.getByText("Why these physical units?", { exact: true }).click();
+  const originalChoice = page
+    .locator(".choice-comparisons > li")
+    .filter({ hasText: "Original recipe · C-014" });
+  await expect(originalChoice).toContainText("Production total: +£15");
+  await expect(originalChoice).toContainText("Same garment changeovers");
+  const staleConfirmation = getAllocationAdoptionReview(p, p.allocationResult!);
+  await confirmation.check();
+  await expect(adoption).toBeEnabled();
+  p = await command(page, "solve_allocation", () =>
+    page
+      .getByRole("button", { name: "Check the allocation", exact: true })
+      .click(),
+  );
+  expect(p.allocationResult!.inputHash).toBe(staleConfirmation.inputHash);
+  expect(p.allocationResult!.proposalId).not.toBe(staleConfirmation.proposalId);
+  await expect(confirmation).not.toBeChecked();
+  await expect(adoption).toBeDisabled();
+  const rejected = await page.request.post(`/api/projects/${id}/commands`, {
+    data: {
+      expectedRevision: p.revision,
+      commandId: crypto.randomUUID(),
+      command: {
+        type: "adopt_allocation",
+        inputHash: p.allocationResult!.inputHash,
+        confirmation: {
+          proposalId: staleConfirmation.proposalId,
+          inputHash: staleConfirmation.inputHash,
+          sourceRevision: staleConfirmation.sourceRevision,
+          reviewHash: staleConfirmation.reviewHash,
+        },
+      },
+    },
+  });
+  expect(rejected.status()).toBe(409);
+  expect((await persisted(page, id)).revision).toBe(p.revision);
+  await confirmation.check();
+  p = await command(page, "adopt_allocation", () => adoption.click());
+  await expect(review).toContainText("The garment changes you adopted");
+  await expect(review).toContainText(
+    "The old garment is still in the direction.",
+  );
+  expect(p.allocationResult!.acceptedConfirmation?.sourceRevision).toBe(
+    p.revision - 1,
+  );
   expect(p.allocationResult!.status).toBe("OPTIMAL");
   expect(p.allocationResult!.totalCostCents).toBe(48_500);
   expect(
@@ -953,4 +1043,314 @@ test("approval changes solver admissibility and revocation cannot become an adop
       )
       .every((assignment) => assignment.unitId === "unit-coat-burgundy"),
   ).toBe(true);
+});
+
+test("Schedule first explains missing decisions and records explicit example decisions before allocation", async ({
+  page,
+}, info) => {
+  let p = await example(page);
+  const id = p.id;
+  await visit(page, id, "/schedule");
+  const actions = page.locator(".schedule-heading");
+  await expect(
+    actions.getByRole("link", { name: "Review looks", exact: true }),
+  ).toBeVisible();
+  await expect(
+    actions.getByRole("button", {
+      name: "Record example decisions",
+      exact: true,
+    }),
+  ).toBeVisible();
+  p = await command(page, "solve_allocation", () =>
+    actions
+      .getByRole("button", { name: "Check the allocation", exact: true })
+      .click(),
+  );
+  expect(p.allocationResult).toMatchObject({
+    status: "DECISIONS_NEEDED",
+    decisions: { looksTotal: 8, approvedLooks: 0 },
+  });
+  expect(p.allocationResult!.assignments).toEqual([]);
+  expect(p.allocationResult!.decisions!.missingLookIds).toHaveLength(8);
+  const result = page.getByRole("region", {
+    name: "Allocation result",
+    exact: true,
+  });
+  await expect(result).toBeFocused();
+  await expect(
+    result.getByText("DECISIONS NEEDED", { exact: true }),
+  ).toHaveClass(/badge-warning/);
+  await expect(result).toContainText(
+    "8 of 8 looks need an approved appearance before allocation.",
+  );
+  await expect(result.getByText("INFEASIBLE", { exact: true })).toHaveCount(0);
+  await expect(result.locator(".allocation-policy")).not.toHaveAttribute(
+    "open",
+    "",
+  );
+  await page.screenshot({ path: info.outputPath("decisions-needed.png") });
+  await result.getByRole("link", { name: "Review looks", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/production/${id}/looks\\?look=`));
+  await expect(
+    page.getByRole("button", { name: "Approve appearance", exact: true }),
+  ).toBeVisible();
+  await visit(page, id, "/schedule");
+  await result
+    .getByRole("button", { name: "Record example decisions", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Rehearse the decisions.",
+    exact: true,
+  });
+  await expect(dialog).toContainText("Example reviewer (sample decision)");
+  const refreshed = page.waitForResponse(
+    (response) =>
+      /\/api\/projects\/[^/]+\/commands$/.test(path(response)) &&
+      response.request().method() === "POST" &&
+      response.request().postDataJSON()?.command?.type === "solve_allocation",
+  );
+  await command(page, "set_example_decisions", () =>
+    dialog
+      .getByRole("button", { name: "Record example decisions", exact: true })
+      .click(),
+  );
+  const response = await refreshed;
+  expect(response.ok()).toBe(true);
+  p = (await response.json()).project;
+  expect(p.allocationResult).toMatchObject({
+    status: "FEASIBLE",
+    totalCostCents: 50_000,
+    decisions: { looksTotal: 8, approvedLooks: 8, missingLookIds: [] },
+  });
+  await expect(dialog).not.toBeVisible();
+  await expect(result.getByText("FEASIBLE", { exact: true })).toBeVisible();
+  await expect(
+    result.getByRole("button", {
+      name: "Adopt these assignments",
+      exact: true,
+    }),
+  ).toBeEnabled();
+  expect(
+    p.looks.every(
+      (look) =>
+        getCurrentApproval(look, p)?.approvedBy ===
+        "Example reviewer (sample decision)",
+    ),
+  ).toBe(true);
+  p = await command(page, "adopt_allocation", () =>
+    result
+      .getByRole("button", { name: "Adopt these assignments", exact: true })
+      .click(),
+  );
+  expect(p.allocations).toHaveLength(17);
+  expect(liveRequests).toEqual([]);
+});
+
+test("a recorded charcoal repair survives a refreshed impact and a Celeste recast in the same production", async ({
+  page,
+}) => {
+  let p = await example(page);
+  const id = p.id;
+  p = await exampleDecisions(page, id);
+  const maeApproval = getCurrentApproval(
+    p.looks.find((look) => look.id === "look-mae")!,
+    p,
+  )!.id;
+  const originalBeauty = structuredClone(
+    p.looks.find((look) => look.id === "look-nora")!.beauty!.approvals,
+  );
+  await visit(page, id);
+  await page
+    .getByRole("button", { name: "Review a change", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByLabel("Which physical unit is unavailable?")
+    .selectOption("unit-coat-oxblood");
+  p = await impact(page);
+  await page
+    .getByRole("dialog", { name: "Follow the change.", exact: true })
+    .getByRole("link", { name: "Compare & review alternatives", exact: true })
+    .click();
+  p = await candidateDecision(
+    page,
+    id,
+    p.units.find((unit) => unit.id === "unit-coat-charcoal")!.name,
+  );
+  const originalCandidate = p.appearanceCandidates!.find(
+    (candidate) => candidate.id === "candidate-nora-charcoal",
+  )!;
+  const charcoalOutput = originalCandidate.previews.at(-1)!.id;
+  const beforeRefresh = p.revision;
+  const commandRoute = `**/api/projects/${id}/commands`;
+  await page.route(commandRoute, async (route) => {
+    if (
+      route.request().method() === "POST" &&
+      route.request().postDataJSON()?.command?.type === "propose_change"
+    ) {
+      await route.fulfill({
+        status: 503,
+        json: {
+          error: {
+            message: "The impact service is resting. Retry this same change.",
+          },
+        },
+      });
+    } else await route.continue();
+  });
+  await page
+    .getByRole("link", { name: "Return to change review", exact: true })
+    .click();
+  let dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Retry this same change",
+  );
+  await expect(
+    dialog.getByLabel("Which physical unit is unavailable?"),
+  ).not.toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Retry impact refresh", exact: true }),
+  ).toBeEnabled();
+  expect((await persisted(page, id)).revision).toBe(beforeRefresh);
+  await page.unroute(commandRoute);
+  p = await command(page, "propose_change", () =>
+    dialog
+      .getByRole("button", { name: "Retry impact refresh", exact: true })
+      .click(),
+  );
+  expect(p.proposals.at(-1)).toMatchObject({
+    kind: "garment_unavailable",
+    subjectId: "unit-coat-oxblood",
+    baseRevision: p.revision,
+  });
+  p = await adoptRepair(page, "C-021");
+  dialog = page.getByRole("dialog", {
+    name: "A considered new revision.",
+    exact: true,
+  });
+  await expect(dialog.locator(".change-measured-impact")).toContainText(
+    "Removing C-014: 2 looks, 3 scenes, 3 calls identified;",
+  );
+  await expect(dialog.locator(".change-measured-impact")).toContainText(
+    "appearance and detail approvals preserved",
+  );
+  for (const look of p.looks.filter(
+    (item) => item.characterId === "char-nora",
+  )) {
+    expect(look.unitIds).toEqual(["unit-coat-charcoal"]);
+    expect(getCurrentPreview(look, p)?.id).toBe(charcoalOutput);
+    expect(getCurrentApproval(look, p)).toBeTruthy();
+  }
+  expect(
+    p.looks.find((look) => look.id === "look-nora")!.beauty!.approvals,
+  ).toEqual(originalBeauty);
+  await dialog
+    .getByLabel("Nora Vale character direction")
+    .fill(
+      "The charcoal wool coat carries Nora’s long silhouette through the return and final bow.",
+    );
+  await dialog
+    .getByLabel("Nora Vale essential details")
+    .fill("Long coat silhouette\nA recurring single physical coat");
+  await dialog.getByLabel("Nora Vale colour palette").fill("#34363C");
+  p = await command(page, "edit_direction", () =>
+    dialog
+      .getByRole("button", { name: "Save direction for review", exact: true })
+      .click(),
+  );
+  expect(
+    getCurrentApproval(
+      p.looks.find((look) => look.id === "look-nora")!,
+      p,
+    ),
+  ).toBeUndefined();
+  expect(
+    getCurrentPreview(
+      p.looks.find((look) => look.id === "look-nora")!,
+      p,
+    )?.id,
+  ).toBe(charcoalOutput);
+  await dialog
+    .getByRole("link", { name: "Review affected looks", exact: true })
+    .click();
+  p = await approveLook(page);
+  p = await allocate(page, id);
+  expect(p.allocationResult!.totalCostCents).toBe(46_500);
+  await visit(page, id);
+  await page
+    .getByRole("button", { name: "Review a change", exact: true })
+    .click();
+  dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: /A character is recast/ }).click();
+  await dialog
+    .getByRole("combobox", { name: "Character", exact: true })
+    .selectOption("char-nora");
+  await dialog
+    .getByRole("combobox", { name: "Replacement performer", exact: true })
+    .selectOption("performer-celeste");
+  p = await impact(page);
+  await page
+    .getByRole("dialog", { name: "Follow the change.", exact: true })
+    .getByRole("link", { name: "Compare & review alternatives", exact: true })
+    .click();
+  p = await candidateDecision(
+    page,
+    id,
+    p.units.find((unit) => unit.id === "unit-coat-charcoal")!.name,
+  );
+  const celesteCandidate = p.appearanceCandidates!.find(
+    (candidate) =>
+      candidate.performerId === "performer-celeste" &&
+      candidate.recipe.unitIds.includes("unit-coat-charcoal"),
+  )!;
+  expect(celesteCandidate.previews.at(-1)!.provenance).toBe(
+    "recorded_provider",
+  );
+  expect(celesteCandidate.previews.at(-1)!.performerId).toBe(
+    "performer-celeste",
+  );
+  const celesteApproval = celesteCandidate.approvals.at(-1)!.id;
+  p = await returnToImpact(page);
+  expect(p.proposals.at(-1)).toMatchObject({
+    kind: "recast",
+    subjectId: "char-nora",
+    replacementId: "performer-celeste",
+    baseRevision: p.revision,
+  });
+  p = await adoptRepair(page);
+  for (const look of p.looks.filter(
+    (item) => item.characterId === "char-nora",
+  )) {
+    expect(look.performerId).toBe("performer-celeste");
+    expect(look.unitIds).toEqual(["unit-coat-charcoal"]);
+    expect(getCurrentApproval(look, p)?.id).toBe(celesteApproval);
+    expect(getCurrentPreview(look, p)?.performerId).toBe("performer-celeste");
+  }
+  expect(
+    getCurrentApproval(
+      p.looks.find((look) => look.id === "look-mae")!,
+      p,
+    )?.id,
+  ).toBe(maeApproval);
+  expect(
+    p.looks
+      .find((look) => look.id === "look-nora")!
+      .beauty!.approvals.every((approval) => approval.state !== "current"),
+  ).toBe(true);
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Back to production", exact: true })
+    .click();
+  p = await allocate(page, id);
+  expect(p.allocationResult!.totalCostCents).toBe(46_500);
+  expect(
+    p.allocations
+      .filter((allocation) => allocation.lookId.startsWith("look-nora"))
+      .every(
+        (allocation) =>
+          allocation.performerId === "performer-celeste" &&
+          allocation.unitId === "unit-coat-charcoal",
+      ),
+  ).toBe(true);
+  expect(liveRequests).toEqual([]);
 });

@@ -288,6 +288,8 @@ export interface Look {
   revision: number;
   continuityGroupId?: string;
   activeCandidateId?: string;
+  /** Server-derived removed recipe references, retained across later allocation solves. */
+  removedUnitIds?: string[];
   sceneIds: string[];
   storyDays: number[];
   unitIds: string[];
@@ -389,6 +391,7 @@ export interface AllocationFinding {
 }
 export interface AllocationResult {
   status:
+    | "DECISIONS_NEEDED"
     | "FEASIBLE"
     | "OPTIMAL"
     | "INFEASIBLE"
@@ -406,6 +409,68 @@ export interface AllocationResult {
   solver: string;
   policy: string;
   createdAt: string;
+  proposalId?: string;
+  decisions?: AllocationDecisionSummary;
+  originalRecipes?: Array<{ lookId: string; unitIds: string[] }>;
+  swaps?: AllocationSwap[];
+  choiceComparisons?: AllocationChoiceComparison[];
+  adoptedAt?: string;
+  adoptionRevision?: number;
+  acceptedConfirmation?: AllocationConfirmation;
+}
+export interface AllocationDecisionSummary {
+  looksTotal: number;
+  approvedLooks: number;
+  missingLookIds: string[];
+}
+export interface AllocationConfirmation {
+  proposalId: string;
+  inputHash: string;
+  sourceRevision: number;
+  reviewHash: string;
+}
+export interface AllocationSwap {
+  characterId: string;
+  lookIds: string[];
+  sceneIds: string[];
+  occurrenceIds: string[];
+  fromUnitIds: string[];
+  toUnitIds: string[];
+  candidateId?: string;
+  approvalId?: string;
+  previewId?: string;
+}
+export interface AllocationChoiceAlternative {
+  id: string;
+  candidateId?: string;
+  unitIds: string[];
+  original: boolean;
+  selected: boolean;
+  admissible: boolean;
+  quoteCents: number | null;
+  planCostDeltaCents: number | null;
+  changeoverDelta: number | null;
+  reason:
+    | "selected"
+    | "approval_required"
+    | "overlap"
+    | "availability"
+    | "hard_budget"
+    | "higher_cost"
+    | "more_changeovers"
+    | "equal_cost"
+    | "not_selected"
+    | "unknown"
+    | "constraint";
+  findings: AllocationFinding[];
+}
+export interface AllocationChoiceComparison {
+  groupId: string;
+  lookIds: string[];
+  characterId: string;
+  originalUnitIds: string[];
+  selectedUnitIds: string[];
+  choices: AllocationChoiceAlternative[];
 }
 export interface SourcingRequest {
   id: string;
@@ -700,7 +765,11 @@ export type ProductionCommand =
       assetId?: string;
     }
   | { type: "solve_allocation" }
-  | { type: "adopt_allocation"; inputHash: string }
+  | {
+      type: "adopt_allocation";
+      inputHash: string;
+      confirmation?: AllocationConfirmation;
+    }
   | {
       type: "create_sourcing";
       unitIds: string[];

@@ -3,11 +3,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Edit3, Sparkles } from "lucide-react";
 import type { AppConfig, GarmentCategory, Look } from "@/lib/types";
+import { getCurrentPreview } from "@/lib/domain/lineage";
 import { money } from "@/lib/format";
 import { useProduction } from "./production-context";
 import { Badge, Button, Field, Modal, Notice, Photo } from "./ui";
 import { PreviewJobStatus } from "./preview-job-status";
 import type { usePreviewJob } from "./use-preview-job";
+import { RecordedPairGuide, useRecordedLibrary } from "./recorded-pair-guide";
 import {
   PreviewAvailability,
   freshPreviewAvailable,
@@ -20,6 +22,7 @@ export function RecipeInspector({
   config,
   generate,
   onCast,
+  onOpenLibrary,
 }: {
   look: Look;
   jobState: ReturnType<typeof usePreviewJob>;
@@ -27,6 +30,7 @@ export function RecipeInspector({
   config: AppConfig | null;
   generate: (mode: "live" | "recorded") => Promise<void>;
   onCast: () => void;
+  onOpenLibrary: (performerId: string) => void;
 }) {
   const { project, send, busy, error } = useProduction();
   const character = project.characters.find((c) => c.id === look.characterId);
@@ -52,6 +56,14 @@ export function RecipeInspector({
     palette.length <= 10 &&
     palette.every((color) => /^#[0-9a-f]{6}$/i.test(color));
   const unit = project.units.find((u) => u.id === unitId);
+  const needsPairGuide =
+    !getCurrentPreview(look, project) || unitId !== look.unitIds[0];
+  const recordedLibrary = useRecordedLibrary({
+    performerId: look.performerId || undefined,
+    unitId,
+    category: unitId === look.unitIds[0] ? look.category : unit?.category,
+    enabled: needsPairGuide && !!look.performerId && !!unitId,
+  });
   const changed =
     unitId !== look.unitIds[0] ||
     makeup !== look.makeup.notes ||
@@ -156,6 +168,14 @@ export function RecipeInspector({
             </div>
           </div>
         )}
+        {needsPairGuide && (
+          <RecordedPairGuide
+            library={recordedLibrary}
+            onSelectUnit={setUnitId}
+            onOpenLibrary={onOpenLibrary}
+            disabled={busy}
+          />
+        )}
         <details className="recipe-details" open>
           <summary>02 / Makeup & hair direction</summary>
           <Field label="Makeup notes">
@@ -174,8 +194,8 @@ export function RecipeInspector({
             />
           </Field>
           <p className="recipe-disclaimer">
-            These are crew application notes. The garment preview does not
-            render makeup or hair.
+            Crew instructions accompany the separately approved makeup and hair
+            views in the handoff.
           </p>
         </details>
         <details className="recipe-details">

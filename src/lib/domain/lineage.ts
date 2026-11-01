@@ -334,7 +334,18 @@ export function getApprovedAppearanceChoices(
   look: Look,
 ): ApprovedAppearanceChoice[] {
   const lookIds = continuityLookIds(production, look);
-  const group = production.looks.filter((item) => lookIds.includes(item.id));
+  const members = production.looks.filter((item) => lookIds.includes(item.id));
+  const scheduled = members.filter(
+    (item) =>
+      !production.characters.find(
+        (character) => character.id === item.characterId,
+      )?.ownClothes &&
+      item.unitIds.length > 0 &&
+      production.occurrences.some((occurrence) =>
+        item.sceneIds.includes(occurrence.sceneId),
+      ),
+  );
+  const group = scheduled.length ? scheduled : members;
   const choices: ApprovedAppearanceChoice[] = [];
   if (
     group.every(

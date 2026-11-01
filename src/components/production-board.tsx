@@ -33,16 +33,19 @@ export function ProductionBoard({
   initialUnitId,
   initialCharacterId,
   initialReplacementId,
+  refreshImpactOnOpen = false,
 }: {
   initialUnitId?: string;
   initialCharacterId?: string;
   initialReplacementId?: string;
+  refreshImpactOnOpen?: boolean;
 }) {
   const { project } = useProduction();
   const [storyDay, setStoryDay] = useState<number | null>(null);
   const [list, setList] = useState(false);
   const [focus, setFocus] = useState(false);
   const [change, setChange] = useState(!!(initialUnitId || initialCharacterId));
+  const [resumeImpact, setResumeImpact] = useState(refreshImpactOnOpen);
   const [library, setLibrary] = useState(false);
   const ready = getReadiness(project);
   const days = [...new Set(project.scenes.map((scene) => scene.storyDay))].sort(
@@ -544,10 +547,14 @@ export function ProductionBoard({
       </section>
       <ChangeReview
         open={change}
-        onClose={() => setChange(false)}
+        onClose={() => {
+          setChange(false);
+          setResumeImpact(false);
+        }}
         initialUnitId={initialUnitId}
         initialCharacterId={initialCharacterId}
         initialReplacementId={initialReplacementId}
+        refreshImpactOnOpen={resumeImpact}
       />
     </div>
   );

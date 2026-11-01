@@ -7,13 +7,12 @@ export interface VerifiedRecordingAssociation {
   referenceImagePath?: string;
 }
 let catalog: Production | undefined;
-/** Only explicit library lineage or the canonical fixture entity can alias IDs.
- * Callers additionally verify frozen transport hashes before matching a task. */
-export function recordingAssociation(
+/** Resolve source identity without depending on a selected garment. Callers
+ * additionally verify the exact raw source and frozen transport bytes. */
+export function recordingSourceAssociation(
   production: Production,
   performer: Production["performers"][number],
   profile: "garment" | "face",
-  unit?: Production["units"][number],
 ): VerifiedRecordingAssociation | undefined {
   catalog ||= createExampleProduction("recording-library");
   const importedSource =
@@ -37,12 +36,29 @@ export function recordingAssociation(
     source.imageUrl !== originalSource?.imageUrl
   )
     return undefined;
+  return {
+    canonicalPerformerId: original.id,
+    sourceImagePath: source.imageUrl,
+  };
+}
+
+/** Only explicit library lineage or the canonical fixture entity can alias IDs.
+ * Callers additionally verify frozen transport hashes before matching a task. */
+export function recordingAssociation(
+  production: Production,
+  performer: Production["performers"][number],
+  profile: "garment" | "face",
+  unit?: Production["units"][number],
+): VerifiedRecordingAssociation | undefined {
+  const library = (catalog ||= createExampleProduction("recording-library"));
+  const source = recordingSourceAssociation(production, performer, profile);
+  if (!source) return undefined;
   let referenceImagePath: string | undefined;
   if (profile === "garment") {
     if (!production.fixture && !unit?.librarySourceId) return undefined;
     const originalUnit =
       unit &&
-      catalog.units.find(
+      library.units.find(
         (item) => item.id === (unit.librarySourceId || unit.id),
       );
     if (
@@ -56,9 +72,5 @@ export function recordingAssociation(
       return undefined;
     referenceImagePath = unit.imageUrl;
   }
-  return {
-    canonicalPerformerId: original.id,
-    sourceImagePath: source.imageUrl,
-    ...(referenceImagePath ? { referenceImagePath } : {}),
-  };
+  return { ...source, ...(referenceImagePath ? { referenceImagePath } : {}) };
 }

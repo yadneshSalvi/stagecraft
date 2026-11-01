@@ -7,6 +7,7 @@ import type {
   ProductionCommand,
   Scene,
 } from "../../src/lib/types";
+import type { LibraryCatalog } from "../../src/lib/library-types";
 import {
   getCurrentApproval,
   getCurrentPreview,
@@ -178,6 +179,8 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
   const createdResponse = await created;
   expect(createdResponse.status()).toBe(201);
   let p: Production = (await createdResponse.json()).project;
+  let performerSpecificBadgesVerified = false;
+  let unsupportedPairSuggestionVerified = false;
   projectId = p.id;
   expect(p).toMatchObject({
     fixture: false,
@@ -375,6 +378,43 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
         exact: true,
       }),
     });
+    const olive = dialog.getByRole("article").filter({
+      has: page.getByRole("heading", {
+        name: "Olive tailored jacket",
+        exact: true,
+      }),
+    });
+    const previewPerformer = dialog.getByRole("combobox", {
+      name: "Preview with performer",
+      exact: true,
+    });
+    await expect(previewPerformer).toHaveValue("performer-ada");
+    await expect(
+      coat.getByText("Ready preview", { exact: true }),
+    ).toBeVisible();
+    await expect(olive.getByText("Ready preview", { exact: true })).toHaveCount(
+      0,
+    );
+    await previewPerformer.selectOption("performer-jules");
+    await expect(
+      olive.getByText("Ready preview", { exact: true }),
+    ).toBeVisible();
+    await expect(coat.getByText("Ready preview", { exact: true })).toHaveCount(
+      0,
+    );
+    await previewPerformer.selectOption("performer-ada");
+    await expect(
+      coat.getByText("Ready preview", { exact: true }),
+    ).toBeVisible();
+    await expect(olive.getByText("Ready preview", { exact: true })).toHaveCount(
+      0,
+    );
+    expect(
+      (await persisted(page)).characters.find(
+        (character) => character.id === actorCharacter.id,
+      )?.performerId,
+    ).toBe(actor.id);
+    performerSpecificBadgesVerified = true;
     p = await command(page, "import_example_unit", () =>
       coat
         .getByRole("button", { name: "Add to wardrobe", exact: true })
@@ -383,6 +423,14 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
     expect(p.units).toHaveLength(1);
     expect(p.units[0].id).not.toBe("unit-coat-oxblood");
     expect(p.units[0].librarySourceId).toBe("unit-coat-oxblood");
+    p = await command(page, "import_example_unit", () =>
+      olive
+        .getByRole("button", { name: "Add to wardrobe", exact: true })
+        .click(),
+    );
+    expect(p.units).toHaveLength(2);
+    expect(p.units[0].librarySourceId).toBe("unit-coat-oxblood");
+    expect(p.units[1].librarySourceId).toBe("unit-jacket-olive");
     await dialog
       .getByRole("button", { name: "Return to production", exact: true })
       .click();
@@ -398,9 +446,104 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
         .getByLabel("Look title")
         .fill(`The recurring coat · story day ${index + 1}`);
       await dialog.getByLabel("Character").selectOption(actorCharacter.id);
-      await dialog
-        .getByLabel("Physical garment unit")
-        .selectOption(p.units[0].id);
+      const garmentSelect = dialog.getByLabel("Physical garment unit");
+      if (index === 0) {
+        const actorId = p.performers[0].id,
+          coatId = p.units[0].id,
+          oliveId = p.units[1].id;
+        const pairResponse = (unitId: string) => (response: Response) => {
+          const url = new URL(response.url());
+          return (
+            url.pathname === "/api/library" &&
+            response.request().method() === "GET" &&
+            url.searchParams.get("projectId") === projectId &&
+            url.searchParams.get("performerId") === actorId &&
+            url.searchParams.get("unitId") === unitId
+          );
+        };
+        const unsupportedPending = page.waitForResponse(pairResponse(oliveId));
+        await garmentSelect.selectOption(oliveId);
+        const unsupportedResponse = await unsupportedPending;
+        expect(unsupportedResponse.ok()).toBe(true);
+        const unsupported =
+          (await unsupportedResponse.json()) as LibraryCatalog;
+        expect(unsupported.project?.revision).toBe(p.revision);
+        expect(unsupported.selection).toMatchObject({
+          performerId: actorId,
+          unitId: oliveId,
+          category: "upper_body",
+          ready: false,
+          reason: "no_recording",
+        });
+        const suggestedCoat = unsupported.selection!.suggestions.find(
+          (item) => item.unitId === "unit-coat-oxblood",
+        );
+        expect(suggestedCoat).toMatchObject({
+          performerId: "performer-ada",
+          change: "garment",
+          projectPerformerId: actorId,
+          projectUnitId: coatId,
+          category: "outerwear",
+        });
+        const options = dialog.getByRole("region", {
+          name: "Recorded preview options",
+          exact: true,
+        });
+        await expect(
+          options.getByText("No recording for this pairing", { exact: true }),
+        ).toBeVisible();
+        await expect(
+          options.getByText(
+            "Keep this performer and choose one of these recorded garments.",
+            { exact: true },
+          ),
+        ).toBeVisible();
+        const suggested = options.getByRole("article").filter({
+          has: page.getByRole("button", {
+            name: "Use C-014",
+            exact: true,
+          }),
+        });
+        const recordedThumbnail = suggested.getByRole("img", {
+          name: "Recorded YouCam pairing: Ada Mercer, Oxblood velvet coat",
+          exact: true,
+        });
+        await expect(recordedThumbnail).toBeVisible();
+        await recordedThumbnail.scrollIntoViewIfNeeded();
+        await expect
+          .poll(() =>
+            recordedThumbnail.evaluate(
+              (image) =>
+                (image as HTMLImageElement).complete &&
+                (image as HTMLImageElement).naturalWidth > 0,
+            ),
+          )
+          .toBe(true);
+        const readyPending = page.waitForResponse(pairResponse(coatId));
+        await suggested
+          .getByRole("button", { name: "Use C-014", exact: true })
+          .click();
+        await expect(garmentSelect).toHaveValue(coatId);
+        const readyResponse = await readyPending;
+        expect(readyResponse.ok()).toBe(true);
+        const ready = (await readyResponse.json()) as LibraryCatalog;
+        expect(ready.selection).toMatchObject({
+          performerId: actorId,
+          unitId: coatId,
+          category: "outerwear",
+          ready: true,
+          reason: "ready",
+        });
+        expect((await persisted(page)).looks).toHaveLength(0);
+        unsupportedPairSuggestionVerified = true;
+      } else {
+        await garmentSelect.selectOption(p.units[0].id);
+      }
+      // Automatic recorded attachment is gated by this resolved server check.
+      await expect(
+        dialog.getByText("Ready preview", { exact: true }),
+      ).toBeVisible();
+      expect(previewRequests).toHaveLength(index);
       await dialog
         .getByRole("checkbox", {
           name: new RegExp(`^SC\\s+${escaped(scene.number)}\\s`),
@@ -420,7 +563,10 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
       const recordResponse = await recorded,
         recordBody = await recordResponse.json();
       expect(recordResponse.ok(), JSON.stringify(recordBody)).toBe(true);
-      expect(recordBody.job).toMatchObject({ state: "succeeded" });
+      expect(recordBody.job).toMatchObject({
+        state: "succeeded",
+        estimatedUnits: 0,
+      });
       await expect(dialog).not.toBeVisible();
       await expect(page).toHaveURL(
         new RegExp(`/looks\\?look=${escaped(lookId)}$`),
@@ -593,6 +739,8 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
     ),
   ).toBe(true);
   expect(blockedFresh).toEqual([]);
+  expect(performerSpecificBadgesVerified).toBe(true);
+  expect(unsupportedPairSuggestionVerified).toBe(true);
   await info.attach("own-script-outcome", {
     body: JSON.stringify(
       {
@@ -605,6 +753,8 @@ test("a grounded own script reaches exact recorded approvals and a checked physi
         quoteCents: saved.allocationResult?.totalCostCents,
         recordedRequests: previewRequests.length,
         freshRequests: blockedFresh.length,
+        performerSpecificBadgesVerified,
+        unsupportedPairSuggestionVerified,
         physicallyReady: getReadiness(saved).ready,
       },
       null,

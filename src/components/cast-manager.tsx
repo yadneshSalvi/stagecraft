@@ -7,6 +7,7 @@ import { uploadImage } from "@/lib/upload-client";
 import { useProduction } from "./production-context";
 import { Badge, Button, Field, Modal, Notice, Photo } from "./ui";
 import { InitialCasting } from "./initial-casting";
+import { RecordedPairGuide, useRecordedLibrary } from "./recorded-pair-guide";
 
 export function CastManager({
   open,
@@ -351,10 +352,12 @@ export function NewLookDialog({
   open,
   onClose,
   onCreated,
+  onOpenLibrary,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated?: (lookId: string) => void;
+  onOpenLibrary?: (performerId: string) => void;
 }) {
   const { project, send, busy, error, refresh, setError } = useProduction();
   const [attaching, setAttaching] = useState(false);
@@ -366,6 +369,12 @@ export function NewLookDialog({
   const [sceneIds, setSceneIds] = useState<string[]>([]);
   const character = project.characters.find((c) => c.id === characterId);
   const unit = project.units.find((u) => u.id === unitId);
+  const recordedLibrary = useRecordedLibrary({
+    performerId: character?.performerId || undefined,
+    unitId,
+    category: unit?.category,
+    enabled: open && !!character?.performerId && !!unitId,
+  });
   async function create(event: React.FormEvent) {
     event.preventDefault();
     if (!character || !unit || attaching) return;
@@ -400,13 +409,7 @@ export function NewLookDialog({
     };
     const result = await send({ type: "create_look", look });
     if (result) {
-      const performer = result.performers.find(
-        (person) => person.id === character.performerId,
-      );
-      if (
-        (performer?.librarySourceId || result.fixture) &&
-        (unit.librarySourceId || result.fixture)
-      ) {
+      if (recordedLibrary.catalog?.selection?.ready) {
         setAttaching(true);
         try {
           await requestPreview(result, look.id, "recorded");
@@ -477,6 +480,14 @@ export function NewLookDialog({
             ))}
           </select>
         </Field>
+        {character?.performerId && unitId && (
+          <RecordedPairGuide
+            library={recordedLibrary}
+            onSelectUnit={setUnitId}
+            onOpenLibrary={onOpenLibrary}
+            disabled={busy || attaching}
+          />
+        )}
         <fieldset className="scene-choice">
           <legend>Appears in these scenes</legend>
           {project.scenes
@@ -538,13 +549,16 @@ export function NewLookDialog({
             type="submit"
             busy={busy || attaching}
             disabled={
+              recordedLibrary.loading ||
               !character ||
               !unit ||
               !sceneIds.length ||
               !project.performers.some((p) => p.id === character?.performerId)
             }
           >
-            Create look
+            {recordedLibrary.loading
+              ? "Checking recorded options"
+              : "Create look"}
             <ArrowRight size={15} />
           </Button>
         </div>

@@ -101,6 +101,14 @@ export function adoptAppearanceCandidate(
     look.performerId = candidate.performerId;
     look.revision += 1;
     if (included) {
+      look.removedUnitIds = [
+        ...new Set([
+          ...(look.removedUnitIds ?? []),
+          ...look.unitIds.filter(
+            (id) => !candidate.recipe.unitIds.includes(id),
+          ),
+        ]),
+      ].filter((id) => !candidate.recipe.unitIds.includes(id));
       look.unitIds = [...candidate.recipe.unitIds];
       look.category = candidate.recipe.category;
       look.activeCandidateId = candidate.id;

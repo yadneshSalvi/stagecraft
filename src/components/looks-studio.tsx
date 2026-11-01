@@ -75,6 +75,12 @@ export function LooksStudio() {
   const [cast, setCast] = useState(false);
   const [newLook, setNewLook] = useState(false);
   const [library, setLibrary] = useState(false);
+  const [libraryPerformerId, setLibraryPerformerId] = useState<string>();
+  const openLibraryPair = (performerId: string) => {
+    setNewLook(false);
+    setLibraryPerformerId(performerId);
+    setLibrary(true);
+  };
   return (
     <>
       <div className="studio-titlebar">
@@ -84,7 +90,13 @@ export function LooksStudio() {
         </Link>
         <span className="eyebrow">THE LOOK STUDIO</span>
         <div>
-          <Button variant="quiet" onClick={() => setLibrary(true)}>
+          <Button
+            variant="quiet"
+            onClick={() => {
+              setLibraryPerformerId(undefined);
+              setLibrary(true);
+            }}
+          >
             Example library
           </Button>
           <Button onClick={() => setCast(true)}>
@@ -265,9 +277,9 @@ export function LooksStudio() {
               prospectivePerformerId={search.get("performer") || undefined}
               returnHref={
                 search.get("repair")
-                  ? `/production/${project.id}?change=${encodeURIComponent(search.get("repair")!)}`
+                  ? `/production/${project.id}?change=${encodeURIComponent(search.get("repair")!)}&impact=refresh`
                   : search.get("recast") && search.get("performer")
-                    ? `/production/${project.id}?recast=${encodeURIComponent(search.get("recast")!)}&performer=${encodeURIComponent(search.get("performer")!)}`
+                    ? `/production/${project.id}?recast=${encodeURIComponent(search.get("recast")!)}&performer=${encodeURIComponent(search.get("performer")!)}&impact=refresh`
                     : undefined
               }
             />
@@ -282,15 +294,22 @@ export function LooksStudio() {
               key={`${selected.id}-${selected.activeCandidateId || "base"}`}
               look={selected}
               onCast={() => setCast(true)}
+              onOpenLibrary={openLibraryPair}
             />
           )}
         </div>
       )}
       <CastManager open={cast} onClose={() => setCast(false)} />
-      <LibraryDialog open={library} onClose={() => setLibrary(false)} />
+      <LibraryDialog
+        open={library}
+        onClose={() => setLibrary(false)}
+        initialKind={libraryPerformerId ? "wardrobe" : "cast"}
+        initialPerformerId={libraryPerformerId}
+      />
       <NewLookDialog
         open={newLook}
         onClose={() => setNewLook(false)}
+        onOpenLibrary={openLibraryPair}
         onCreated={(lookId) =>
           router.replace(`/production/${project.id}/looks?look=${lookId}`)
         }
@@ -299,7 +318,15 @@ export function LooksStudio() {
   );
 }
 
-function LookCanvas({ look, onCast }: { look: Look; onCast: () => void }) {
+function LookCanvas({
+  look,
+  onCast,
+  onOpenLibrary,
+}: {
+  look: Look;
+  onCast: () => void;
+  onOpenLibrary: (performerId: string) => void;
+}) {
   const { project, config, send, busy, error, setError } = useProduction();
   const character = project.characters.find((c) => c.id === look.characterId);
   const performer = project.performers.find((p) => p.id === look.performerId);
@@ -560,6 +587,7 @@ function LookCanvas({ look, onCast }: { look: Look; onCast: () => void }) {
           return jobState.generate(mode);
         }}
         onCast={onCast}
+        onOpenLibrary={onOpenLibrary}
       />
       <Modal
         open={approving}

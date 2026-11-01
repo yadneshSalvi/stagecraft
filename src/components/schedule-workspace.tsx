@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -11,13 +11,15 @@ import {
   Route,
   ShieldCheck,
 } from "lucide-react";
-import type { Occurrence, ProductionMode } from "@/lib/types";
+import type { Occurrence, Production, ProductionMode } from "@/lib/types";
+import { getAllocationDecisionSummary } from "@/lib/domain/allocation-context";
 import { day, time, money } from "@/lib/format";
 import { useProduction } from "./production-context";
 import { Badge, Button, EmptyState, Notice, PageHeading } from "./ui";
 import { AllocationReview } from "./allocation-review";
 import { OccurrenceDialog, TransitionDialog } from "./schedule-dialogs";
 import { ScheduleDraft } from "./schedule-draft";
+import { ExampleDecisions } from "./example-decisions";
 
 export function ScheduleWorkspace() {
   const { project, send, busy } = useProduction();
@@ -25,6 +27,26 @@ export function ScheduleWorkspace() {
   const [transitionOpen, setTransitionOpen] = useState(false);
   const [focusResult, setFocusResult] = useState(0);
   const [drafting, setDrafting] = useState(false);
+  const [recheckRevision, setRecheckRevision] = useState(0);
+  const recheckedRevision = useRef(0);
+  const decisions = getAllocationDecisionSummary(project);
+  const firstMissingLook = decisions.missingLookIds[0];
+  const reviewHref = `/production/${project.id}/looks${firstMissingLook ? `?look=${encodeURIComponent(firstMissingLook)}` : ""}`;
+  const afterDecisions = (next: Production) =>
+    setRecheckRevision(next.revision);
+  useEffect(() => {
+    if (
+      !recheckRevision ||
+      busy ||
+      project.revision < recheckRevision ||
+      recheckedRevision.current === recheckRevision
+    )
+      return;
+    recheckedRevision.current = recheckRevision;
+    void send({ type: "solve_allocation" }).then((next) => {
+      if (next) setFocusResult((value) => value + 1);
+    });
+  }, [busy, project.revision, recheckRevision, send]);
   const result = project.allocationResult;
   const occurrences = [...project.occurrences].sort((a, b) =>
     a.start.localeCompare(b.start),
@@ -35,41 +57,62 @@ export function ScheduleWorkspace() {
   const mode = project.mode;
   return (
     <>
-      <PageHeading
-        eyebrow="THE CALL SHEET / PHYSICAL COMMITMENTS"
-        title="A place. A time. A real garment."
-        action={
-          <>
-            {project.scenes.some(
-              (scene) =>
-                !project.occurrences.some((call) => call.sceneId === scene.id),
-            ) && (
-              <Button onClick={() => setDrafting(true)}>
-                <CalendarDays size={15} />
-                Draft calls from script
+      <div className="schedule-heading">
+        <PageHeading
+          eyebrow="THE CALL SHEET / PHYSICAL COMMITMENTS"
+          title="A place. A time. A real garment."
+          action={
+            <>
+              {project.scenes.some(
+                (scene) =>
+                  !project.occurrences.some(
+                    (call) => call.sceneId === scene.id,
+                  ),
+              ) && (
+                <Button onClick={() => setDrafting(true)}>
+                  <CalendarDays size={15} />
+                  Draft calls from script
+                </Button>
+              )}
+              <Button onClick={() => setEdit("new")}>
+                <Plus size={15} />
+                Add a call
               </Button>
-            )}
-            <Button onClick={() => setEdit("new")}>
-              <Plus size={15} />
-              Add a call
-            </Button>
-            <Button
-              variant="primary"
-              busy={busy}
-              onClick={async () => {
-                if (await send({ type: "solve_allocation" }))
-                  setFocusResult((value) => value + 1);
-              }}
-            >
-              <ShieldCheck size={16} />
-              Check the allocation
-            </Button>
-          </>
-        }
-      >
-        Story chronology and production order are separate. Physical units can
-        only be in one place at a time.
-      </PageHeading>
+              {decisions.looksTotal > 0 && decisions.approvedLooks === 0 && (
+                <>
+                  <Link className="button" href={reviewHref}>
+                    Review looks
+                  </Link>
+                  <ExampleDecisions compact onRecorded={afterDecisions} />
+                </>
+              )}
+              <Button
+                variant="primary"
+                busy={busy}
+                onClick={async () => {
+                  if (await send({ type: "solve_allocation" }))
+                    setFocusResult((value) => value + 1);
+                }}
+              >
+                <ShieldCheck size={16} />
+                Check the allocation
+              </Button>
+            </>
+          }
+        >
+          Story chronology and production order are separate. Physical units can
+          only be in one place at a time.
+        </PageHeading>
+      </div>
+      {decisions.looksTotal > 0 && decisions.approvedLooks === 0 && (
+        <p className="schedule-approval-nudge">
+          {decisions.looksTotal} scheduled look
+          {decisions.looksTotal === 1 ? " needs" : "s need"} an approved
+          appearance before allocation.
+          {project.fixture &&
+            " Review each output, or explicitly record the example decisions to rehearse the allocation."}
+        </p>
+      )}
       {drafting && <ScheduleDraft onClose={() => setDrafting(false)} />}
       <div className="schedule-controls">
         <div className="segmented" aria-label="Production scheduling mode">
@@ -253,8 +296,7 @@ export function ScheduleWorkspace() {
               </div>
             </div>
             <Notice>
-              Provisional availability and unobserved fitting remain evidence
-              gaps even when a time-and-unit assignment is feasible.
+              Review pending availability and fitting records in Wardrobe.
             </Notice>
             <Link href={`/production/${project.id}/wardrobe`}>
               Review physical unit evidence
@@ -264,7 +306,11 @@ export function ScheduleWorkspace() {
         </div>
       )}
       {result && (
-        <AllocationReview result={result} focusRequest={focusResult} />
+        <AllocationReview
+          result={result}
+          focusRequest={focusResult}
+          onDecisionsRecorded={afterDecisions}
+        />
       )}
       {(mode === "live_performance" || project.transitions.length > 0) && (
         <section className="transition-section">

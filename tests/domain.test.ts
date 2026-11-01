@@ -154,7 +154,7 @@ describe("truthful production fixtures and immutable commands", () => {
     ).toBe(true);
     const allocation = solveAllocation(production, { now: NOW });
     expect(allocation).toMatchObject({
-      status: "INFEASIBLE",
+      status: "DECISIONS_NEEDED",
       independentlyChecked: false,
       totalCostCents: 0,
     });

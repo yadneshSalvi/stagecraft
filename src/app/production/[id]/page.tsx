@@ -12,12 +12,14 @@ export default async function Page({
     typeof query.recast === "string" ? query.recast : undefined;
   const initialReplacementId =
     typeof query.performer === "string" ? query.performer : undefined;
+  const refreshImpactOnOpen = query.impact === "refresh";
   return (
     <ProductionBoard
-      key={`${initialUnitId || ""}:${initialCharacterId || ""}:${initialReplacementId || ""}`}
+      key={`${initialUnitId || ""}:${initialCharacterId || ""}:${initialReplacementId || ""}:${refreshImpactOnOpen}`}
       initialUnitId={initialUnitId}
       initialCharacterId={initialCharacterId}
       initialReplacementId={initialReplacementId}
+      refreshImpactOnOpen={refreshImpactOnOpen}
     />
   );
 }

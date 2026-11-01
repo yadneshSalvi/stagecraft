@@ -7,7 +7,30 @@ import type {
   PhysicalUnit,
   Production,
 } from "../types";
-import { allocationInputHash, getApprovedAppearanceChoices } from "./lineage";
+import {
+  allocationInputHash,
+  appearanceRecipeHash,
+  continuityLookIds,
+  getApprovedAppearanceChoices,
+} from "./lineage";
+import { fingerprint } from "./hash";
+import {
+  getAllocationDecisionSummary,
+  scheduledDressedLooks,
+} from "./allocation-context";
+import {
+  buildAllocationChoiceComparisons,
+  countGarmentChangeovers,
+  getAllocationSwaps,
+} from "./allocation-review";
+export {
+  getAllocationDecisionSummary,
+  getAllocationStatus,
+} from "./allocation-context";
+export {
+  getAllocationSwaps,
+  getAllocationAdoptionReview,
+} from "./allocation-review";
 import type { ApprovedAppearanceChoice } from "./lineage";
 
 const MINUTE = 60000;
@@ -20,6 +43,7 @@ export interface AllocationOptions {
   now?: string;
   maxNodes?: number;
   sourceRevision?: number;
+  proposalId?: string;
 }
 export interface AllocationValidation {
   valid: boolean;
@@ -134,7 +158,40 @@ function preparationStart(
   );
 }
 
-function buildDemands(production: Production): {
+/** Ignores missing working-recipe permission only to diagnose physical facts, never adoption. */
+function physicalPlanningChoices(
+  production: Production,
+  look: Look,
+): ApprovedAppearanceChoice[] {
+  const lookIds = continuityLookIds(production, look);
+  const group = scheduledDressedLooks(production).filter((item) =>
+    lookIds.includes(item.id),
+  );
+  const recipes = [
+    ...(group.length ? group : [look]).map((item) => ({
+      category: item.category,
+      unitIds: [...item.unitIds],
+    })),
+    ...getApprovedAppearanceChoices(production, look).map(
+      (choice) => choice.recipe,
+    ),
+  ];
+  return [
+    ...new Map(
+      recipes.map((recipe) => [appearanceRecipeHash(recipe), recipe]),
+    ).entries(),
+  ].map(([hash, recipe]) => ({
+    id: `physical-only:${look.continuityGroupId ?? look.id}:${hash}`,
+    lookIds,
+    recipe,
+    evidence: {},
+  }));
+}
+
+function buildDemands(
+  production: Production,
+  physicalOnly = false,
+): {
   demands: Demand[];
   findings: AllocationFinding[];
   invalid: boolean;
@@ -234,12 +291,14 @@ function buildDemands(production: Production): {
       }
     }
     for (const look of looks) {
-      const choices = getApprovedAppearanceChoices(production, look);
-      if (!choices.length)
+      const choices = physicalOnly
+        ? physicalPlanningChoices(production, look)
+        : getApprovedAppearanceChoices(production, look);
+      if (!physicalOnly && !choices.length)
         findings.push(
           finding(
             "APPEARANCE_APPROVAL_REQUIRED",
-            "conflict",
+            "unverified",
             `${look.title} has no exact current approved appearance. Review an existing output or approve a candidate before allocation.`,
             look.unitIds,
             [occurrence.id],
@@ -685,13 +744,14 @@ function transitionFindings(production: Production): AllocationFinding[] {
 }
 
 /** Independent of the optimizer: checks coverage, exact intervals, facts and all overlaps. */
-export function validateAllocation(
+function validateAllocationModel(
   production: Production,
   assignments: Allocation[],
   options: Pick<AllocationOptions, "now"> = {},
+  physicalOnly = false,
 ): AllocationValidation {
   const now = time(options.now ?? new Date().toISOString());
-  const built = buildDemands(production);
+  const built = buildDemands(production, physicalOnly);
   const findings = [...built.findings, ...transitionFindings(production)];
   if (
     unique(assignments.map((assignment) => assignment.id)).length !==
@@ -1014,13 +1074,14 @@ export function validateAllocation(
   };
 }
 
-export function solveAllocation(
+function solveAllocationModel(
   production: Production,
   options: AllocationOptions = {},
+  physicalOnly = false,
 ): AllocationResult {
   const now = options.now ?? new Date().toISOString();
   const sourceRevision = options.sourceRevision ?? production.revision;
-  const built = buildDemands(production);
+  const built = buildDemands(production, physicalOnly);
   const staticFindings = [...built.findings, ...transitionFindings(production)];
   const base = {
     sourceRevision,
@@ -1109,6 +1170,16 @@ export function solveAllocation(
     approvalId: choice?.evidence[demand.look.id]?.approvalId,
     previewId: choice?.evidence[demand.look.id]?.previewId,
   });
+  const requiredAssignments = () =>
+    built.demands.map((demand) =>
+      makeAssignment(
+        demand,
+        demand.required,
+        demand.choices.find(
+          (choice) => choice.recipe.unitIds[demand.slot] === demand.required.id,
+        ),
+      ),
+    );
   const candidates = new Map(
     built.demands.map((demand) => [
       demand.key,
@@ -1168,10 +1239,11 @@ export function solveAllocation(
           !production.units.find((unit) => unit.id === id)?.priceSource.trim(),
       ),
     );
-    const check = validateAllocation(
+    const check = validateAllocationModel(
       production,
-      built.demands.map((demand) => makeAssignment(demand, demand.required)),
+      requiredAssignments(),
       { now },
+      physicalOnly,
     );
     return {
       ...base,
@@ -1220,36 +1292,12 @@ export function solveAllocation(
     }
     if (cost > bestCost || cost > production.budgetCents) return;
     if (index === order.length) {
-      let changeovers = 0;
-      for (const performerId of unique(
-        chosen.map((item) => item.demand.look.performerId),
-      )) {
-        const calls = [
-          ...new Set(
-            chosen
-              .filter((item) => item.demand.look.performerId === performerId)
-              .map((item) => item.demand.occurrence.id),
-          ),
-        ]
-          .map((occurrenceId) => ({
-            start: time(
-              production.occurrences.find((item) => item.id === occurrenceId)!
-                .start,
-            ),
-            units: chosen
-              .filter(
-                (item) =>
-                  item.demand.look.performerId === performerId &&
-                  item.demand.occurrence.id === occurrenceId,
-              )
-              .map((item) => item.unit.id)
-              .sort()
-              .join("|"),
-          }))
-          .sort((a, b) => a.start - b.start);
-        for (let i = 1; i < calls.length; i++)
-          if (calls[i].units !== calls[i - 1].units) changeovers++;
-      }
+      const changeovers = countGarmentChangeovers(
+        production,
+        chosen.map(({ demand, unit, choice }) =>
+          makeAssignment(demand, unit, choice),
+        ),
+      );
       if (cost < bestCost || (cost === bestCost && changeovers < bestChanges)) {
         bestChanges = changeovers;
         bestCost = cost;
@@ -1292,10 +1340,11 @@ export function solveAllocation(
   };
   visit(0, 0, new Set());
   if (best === null) {
-    const check = validateAllocation(
+    const check = validateAllocationModel(
       production,
-      built.demands.map((demand) => makeAssignment(demand, demand.required)),
+      requiredAssignments(),
       { now },
+      physicalOnly,
     );
     return {
       ...base,
@@ -1316,7 +1365,12 @@ export function solveAllocation(
       independentlyChecked: false,
     };
   }
-  const checked = validateAllocation(production, best, { now });
+  const checked = validateAllocationModel(
+    production,
+    best,
+    { now },
+    physicalOnly,
+  );
   const checkerLimited = checked.findings.some(
     (item) => item.code === "COVERAGE_CHECK_LIMIT",
   );
@@ -1362,4 +1416,60 @@ export function solveAllocation(
     independentlyChecked: false,
     constraintChecked: checked.valid,
   };
+}
+
+/** Public checking always enforces exact appearance permission. */
+export function validateAllocation(
+  production: Production,
+  assignments: Allocation[],
+  options: Pick<AllocationOptions, "now"> = {},
+): AllocationValidation {
+  return validateAllocationModel(production, assignments, options);
+}
+export function solveAllocation(
+  production: Production,
+  options: AllocationOptions = {},
+): AllocationResult {
+  const built = buildDemands(production);
+  const pending = built.findings.some(
+    (item) => item.code === "APPEARANCE_APPROVAL_REQUIRED",
+  );
+  let result: AllocationResult;
+  if (pending && !built.invalid) {
+    const physical = solveAllocationModel(production, options, true);
+    result = {
+      ...physical,
+      status: ["FEASIBLE", "OPTIMAL"].includes(physical.status)
+        ? "DECISIONS_NEEDED"
+        : physical.status,
+      assignments: [],
+      constraintChecked: false,
+      totalCostCents: 0,
+      findings: deduplicateFindings([
+        ...physical.findings,
+        ...built.findings.filter(
+          (item) => item.code === "APPEARANCE_APPROVAL_REQUIRED",
+        ),
+      ]),
+    };
+  } else result = solveAllocationModel(production, options);
+  result.decisions = getAllocationDecisionSummary(production);
+  result.proposalId =
+    options.proposalId ??
+    `allocation-${fingerprint({ productionId: production.id, sourceRevision: result.sourceRevision, inputHash: result.inputHash }).slice(0, 32)}`;
+  result.originalRecipes = production.looks.map((look) => ({
+    lookId: look.id,
+    unitIds: [...look.unitIds],
+  }));
+  result.swaps = getAllocationSwaps(production, result);
+  if (
+    result.constraintChecked &&
+    ["FEASIBLE", "OPTIMAL"].includes(result.status)
+  )
+    result.choiceComparisons = buildAllocationChoiceComparisons(
+      production,
+      result,
+      validateAllocation,
+    );
+  return result;
 }

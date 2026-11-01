@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -29,12 +29,14 @@ export function ChangeReview({
   initialUnitId,
   initialCharacterId,
   initialReplacementId,
+  refreshImpactOnOpen = false,
 }: {
   open: boolean;
   onClose: () => void;
   initialUnitId?: string;
   initialCharacterId?: string;
   initialReplacementId?: string;
+  refreshImpactOnOpen?: boolean;
 }) {
   return open ? (
     <ChangeReviewSession
@@ -43,6 +45,7 @@ export function ChangeReview({
       initialUnitId={initialUnitId}
       initialCharacterId={initialCharacterId}
       initialReplacementId={initialReplacementId}
+      refreshImpactOnOpen={refreshImpactOnOpen}
     />
   ) : null;
 }
@@ -53,12 +56,14 @@ function ChangeReviewSession({
   initialUnitId,
   initialCharacterId,
   initialReplacementId,
+  refreshImpactOnOpen,
 }: {
   open: boolean;
   onClose: () => void;
   initialUnitId?: string;
   initialCharacterId?: string;
   initialReplacementId?: string;
+  refreshImpactOnOpen: boolean;
 }) {
   const { project, send, busy, error, clearError } = useProduction();
   const [kind, setKind] = useState<RepairProposal["kind"]>(
@@ -78,6 +83,7 @@ function ChangeReviewSession({
   const [optionId, setOptionId] = useState<string | null>(null);
   const [adopted, setAdopted] = useState(false);
   const ownMutation = useRef(false);
+  const resumedImpact = useRef(false);
   const seenRevision = useRef(project.revision);
   const [revisionNotice, setRevisionNotice] = useState(false);
   useEffect(() => {
@@ -93,15 +99,23 @@ function ChangeReviewSession({
     return () => cancelAnimationFrame(frame);
   }, [project.revision]);
   const proposal = project.proposals.find((p) => p.id === proposalId);
+  const resumingImpact = refreshImpactOnOpen && !proposal && !revisionNotice;
   const isStale =
     !!proposal &&
     (proposal.status === "stale" ||
       (proposal.status !== "adopted" &&
         proposal.baseRevision !== project.revision));
   const selected = proposal?.options.find((option) => option.id === optionId);
+  const preservedApprovalCount = proposal
+    ? new Set([
+        ...proposal.impact.preservedApprovalIds,
+        ...(proposal.impact.preservedBeautyApprovalIds || []),
+        ...(proposal.impact.preservedDetailApprovalIds || []),
+      ]).size
+    : 0;
   const unit = project.units.find((u) => u.id === subject);
   const character = project.characters.find((c) => c.id === subject);
-  async function propose() {
+  const propose = useCallback(async () => {
     ownMutation.current = true;
     setRevisionNotice(false);
     clearError();
@@ -124,7 +138,12 @@ function ChangeReviewSession({
       }
     }
     ownMutation.current = false;
-  }
+  }, [clearError, kind, project.fixture, replacement, send, subject]);
+  useEffect(() => {
+    if (!refreshImpactOnOpen || resumedImpact.current || busy) return;
+    resumedImpact.current = true;
+    void propose();
+  }, [busy, propose, refreshImpactOnOpen]);
   async function adopt() {
     if (!proposal || !optionId) return;
     ownMutation.current = true;
@@ -216,7 +235,12 @@ function ChangeReviewSession({
           impact proposal.
         </Notice>
       )}
-      {!proposal && (
+      {resumingImpact && !error && (
+        <p className="change-refresh-status" role="status">
+          Refreshing this change against the current decisions…
+        </p>
+      )}
+      {!proposal && !resumingImpact && (
         <div className="change-setup">
           <div className="change-type-switch">
             <button
@@ -594,6 +618,21 @@ function ChangeReviewSession({
               tone="success"
               title={`${revision(project.revision)} is now the current working book.`}
             >
+              <p className="change-measured-impact">
+                {kind === "garment_unavailable"
+                  ? `Removing ${unit?.code || "the selected unit"}`
+                  : `Recasting ${character?.name || "the selected character"}`}
+                : {proposal.impact.lookIds.length} look
+                {proposal.impact.lookIds.length === 1 ? "" : "s"},{" "}
+                {proposal.impact.sceneIds.length} scene
+                {proposal.impact.sceneIds.length === 1 ? "" : "s"},{" "}
+                {proposal.impact.occurrenceIds.length} call
+                {proposal.impact.occurrenceIds.length === 1 ? "" : "s"}{" "}
+                identified
+                {preservedApprovalCount > 0
+                  ? `; ${preservedApprovalCount} appearance and detail approval${preservedApprovalCount === 1 ? "" : "s"} preserved.`
+                  : "."}
+              </p>
               The exact reviewed alternative remains attached. Open the affected
               looks to inspect their current decisions and any independent
               details that need review.
@@ -624,11 +663,17 @@ function ChangeReviewSession({
         ) : !proposal || isStale ? (
           <Button
             variant="primary"
-            busy={busy}
+            busy={busy || (resumingImpact && !error)}
             disabled={!subject || (kind === "recast" && !replacement)}
             onClick={() => void propose()}
           >
-            {isStale ? "Recompute impact" : "Preview the impact"}
+            {resumingImpact
+              ? error
+                ? "Retry impact refresh"
+                : "Refreshing impact"
+              : isStale
+                ? "Recompute impact"
+                : "Preview the impact"}
             <GitBranch size={16} />
           </Button>
         ) : (

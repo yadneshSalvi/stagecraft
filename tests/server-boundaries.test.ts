@@ -89,6 +89,31 @@ describe("public mutation and media boundaries", () => {
       }).success,
     ).toBe(false);
   });
+  it("accepts only a complete bounded allocation swap confirmation", () => {
+    const input = { type: "adopt_allocation", inputHash: "a".repeat(64) };
+    const confirmation = {
+      proposalId: "allocation-review-1",
+      inputHash: "a".repeat(64),
+      sourceRevision: 12,
+      reviewHash: "b".repeat(64),
+    };
+    expect(commandSchema.safeParse(input).success).toBe(true);
+    expect(commandSchema.safeParse({ ...input, confirmation }).success).toBe(
+      true,
+    );
+    for (const value of [
+      true,
+      { ...confirmation, sourceRevision: -1 },
+      { ...confirmation, reviewHash: "unknown" },
+      { ...confirmation, proposalId: "" },
+      { ...confirmation, approved: true },
+      { ...confirmation, inputHash: undefined },
+    ]) {
+      expect(
+        commandSchema.safeParse({ ...input, confirmation: value }).success,
+      ).toBe(false);
+    }
+  });
   it("requires scoped source permission, known types and bounded bytes for upload intents", () => {
     const input = {
       projectId: "12460c98-b394-40b2-af24-c2a98c2f14df",

@@ -276,10 +276,21 @@ export default function EvidencePage() {
             Allocation tests require current approval for the exact performer,
             physical unit, reference and output. A continuity group keeps one
             garment across its calls; the objective minimizes unique-unit hire
-            cost, then performer changeovers. FEASIBLE means the constraints
-            passed without a genuine choice. OPTIMAL requires exhaustively
-            comparing the admissible alternatives. The Constraint check shares
+            cost, then performer changeovers. DECISIONS NEEDED identifies
+            missing current approvals without assigning unapproved garments.
+            FEASIBLE means a valid available choice was found; OPTIMAL
+            additionally requires exhaustive comparison of genuine admissible
+            alternatives. Garment swaps require confirmation of the exact
+            solution and its direction references. The Constraint check shares
             the solver’s demand model and is not an independent proof.
+          </p>
+          <p>
+            Ready preview badges verify the performer, garment reference and
+            recorded output identities. The library offers 18 physical-unit
+            bindings to 12 garment recordings, including distinct ivory units
+            with identical artwork. Supported pairings can be reviewed and
+            allocated without a fresh provider task. An unsupported pairing
+            suggests recorded garments for the selected performer first.
           </p>
           <p>
             The published domain benchmark uses ten in-process samples of a

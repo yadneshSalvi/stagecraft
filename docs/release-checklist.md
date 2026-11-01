@@ -2,7 +2,25 @@
 
 This checklist separates current review-round checks from the preceding deployed release. Synthetic decisions, provider images and software checks do not establish practitioner approval, physical fitting or supplier outcomes.
 
-The current review round starts from `a5f128467e72e9fdfa37ddfc5f0649278eda3129`. The final application commit `deaf490c01ceac1320694515fa163ef513baa718` is deployed as `dpl_4jc58ZVN3mbtYjq74GEPuPvVDNr9`, with the normal balance floor. Local gates and independent canonical acceptance are complete. The final canonical browser suite passed **16/16**, with zero failures, skips or retries, in **319.900 seconds**. [Production verification](evidence/review-production-verification.json) records the exact release; later documentation-only commits do not alter the application build. The canonical application is [stagecraft-swart.vercel.app](https://stagecraft-swart.vercel.app).
+Review round two starts from repository commit `4bc1176`, whose application is `deaf490`. It adds decisions-needed allocation guidance, exact garment-swap confirmation, verified recorded-pair suggestions, comparative choices and a refreshed change-review return. No new YouCam submissions, recordings, schema migrations or environment changes are part of this round. The canonical application is [stagecraft-swart.vercel.app](https://stagecraft-swart.vercel.app).
+
+## Review round two — current gate
+
+- [x] Focused domain checks: 95 tests across five files, including 18 new round-two regressions and the existing independent allocation oracle.
+- [x] Focused backend checks: 53 tests across six files, including 19 library cases covering trusted identities, altered source evidence, owner isolation and recorded-only completion while fresh generation rests.
+- [x] Independent local browser acceptance: Schedule first shows eight missing decisions in amber; explicit example decisions yield FEASIBLE £500. Approving burgundy while oxblood remains available yields OPTIMAL £485 with two changed looks, three scenes, visible direction references and required confirmation. Recompute clears confirmation; adoption updates seventeen assignments, and the creative concern survives a later solve.
+- [x] Independent local 390px check: no document overflow; Ready preview badges and three same-performer alternatives work, and creation is disabled while its pair is being checked.
+- [x] Integrated formatting, lint and TypeScript; full serial unit/PostgreSQL suite **226/226 across 21 files in 16.73 seconds**, zero skips; optimized production build.
+- [x] Full Chromium gate against that optimized build: **18/18 in 199.939 seconds**, zero failures, skips or retries. It includes recorded-only own-script completion, exact confirmation races, both same-production repaired-coat recasts and all existing accessibility, private ownership, recovery, sourcing and handoff cases. [Round-two local record](evidence/review-round2-local-verification.json).
+- [x] Regenerated crew PDF: 19 A4 pages, 27 loaded images, keyboard/ARIA readiness disclosure and automatic printing of every frozen requirement. No PDF layout source changed in this round.
+- [x] Root optimized source/client scan: 283 text files including 33 client chunks, 27 configured secret values, zero findings. Dry deployment manifest: 314 files, zero private paths. The library route trace includes all required recording/transport manifests and source/result files, and every traced file exists.
+- [ ] Final staged publication review, deployment and fresh canonical acceptance.
+
+Optional balance-lock optimization, provider-checked orphan reconciliation and long-script chunking remain deferred with their safety and scope reasons in [operations](operations.md#optional-follow-up-work-assessed-in-review-round-two).
+
+## Review round one — released scope
+
+The first review round started from `a5f128467e72e9fdfa37ddfc5f0649278eda3129`. Its final application commit `deaf490c01ceac1320694515fa163ef513baa718` was deployed as `dpl_4jc58ZVN3mbtYjq74GEPuPvVDNr9`, with the normal balance floor. Local gates and independent canonical acceptance completed. Its final canonical browser suite passed **16/16**, with zero failures, skips or retries, in **319.900 seconds**. [Production verification](evidence/review-production-verification.json) records that release; later documentation-only commits did not alter the application build.
 
 ## Review-round evidence already observed
 
@@ -17,9 +35,9 @@ The current review round starts from `a5f128467e72e9fdfa37ddfc5f0649278eda3129`.
 - [x] Protected-deployment browser context helper: 4 tests passed. Only the exact deployment host’s Vercel protection cookie can be shared with an isolated app-user context; app authentication is not copied.
 - [x] Additive migrations 005–006 applied to the production database. This does not deploy the changed application.
 
-## Current application-wide gate
+## Review round one application-wide gate
 
-The following items are updated only after running against the integrated source. Earlier release counts do not count as verification of the new continuity, candidate or independent-detail flows.
+These observations cover the first review release. They do not count as verification of the second review's changed allocation, library and return flows.
 
 - [x] Full formatting, lint and TypeScript validation. The final documentation pass is checked again before handoff.
 - [x] Complete serial unit/domain/backend suite: **188 tests across 19 files passed in 13.71 seconds**, including 17 session-recovery cases preserving browser identity on rate limits, network/server failures and malformed replies.
