@@ -177,15 +177,24 @@ export function ContinuityWall({
                                 >
                                   <div className="continuity-cell-image">
                                     <Photo
-                                      natural
+                                      fit="cover"
                                       src={preview?.imageUrl || body?.imageUrl}
                                       alt={`${character.name}: ${preview ? "YouCam garment result" : "source awaiting garment result"}`}
                                       sizes={
                                         compact
-                                          ? "120px"
-                                          : "(max-width: 700px) 160px, 220px"
+                                          ? "80px"
+                                          : "(max-width: 700px) 200px, 300px"
                                       }
                                     />
+                                    {garmentChanged && !compact && (
+                                      <div
+                                        className={`continuity-cell-caption ${inset ? "beside-inset" : ""}`}
+                                      >
+                                        <strong>
+                                          {unit?.name || look.title}
+                                        </strong>
+                                      </div>
+                                    )}
                                     {inset && (
                                       <span
                                         className={`continuity-makeup ${insetApproved ? "approved" : "awaiting"}`}
@@ -218,13 +227,6 @@ export function ContinuityWall({
                                       aria-hidden="true"
                                     />
                                   </div>
-                                  {garmentChanged && !compact && (
-                                    <div className="continuity-cell-caption">
-                                      <strong>
-                                        {unit?.name || look.title}
-                                      </strong>
-                                    </div>
-                                  )}
                                 </Link>
                               );
                             })
