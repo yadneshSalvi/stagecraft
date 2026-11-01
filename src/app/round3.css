@@ -68,10 +68,9 @@
   align-items: center;
   color: var(--brass);
 }
-/* One disclosure treatment, including the print-safe crew disclosure. */
+/* One disclosure treatment. The print-safe crew toggle keeps its own button style. */
 .workspace details > summary,
-.modal details > summary,
-.crew-warnings-toggle {
+.modal details > summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -106,10 +105,6 @@
 .workspace details > summary:hover,
 .modal details > summary:hover {
   color: var(--text);
-}
-.crew-warnings-toggle {
-  color: inherit;
-  border-color: currentColor;
 }
 .modal {
   padding: 24px;
