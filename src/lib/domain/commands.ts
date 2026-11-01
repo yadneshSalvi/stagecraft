@@ -18,7 +18,7 @@ import {
   affectedLookIds,
   buildRepairProposal,
   matchingRepairCandidates,
-  simulateRepair,
+  evaluateRepairAlternative,
 } from "./change";
 import { DomainError, findRecord, requireFact } from "./errors";
 import { canonicalJson } from "./hash";
@@ -1757,12 +1757,13 @@ export function applyCommand(
         replacementId,
       };
       const lookIds = affectedLookIds(draft, request);
-      const scratch = simulateRepair(draft, request, replacementId);
-      const checked = solveAllocation(scratch, { now });
+      const {
+        scratch,
+        allocation: checked,
+        feasible,
+      } = evaluateRepairAlternative(draft, request, replacementId, now);
       requireFact(
-        (proposal.kind === "recast" && lookIds.length === 0) ||
-          ((checked.status === "OPTIMAL" || checked.status === "FEASIBLE") &&
-            checked.constraintChecked),
+        feasible,
         "REPAIR_INFEASIBLE",
         checked.findings.find((item) => item.severity === "conflict")
           ?.message ??

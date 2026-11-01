@@ -44,6 +44,8 @@ export interface AllocationOptions {
   maxNodes?: number;
   sourceRevision?: number;
   proposalId?: string;
+  /** Internal explicit-repair constraint; never grants appearance permission. */
+  fixedCandidateIds?: string[];
 }
 export interface AllocationValidation {
   valid: boolean;
@@ -191,6 +193,7 @@ function physicalPlanningChoices(
 function buildDemands(
   production: Production,
   physicalOnly = false,
+  fixedCandidateIds: string[] = [],
 ): {
   demands: Demand[];
   findings: AllocationFinding[];
@@ -201,6 +204,19 @@ function buildDemands(
   const findings: AllocationFinding[] = [];
   let invalid = false,
     incomplete = false;
+  const fixedCandidates = (production.appearanceCandidates ?? []).filter(
+    (candidate) => fixedCandidateIds.includes(candidate.id),
+  );
+  if (fixedCandidates.length !== unique(fixedCandidateIds).length) {
+    invalid = true;
+    findings.push(
+      finding(
+        "FIXED_CANDIDATE_MISSING",
+        "conflict",
+        "An explicitly selected repair candidate is missing. Refresh the repair proposal.",
+      ),
+    );
+  }
   for (const [label, records] of [
     ["occurrence", production.occurrences],
     ["look", production.looks],
@@ -291,9 +307,33 @@ function buildDemands(
       }
     }
     for (const look of looks) {
-      const choices = physicalOnly
-        ? physicalPlanningChoices(production, look)
-        : getApprovedAppearanceChoices(production, look);
+      const fixed = fixedCandidates.filter((candidate) =>
+        candidate.lookIds.includes(look.id),
+      );
+      if (fixed.length > 1) {
+        invalid = true;
+        findings.push(
+          finding(
+            "CONFLICTING_APPEARANCE_CONSTRAINT",
+            "conflict",
+            "A continuity scope cannot be fixed to different exact repair candidates.",
+            [],
+            [occurrence.id],
+            [look.id],
+          ),
+        );
+      }
+      const choices = (
+        physicalOnly
+          ? physicalPlanningChoices(production, look)
+          : getApprovedAppearanceChoices(production, look)
+      ).filter((choice) =>
+        fixed.every((candidate) =>
+          physicalOnly
+            ? appearanceRecipeHash(choice.recipe) === candidate.recipeHash
+            : choice.candidateId === candidate.id,
+        ),
+      );
       if (!physicalOnly && !choices.length)
         findings.push(
           finding(
@@ -747,11 +787,15 @@ function transitionFindings(production: Production): AllocationFinding[] {
 function validateAllocationModel(
   production: Production,
   assignments: Allocation[],
-  options: Pick<AllocationOptions, "now"> = {},
+  options: Pick<AllocationOptions, "now" | "fixedCandidateIds"> = {},
   physicalOnly = false,
 ): AllocationValidation {
   const now = time(options.now ?? new Date().toISOString());
-  const built = buildDemands(production, physicalOnly);
+  const built = buildDemands(
+    production,
+    physicalOnly,
+    options.fixedCandidateIds,
+  );
   const findings = [...built.findings, ...transitionFindings(production)];
   if (
     unique(assignments.map((assignment) => assignment.id)).length !==
@@ -1081,7 +1125,11 @@ function solveAllocationModel(
 ): AllocationResult {
   const now = options.now ?? new Date().toISOString();
   const sourceRevision = options.sourceRevision ?? production.revision;
-  const built = buildDemands(production, physicalOnly);
+  const built = buildDemands(
+    production,
+    physicalOnly,
+    options.fixedCandidateIds,
+  );
   const staticFindings = [...built.findings, ...transitionFindings(production)];
   const base = {
     sourceRevision,
@@ -1242,7 +1290,7 @@ function solveAllocationModel(
     const check = validateAllocationModel(
       production,
       requiredAssignments(),
-      { now },
+      { now, fixedCandidateIds: options.fixedCandidateIds },
       physicalOnly,
     );
     return {
@@ -1343,7 +1391,7 @@ function solveAllocationModel(
     const check = validateAllocationModel(
       production,
       requiredAssignments(),
-      { now },
+      { now, fixedCandidateIds: options.fixedCandidateIds },
       physicalOnly,
     );
     return {
@@ -1368,7 +1416,7 @@ function solveAllocationModel(
   const checked = validateAllocationModel(
     production,
     best,
-    { now },
+    { now, fixedCandidateIds: options.fixedCandidateIds },
     physicalOnly,
   );
   const checkerLimited = checked.findings.some(
@@ -1430,7 +1478,7 @@ export function solveAllocation(
   production: Production,
   options: AllocationOptions = {},
 ): AllocationResult {
-  const built = buildDemands(production);
+  const built = buildDemands(production, false, options.fixedCandidateIds);
   const pending = built.findings.some(
     (item) => item.code === "APPEARANCE_APPROVAL_REQUIRED",
   );

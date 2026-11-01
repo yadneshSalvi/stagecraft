@@ -1354,3 +1354,121 @@ test("a recorded charcoal repair survives a refreshed impact and a Celeste recas
   ).toBe(true);
   expect(liveRequests).toEqual([]);
 });
+
+test("both approved repair choices remain feasible and preserve the explicitly selected output", async ({
+  page,
+}) => {
+  let p = await example(page);
+  const id = p.id;
+  p = await exampleDecisions(page, id);
+  await visit(page, id, "/looks?look=look-nora&detail=alternatives");
+  p = await candidateDecision(
+    page,
+    id,
+    p.units.find((unit) => unit.id === "unit-coat-burgundy")!.name,
+  );
+  const burgundy = p.appearanceCandidates!.find(
+    (candidate) => candidate.id === "candidate-nora-burgundy",
+  )!;
+  const selectedApprovalId = burgundy.approvals.at(-1)!.id;
+  const selectedPreviewId = burgundy.previews.at(-1)!.id;
+  p = await allocate(page, id, false);
+  expect(p.allocationResult!.totalCostCents).toBe(48_500);
+  expect(p.looks.find((look) => look.id === "look-nora")!.unitIds).toEqual([
+    "unit-coat-oxblood",
+  ]);
+  expect(p.units.find((unit) => unit.id === "unit-coat-oxblood")!.status).toBe(
+    "available",
+  );
+  await visit(page, id);
+  await page
+    .getByRole("button", { name: "Review a change", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByLabel("Which physical unit is unavailable?")
+    .selectOption("unit-coat-oxblood");
+  p = await impact(page);
+  expect(
+    p.proposals
+      .at(-1)!
+      .options.find(
+        (option) => option.replacementUnitId === "unit-coat-burgundy",
+      ),
+  ).toMatchObject({ feasible: true, requiresVisualApproval: false });
+  expect(
+    p.proposals
+      .at(-1)!
+      .options.find(
+        (option) => option.replacementUnitId === "unit-coat-charcoal",
+      ),
+  ).toMatchObject({ feasible: false, requiresVisualApproval: true });
+  await page
+    .getByRole("dialog", { name: "Follow the change.", exact: true })
+    .getByRole("link", { name: "Compare & review alternatives", exact: true })
+    .click();
+  p = await candidateDecision(
+    page,
+    id,
+    p.units.find((unit) => unit.id === "unit-coat-charcoal")!.name,
+  );
+  p = await returnToImpact(page);
+  const options = p.proposals.at(-1)!.options;
+  for (const unitId of ["unit-coat-burgundy", "unit-coat-charcoal"]) {
+    const option = options.find((item) => item.replacementUnitId === unitId)!;
+    expect(option).toMatchObject({
+      feasible: true,
+      requiresVisualApproval: false,
+    });
+    expect(
+      option.findings.filter((finding) => finding.severity === "conflict"),
+    ).toEqual([]);
+  }
+  const impactDialog = page.getByRole("dialog", {
+    name: "Follow the change.",
+    exact: true,
+  });
+  await expect(
+    impactDialog.getByRole("button", { name: /C-033.*Reviewable proposal/ }),
+  ).toBeVisible();
+  await expect(
+    impactDialog.getByRole("button", { name: /C-021.*Reviewable proposal/ }),
+  ).toBeVisible();
+  p = await adoptRepair(page, "C-033");
+  for (const look of p.looks.filter(
+    (item) => item.characterId === "char-nora",
+  )) {
+    expect(look.unitIds).toEqual(["unit-coat-burgundy"]);
+    expect(look.activeCandidateId).toBe(burgundy.id);
+    expect(getCurrentApproval(look, p)?.id).toBe(selectedApprovalId);
+    expect(getCurrentPreview(look, p)?.id).toBe(selectedPreviewId);
+  }
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Back to production", exact: true })
+    .click();
+  p = await allocate(page, id, false);
+  expect(p.allocationResult!.status).toBe("OPTIMAL");
+  expect(p.allocationResult!.totalCostCents).toBe(46_500);
+  expect(
+    p
+      .allocationResult!.assignments.filter((assignment) =>
+        assignment.lookId.startsWith("look-nora"),
+      )
+      .every((assignment) => assignment.unitId === "unit-coat-charcoal"),
+  ).toBe(true);
+  expect(p.looks.find((look) => look.id === "look-nora")!.unitIds).toEqual([
+    "unit-coat-burgundy",
+  ]);
+  const swaps = page.getByRole("region", {
+    name: "Garment changes in this allocation",
+    exact: true,
+  });
+  await expect(swaps).toContainText("C-033 Burgundy wool coat");
+  await expect(swaps).toContainText("C-021 Charcoal wool coat");
+  await expect(swaps.getByRole("checkbox")).not.toBeChecked();
+  await expect(
+    page.getByRole("button", { name: "Adopt these assignments", exact: true }),
+  ).toBeDisabled();
+  expect(liveRequests).toEqual([]);
+});

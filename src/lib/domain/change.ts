@@ -394,6 +394,65 @@ export function simulateRepair(
   return draft;
 }
 
+/** Evaluates an explicit repair, not a cheaper replacement for the reviewed candidate. */
+export function evaluateRepairAlternative(
+  production: Production,
+  request: ChangeRequest,
+  replacementId: string,
+  now: string,
+) {
+  const lookIds = affectedLookIds(production, request);
+  // Resolve before recasting: a request may identify the old performer rather than the character.
+  const appearanceCandidates = matchingRepairCandidates(
+    production,
+    request,
+    replacementId,
+  );
+  const castingOnly = request.kind === "recast" && lookIds.length === 0;
+  const requiresVisualApproval =
+    !castingOnly &&
+    (!appearanceCandidates.length ||
+      lookIds.some(
+        (id) =>
+          !appearanceCandidates.some(
+            (candidate) =>
+              candidate.lookIds.includes(id) &&
+              !!getCurrentCandidateApproval(production, candidate),
+          ),
+      ));
+  const scratch = simulateRepair(production, request, replacementId);
+  const allocation = solveAllocation(scratch, {
+    now,
+    fixedCandidateIds: appearanceCandidates.map((candidate) => candidate.id),
+  });
+  const feasible =
+    castingOnly ||
+    (!requiresVisualApproval &&
+      (allocation.status === "OPTIMAL" || allocation.status === "FEASIBLE") &&
+      !!allocation.constraintChecked &&
+      allocation.assignments
+        .filter((assignment) => lookIds.includes(assignment.lookId))
+        .every(
+          (assignment) =>
+            appearanceCandidates.some(
+              (candidate) =>
+                candidate.id === assignment.candidateId &&
+                candidate.lookIds.includes(assignment.lookId),
+            ) &&
+            !!scratch.looks
+              .find((look) => look.id === assignment.lookId)
+              ?.unitIds.includes(assignment.unitId),
+        ));
+  return {
+    scratch,
+    allocation,
+    appearanceCandidates,
+    castingOnly,
+    requiresVisualApproval,
+    feasible,
+  };
+}
+
 export function buildRepairProposal(
   production: Production,
   request: ChangeRequest,
@@ -441,32 +500,19 @@ export function buildRepairProposal(
       );
   }
   const options: RepairOption[] = candidates.map((candidate) => {
-    const scratch = simulateRepair(production, request, candidate.id);
-    const allocation = solveAllocation(scratch, { now: context.now });
-    const castingOnly =
-      request.kind === "recast" && impact.lookIds.length === 0;
-    const feasible =
-      castingOnly ||
-      ((allocation.status === "OPTIMAL" || allocation.status === "FEASIBLE") &&
-        !!allocation.constraintChecked &&
-        allocation.assignments
-          .filter((assignment) => impact.lookIds.includes(assignment.lookId))
-          .every((assignment) =>
-            scratch.looks
-              .find((look) => look.id === assignment.lookId)
-              ?.unitIds.includes(assignment.unitId),
-          ));
-    const appearanceCandidates = matchingRepairCandidates(
+    const {
+      scratch,
+      allocation,
+      appearanceCandidates,
+      castingOnly,
+      requiresVisualApproval,
+      feasible,
+    } = evaluateRepairAlternative(
       production,
       request,
       candidate.id,
+      context.now,
     );
-    const requiresVisualApproval =
-      !castingOnly &&
-      (!appearanceCandidates.length ||
-        appearanceCandidates.some(
-          (item) => !getCurrentCandidateApproval(production, item),
-        ));
     return {
       id: `${context.id}-option-${candidate.id}`,
       label: candidate.label,

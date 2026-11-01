@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "completedAt": "2026-11-01T04:54:48Z",
+  "scope": "Local verification of the exact-repair correction found during canonical review round two acceptance",
+  "baselineApplicationCommit": "b99966c",
+  "baselineHistory": {
+    "localRecord": "review-round2-local-verification.json",
+    "localUnitPassed": 226,
+    "localBrowserPassed": 18,
+    "localBrowserDurationSeconds": 199.939,
+    "canonicalBrowserPassed": 18,
+    "canonicalBrowserDurationSeconds": 371.866,
+    "canonicalFailed": 0,
+    "canonicalSkipped": 0,
+    "canonicalRetries": 0,
+    "qualification": "These passing suites did not cover the independent browser finding below. Their original evidence is retained."
+  },
+  "observedCanonicalFinding": {
+    "scenario": "Oxblood remained current and available. Burgundy was approved and had an unadopted GBP 485 allocation. After approving charcoal and refreshing the missing-oxblood impact, charcoal was reviewable but burgundy was disabled as a constraint conflict.",
+    "findingMismatch": "The disabled burgundy option had no conflict-severity finding; only unresolved evidence notes.",
+    "pureDomainReproduction": "The burgundy scratch solve chose the cheaper charcoal at GBP 465, then the option membership check rejected the different assignment.",
+    "providerTasks": 0
+  },
+  "correctionBoundary": {
+    "applicationFiles": [
+      "src/lib/domain/allocation.ts",
+      "src/lib/domain/change.ts",
+      "src/lib/domain/commands.ts"
+    ],
+    "repair": "Fix only affected continuity groups to the selected exact approved candidate for both option comparison and adoption recheck. Resolve candidates before an old-performer recast changes its subject.",
+    "permission": "The internal constraint filters current approved choices; it cannot grant approval. Missing or conflicting fixed identities fail closed. Physical diagnostic assignments are never exposed.",
+    "ordinaryAllocation": "Unrestricted Schedule search still considers all admissible approved choices and retains its cost-first objective. Unrelated groups remain optimizable during repair assessment.",
+    "persistence": "The constrained result is internal repair validation/findings, never installed as the ordinary allocationResult or presented as a global optimum.",
+    "compatibility": "No public API, stored-production format, schema migration, environment or provider-fixture change."
+  },
+  "failingThenPassingProof": {
+    "sameNewDomainCases": 6,
+    "before": {
+      "passed": 1,
+      "failed": 5,
+      "durationSeconds": 1.62,
+      "core": "unchanged b99966c domain files"
+    },
+    "after": {
+      "passed": 6,
+      "failed": 0,
+      "durationSeconds": 1.66
+    },
+    "existingDomain": {
+      "passed": 95,
+      "failed": 0,
+      "durationSeconds": 4.55
+    },
+    "coverage": [
+      "Both approved burgundy and charcoal repairs remain feasible at their own quotes",
+      "Explicit burgundy adoption preserves exact output and approval identities while ordinary allocation still prefers charcoal",
+      "Unavailable, over-budget, overlapping and unapproved selected options remain blocked even when charcoal can work",
+      "Recast retains its selected exact coat while an unrelated approved jacket choice remains free to optimize"
+    ]
+  },
+  "staticChecks": {
+    "formatting": "passed",
+    "eslint": "passed",
+    "typescript": "passed",
+    "optimizedBuild": "passed",
+    "diffWhitespace": "passed"
+  },
+  "unitIntegration": {
+    "files": 22,
+    "passed": 232,
+    "failed": 0,
+    "skipped": 0,
+    "durationSeconds": 18.1,
+    "database": "isolated local PostgreSQL",
+    "providerCalls": "transport doubles"
+  },
+  "focusedBrowser": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "durationSeconds": 6.575
+  },
+  "fullBrowser": {
+    "optimizedBuild": true,
+    "workers": 1,
+    "retries": 0,
+    "startedAt": "2026-11-01T04:50:45.242Z",
+    "passed": 19,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "durationSeconds": 201.813,
+    "newCoverage": "Exact canonical sequence: approve burgundy, solve without adoption, preview missing oxblood, approve charcoal, refresh impact, inspect both reviewable options, adopt burgundy preserving its output/approval, then confirm that a later unrestricted solve proposes charcoal without silently adopting it.",
+    "retainedCoverage": "All eighteen earlier accessibility, own-script/free-library, private-upload, approval-race, repair/recast, detail, sourcing, frozen-handoff and request-recovery cases passed.",
+    "otherExternalCalls": "One actual short Gemini extraction in the final full run; private-upload verification used the configured private Blob store.",
+    "freshYouCamSubmissions": 0
+  },
+  "crewPdf": {
+    "regenerated": true,
+    "pages": 19,
+    "paper": "A4",
+    "loadedImages": 27,
+    "requirements": "All frozen requirements remain automatically visible in print; online keyboard/ARIA disclosure checks passed.",
+    "layoutChange": false
+  },
+  "independentRebuiltScan": {
+    "observedAt": "2026-11-01T04:50:29Z",
+    "textFiles": 285,
+    "clientFiles": 33,
+    "knownSecretValuesChecked": 27,
+    "findings": 0,
+    "scope": "Root checked rebuilt source/client output before final documentation; final staged publication review remains separate."
+  },
+  "providerEvidence": {
+    "newYouCamTasks": 0,
+    "newRecordings": 0,
+    "existingOutputs": 20,
+    "fixtureHashes": "unchanged"
+  },
+  "limits": [
+    "Synthetic software validation, not practitioner, physical-fitting or supplier evidence.",
+    "No human time-saving or environmental claim.",
+    "Canonical deployment and final acceptance are separate from this local record."
+  ]
+}

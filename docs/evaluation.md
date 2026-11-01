@@ -2,7 +2,13 @@
 
 This reports software verification on explicitly synthetic productions. No practitioner study, real-performer fitting, physical realization, supplier reservation or human time saving is claimed. Actual provider-image review is documented separately in [evaluation-ai.md](evaluation-ai.md).
 
-## Review round 2 integrated checks
+## Review round 2 repair correction
+
+Independent canonical acceptance of `b99966c` found a combination outside the passing 18-case suite: both coat alternatives were approved, but the explicit burgundy repair was disabled without a conflict finding because its internal solver selected cheaper charcoal. Six new domain cases demonstrated **5 failures and 1 pass** on the unchanged core, then **6/6 passed** after the correction. The existing 95 domain cases also passed. Repair comparison and adoption now constrain the selected exact approved candidate only in affected groups; ordinary Schedule optimization remains unrestricted. This internal feasibility result is never persisted or displayed as a globally optimal allocation.
+
+The corrected full unit/PostgreSQL suite passed **232/232 across 22 files in 18.10 seconds**. Formatting, lint, TypeScript and the optimized build passed. The exact new browser case passed in **6.575 seconds**, then the complete expanded suite passed **19/19 in 201.813 seconds**, with zero failures, skips or retries. It verifies both reviewable repairs, explicit burgundy adoption retaining the selected output/approval, and a later ordinary solve proposing charcoal with confirmation still required. The crew PDF remains 19 A4 pages with 27 loaded images. No new YouCam submission or recording was made. [Correction and full proof](evidence/review-round2-repair-verification.json).
+
+## Review round 2 initial integrated checks
 
 On 1 November 2026, full formatting, ESLint, TypeScript and the optimized build passed. The serial unit/PostgreSQL suite passed **226 tests across 21 files in 16.73 seconds**, with zero skips. The optimized local Chromium suite then passed **18/18 in 199.939 seconds**, with zero failures, skips or retries. It includes all earlier accessibility, ownership, recovery, sourcing and independent-detail journeys plus Schedule-first decision guidance, exact swap-confirmation invalidation, same-production charcoal repair → Celeste recast and recorded-pair suggestions through adopted allocation. The crew PDF regenerated as 19 A4 pages with 27 loaded images and every frozen requirement available in print. [Sanitized round-two record](evidence/review-round2-local-verification.json).
 

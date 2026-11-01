@@ -56,7 +56,7 @@ pnpm test:e2e
 
 Database tests accept only explicitly configured local `stagecraft_dev` or `stagecraft_test` databases. Unit/integration suites replace paid provider calls; recorded browser journeys reject live YouCam requests before the application. The own-script browser journey performs one actual short Gemini extraction. Private-upload checks use the configured private Blob store. Live YouCam smoke tests are separate deliberate operations.
 
-The second review passed **226 unit/integration tests across 21 files** and **18/18 browser tests against the optimized local build**, with no failures, skips or retries. The browser gate took 199.939 seconds and used no paid YouCam tasks. It regenerated the 19-page crew PDF with all 27 images and complete printed requirements. [Current local verification](docs/evidence/review-round2-local-verification.json) records exact scope and attempts; the [release checklist](docs/release-checklist.md) tracks deployment separately. The [preceding production verification](docs/evidence/review-production-verification.json) preserves its protected/canonical browser checks and two bounded fresh workflow smokes.
+The second review, including the repair-selection correction found during canonical acceptance, passed **232 unit/integration tests across 22 files** and **19/19 browser tests against the optimized local build**, with no failures, skips or retries. The browser gate took 201.813 seconds and used no paid YouCam tasks. It regenerated the 19-page crew PDF with all 27 images and complete printed requirements. [Current local verification](docs/evidence/review-round2-repair-verification.json) preserves the failing-to-passing proof and earlier baseline; the [release checklist](docs/release-checklist.md) tracks deployment separately. The [preceding production verification](docs/evidence/review-production-verification.json) preserves its protected/canonical browser checks and two bounded fresh workflow smokes.
 
 ## Saved work and provider limits
 
@@ -90,7 +90,8 @@ Allocation uses bounded exact TypeScript search. Its production **Constraint che
 - [Original production release observations](docs/evidence/production-review.json)
 - [Operations and deployment](docs/operations.md)
 - [Current release checks](docs/release-checklist.md)
-- [Current integrated local verification](docs/evidence/review-round2-local-verification.json)
+- [Current integrated local verification](docs/evidence/review-round2-repair-verification.json)
+- [Initial second-review local verification](docs/evidence/review-round2-local-verification.json)
 - [Preceding local verification](docs/evidence/review-local-verification.json)
 - [Asset provenance and licenses](docs/asset-licenses.md)
 

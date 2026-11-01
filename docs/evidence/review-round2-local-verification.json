@@ -151,5 +151,9 @@
     "No practitioner study, physical fitting, real supplier outcome, human time saving or environmental result",
     "Automated accessibility and Chromium checks do not certify all assistive technologies or browsers",
     "Canonical deployment and acceptance are separate release steps, not inferred from this local run"
-  ]
+  ],
+  "followUp": {
+    "record": "review-round2-repair-verification.json",
+    "reason": "Independent canonical acceptance found an uncovered both-approved repair-selection case. Original counts above are preserved; the correction repeated the expanded full gates."
+  }
 }

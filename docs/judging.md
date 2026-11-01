@@ -25,6 +25,8 @@ You can test the allocator’s creative boundary while `C-014` is still availabl
 
 Prices are synthetic quotation facts and cost each physical unit once. Mae and Ruth have distinct ivory blouse units even though their public reference artwork is shared. An optimal mathematical assignment does not establish fitting, stock, transport or practical changeover evidence.
 
+You can approve both coat alternatives before adopting the repair. Each repair card assesses its own exact reviewed candidate, so burgundy can remain reviewable at £485 while charcoal is also reviewable at £465. Choosing burgundy preserves its selected output and approval. A later unrestricted Schedule check may recommend charcoal; that different garment still requires explicit swap confirmation. A cheaper alternative does not by itself make the chosen repair a constraint conflict.
+
 ## Recast the same repaired production
 
 1. Keep this working book. Choose **Review a change → A character is recast**, Nora → **Celeste Rowan**. The proposal identifies Ada-specific garment, makeup and necklace decisions; unrelated performers’ evidence remains valid.
