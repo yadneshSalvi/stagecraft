@@ -366,12 +366,13 @@ function LookCanvas({
   }
   return (
     <>
-      <section className="look-canvas">
+      <section className="look-canvas costume-canvas">
         <header className="look-heading">
           <div>
             <h2>{character?.name || "Character look"}</h2>
-            <span className="look-name">{look.title}</span>
             <p>
+              <span className="look-name">{look.title}</span>
+              <span>·</span>
               {performer?.name || "Assign a performer"}
               <span>·</span>
               {look.sceneIds
@@ -413,60 +414,62 @@ function LookCanvas({
             </Button>
           </div>
         </header>
-        <div className="look-view-tabs">
-          <div className="segmented" aria-label="Image view">
-            <button
-              aria-pressed={view === "preview"}
-              className={view === "preview" ? "active" : ""}
-              disabled={!preview}
-              onClick={() => selectView("preview")}
-            >
-              Preview
-            </button>
-            <button
-              aria-pressed={view === "source"}
-              className={view === "source" ? "active" : ""}
-              onClick={() => selectView("source")}
-            >
-              Source
-            </button>
-            <button
-              aria-pressed={view === "compare"}
-              className={view === "compare" ? "active" : ""}
-              disabled={!preview}
-              onClick={() => selectView("compare")}
-            >
-              Compare
-            </button>
+        <div className="look-stage">
+          <div className="look-view-tabs">
+            <div className="segmented" aria-label="Image view">
+              <button
+                aria-pressed={view === "preview"}
+                className={view === "preview" ? "active" : ""}
+                disabled={!preview}
+                onClick={() => selectView("preview")}
+              >
+                Preview
+              </button>
+              <button
+                aria-pressed={view === "source"}
+                className={view === "source" ? "active" : ""}
+                onClick={() => selectView("source")}
+              >
+                Source
+              </button>
+              <button
+                aria-pressed={view === "compare"}
+                className={view === "compare" ? "active" : ""}
+                disabled={!preview}
+                onClick={() => selectView("compare")}
+              >
+                Compare
+              </button>
+            </div>
+          </div>
+          <div className="costume-image-stage">
+            {view === "compare" && preview && performer?.imageUrl ? (
+              <ImageComparison
+                sourceUrl={performer.imageUrl}
+                previewUrl={preview.imageUrl}
+                sourceAlt={`Original source of ${performer.name}`}
+                previewAlt={`${character?.name}, YouCam generated garment preview`}
+              />
+            ) : (
+              <Photo
+                natural
+                original
+                priority
+                src={
+                  view === "source"
+                    ? performer?.imageUrl
+                    : preview?.imageUrl || performer?.imageUrl
+                }
+                alt={
+                  view === "source"
+                    ? `${performer?.name}, original permitted source`
+                    : `${character?.name}, ${preview ? "YouCam generated garment preview" : "source image awaiting preview"}`
+                }
+              />
+            )}
           </div>
         </div>
-        <div className="costume-image-stage">
-          {view === "compare" && preview && performer?.imageUrl ? (
-            <ImageComparison
-              sourceUrl={performer.imageUrl}
-              previewUrl={preview.imageUrl}
-              sourceAlt={`Original source of ${performer.name}`}
-              previewAlt={`${character?.name}, YouCam generated garment preview`}
-            />
-          ) : (
-            <Photo
-              natural
-              original
-              priority
-              src={
-                view === "source"
-                  ? performer?.imageUrl
-                  : preview?.imageUrl || performer?.imageUrl
-              }
-              alt={
-                view === "source"
-                  ? `${performer?.name}, original permitted source`
-                  : `${character?.name}, ${preview ? "YouCam generated garment preview" : "source image awaiting preview"}`
-              }
-            />
-          )}
-        </div>
-        {look.reviewReason && (
+        {look.reviewReason && !approval && look.approvals.length > 0 && (
           <Notice tone="warning" title="Needs re-review">
             {look.reviewReason}
           </Notice>

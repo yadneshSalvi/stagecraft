@@ -1,0 +1,147 @@
+/* Round 4: final visual polish. Loaded last so these rules settle earlier layers. */
+
+/* Looks studio: one compact heading row, view tabs beside the image, and a
+   preview that grows toward 60–65vh at its own ratio while staying above the fold. */
+.costume-canvas {
+  container-type: inline-size;
+}
+.costume-canvas .look-heading {
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.costume-canvas .look-heading > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.costume-canvas .look-heading h2 {
+  margin: 0 0 8px;
+  line-height: 1.1;
+}
+.costume-canvas .look-heading p {
+  gap: 8px;
+}
+.costume-canvas .look-name {
+  display: inline;
+  margin: 0;
+  font-size: inherit;
+}
+.costume-canvas .look-heading > .appearance-approval {
+  flex: none;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+.costume-canvas .appearance-approval > .button {
+  flex: none;
+  white-space: nowrap;
+}
+.look-stage {
+  position: relative;
+}
+.costume-canvas .look-view-tabs {
+  justify-content: center;
+  margin-bottom: 8px;
+}
+@container (min-width: 600px) {
+  .costume-canvas .look-view-tabs {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    margin: 0;
+  }
+  .costume-canvas .look-view-tabs .segmented {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .costume-canvas .look-view-tabs .segmented button {
+    justify-content: flex-start;
+    text-align: left;
+  }
+}
+@media (min-width: 701px) {
+  .costume-canvas .costume-image-stage > *,
+  .costume-canvas .costume-image-stage > .photo-natural {
+    width: min(
+      100%,
+      calc(clamp(240px, 100svh - 352px, 65svh) * var(--photo-ratio, 0.666667))
+    );
+  }
+}
+
+/* Right rail: one heading style for Direction, Recipe and Preview. */
+aside.recipe-inspector .section-title :is(h2, h3),
+aside.recipe-inspector .generation-panel > h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--text);
+  font: 500 14px/1.4 var(--font-sans);
+  letter-spacing: 0;
+}
+aside.recipe-inspector .recipe-form .section-title {
+  margin-bottom: 16px;
+}
+
+/* Approval dialogs: the exact output at an inspectable size beside the form. */
+.modal[open]:has(> .approval-output) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: 24px;
+  width: min(760px, calc(100vw - 32px));
+}
+.modal:has(> .approval-output) > .modal-heading {
+  grid-column: 1 / -1;
+}
+.modal:has(> .approval-output) > :not(.modal-heading, .approval-output) {
+  grid-column: 2;
+}
+.modal:has(> .approval-output) > .approval-output {
+  grid-row: 2 / span 2;
+  width: auto;
+  margin: 0;
+}
+.approval-output > .photo,
+.approval-output > .photo.photo-natural {
+  width: calc(min(360px, 100svh - 200px) * var(--photo-ratio, 0.666667));
+  border-radius: 4px;
+}
+@media (max-width: 700px) {
+  .modal[open]:has(> .approval-output) {
+    display: block;
+  }
+  .modal:has(> .approval-output) > .approval-output {
+    margin: 0 auto 16px;
+  }
+  .approval-output > .photo,
+  .approval-output > .photo.photo-natural {
+    width: calc(min(280px, 40svh) * var(--photo-ratio, 0.666667));
+    margin: 0 auto;
+  }
+}
+
+/* Allocation result: findings start their own section, Method spans the full
+   width, and adoption sits alone on a right-aligned row. */
+.allocation-result .findings-summary .finding-groups {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.allocation-result .allocation-adopt {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  margin-top: 0;
+  border-top: 0;
+}
+.allocation-result .allocation-policy {
+  flex: none;
+  width: 100%;
+  max-width: none;
+}
+.allocation-result .allocation-adopt > .button {
+  align-self: flex-end;
+}

@@ -106,11 +106,13 @@ export function BeautyStudio({ look }: { look: Look }) {
           setView={selectView}
           onSource={openSource}
         />
-        {look.beauty?.reviewReason && (
-          <Notice tone="warning" title="Needs re-review">
-            {look.beauty.reviewReason}
-          </Notice>
-        )}
+        {look.beauty?.reviewReason &&
+          !approval &&
+          look.beauty.approvals.length > 0 && (
+            <Notice tone="warning" title="Needs re-review">
+              {look.beauty.reviewReason}
+            </Notice>
+          )}
         {inspectionNotes && (
           <details className="inspection-notes">
             <summary>Inspection notes</summary>

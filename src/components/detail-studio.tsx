@@ -210,7 +210,7 @@ export function DetailStudio({ look, kind }: { look: Look; kind: DetailKind }) {
             </Button>
           </div>
         )}
-        {detail?.reviewReason && (
+        {detail?.reviewReason && !approval && detail.approvals.length > 0 && (
           <Notice tone="warning" title="Needs re-review">
             {detail.reviewReason}
           </Notice>
