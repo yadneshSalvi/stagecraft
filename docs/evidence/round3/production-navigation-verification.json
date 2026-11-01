@@ -1,0 +1,160 @@
+{
+  "version": 1,
+  "scope": "STAGECRAFT round three final canonical navigation acceptance",
+  "applicationSourceCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8",
+  "testSourceCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8",
+  "canonicalUrl": "https://stagecraft-swart.vercel.app",
+  "deploymentId": "dpl_AdZFEtAtiaoMogNNBwvATVQ8tYCh",
+  "deploymentUrl": "https://stagecraft-3evv5aus4-yadneshsalvis-projects.vercel.app",
+  "deploymentState": "READY",
+  "verifiedAt": "2026-11-01T11:47:35.320167+00:00",
+  "attempts": [
+    {
+      "number": 1,
+      "kind": "full canonical suite",
+      "startedAt": "2026-11-01T11:39:31.733Z",
+      "completedAt": "2026-11-01T11:46:50.845867+00:00",
+      "durationSeconds": 439.113,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0,
+      "retries": 0,
+      "workers": 1,
+      "exitCode": 0,
+      "repeatedAfterSuccess": false
+    }
+  ],
+  "browser": {
+    "engine": "Chromium",
+    "contexts": "fresh isolated app contexts per case",
+    "copiedApplicationAuthentication": false,
+    "deploymentStorageState": "unset",
+    "roundThreeViewports": [
+      {
+        "width": 1440,
+        "height": 900
+      },
+      {
+        "width": 1366,
+        "height": 768
+      }
+    ],
+    "additionalMobileWidth": 390
+  },
+  "preflight": {
+    "homepageHttpStatus": 200,
+    "configHttpStatus": 200,
+    "normalConfiguration": {
+      "youcam": true,
+      "storage": true,
+      "generationPaused": false,
+      "dailyJobLimit": 8,
+      "ownerDailyJobLimit": 4,
+      "recordedPreviews": 12,
+      "recordedBeautyPreviews": 4,
+      "recordedDetailPreviews": {
+        "hair_color": 2,
+        "necklace": 2
+      },
+      "freshPreviewAvailability": {
+        "available": true,
+        "reason": "ready"
+      }
+    }
+  },
+  "coverage": {
+    "existingCasesPassed": 19,
+    "newRoundThreeCasesPassed": 2,
+    "exactOutputAndIntentRaces": true,
+    "privateBlobUploadOwnerIsolationAndWithdrawal": true,
+    "sameProductionRepairRecastIndependentDetailsAndFrozenPack": true,
+    "bothApprovedRepairChoices": true,
+    "missingDecisionsInlineApprovalAndAutomaticRefresh": true,
+    "consumedReturnUrlAndManualReopen": true,
+    "deliberateDirectionAcknowledgement": true,
+    "keyboardComparisonAndAboveFoldActions": true,
+    "requestRecoveryWithoutAutomaticResubmission": true,
+    "crewPdfAll27ImagesAndFullWarningList": true,
+    "singleSidebarClickAfterReturnAndAdoptionBothViewports": true
+  },
+  "ownScript": {
+    "provider": "Gemini",
+    "model": "gemini-4-argon",
+    "sceneCount": 2,
+    "characterCount": 2,
+    "grounding": {
+      "modelCueCount": 4,
+      "droppedCueCount": 0,
+      "modelSceneCount": 2,
+      "groundedCueCount": 4,
+      "repeatedCueCount": 0,
+      "groundedSceneCount": 2,
+      "normalizedCueCount": 0,
+      "repairedExcerptCount": 0
+    },
+    "recordedRequests": 2,
+    "freshRequests": 0,
+    "adoptedAllocations": 2,
+    "quoteCents": 14500,
+    "performerSpecificBadgesVerified": true,
+    "unsupportedPairSuggestionVerified": true,
+    "physicallyReady": false
+  },
+  "providerSafety": {
+    "freshYouCamSubmissions": 0,
+    "newYouCamUnitsSpent": 0,
+    "recordedUniqueRequestIdentifiers": 12,
+    "mockedLiveClientPosts": 3,
+    "mockedLiveResponseStatuses": [503, 504, 503],
+    "liveClientPostsForwardedToServer": 0,
+    "note": "The three live-mode HTTP requests were fulfilled by browser recovery fixtures. No live request was forwarded to the application."
+  },
+  "cleanup": {
+    "testCreatedProductions": 20,
+    "successfulTestProductionDeletes": 20,
+    "unmatchedDeletes": 0,
+    "leftoverTestProductions": 0,
+    "creationBodiesUnparsed": 0,
+    "deleteFailures": 0,
+    "evidence": "Created identifiers from trace HTTP 201 response bodies reconciled exactly with successful DELETE requests. Identifiers remain private.",
+    "rootOwnedProductionsTouched": false
+  },
+  "evidence": {
+    "fullReportRetainedPrivately": true,
+    "traceArchivesRetainedPrivately": 21,
+    "privateFileMode": "0600",
+    "canonicalScreenshotOutputs": 10,
+    "canonicalLayoutMeasurements": 2,
+    "layoutFiles": ["after/layout-1440x900.json", "after/layout-1366x768.json"],
+    "screenshotFiles": [
+      "after/board-1440x900.png",
+      "after/board-1366x768.png",
+      "after/looks-1440x900.png",
+      "after/looks-1366x768.png",
+      "after/repair-decisions-needed-1440x900.png",
+      "after/repair-decisions-needed-1366x768.png",
+      "after/repair-ready-1440x900.png",
+      "after/repair-ready-1366x768.png",
+      "after/allocation-1440x900.png",
+      "after/allocation-1366x768.png"
+    ],
+    "note": "All ten automated PNG captures and two layout measurements were immediately archived privately. Public reference images may later be independently recaptured. Full original states remain in the private traces.",
+    "privateAttemptDirectory": "artifacts/private/review-round3/canonical-9c52f24-attempt-1",
+    "priorProductionVerification": "production-verification.json",
+    "priorProductionVerificationUnchanged": true
+  },
+  "relatedLocalVerification": "local-verification.json",
+  "limits": [
+    "Synthetic productions and software checks; no practitioner or physical outcome is inferred.",
+    "Chromium accessibility and layout checks do not certify every device or assistive technology."
+  ],
+  "navigationFollowup": {
+    "purpose": "Defensive hardening of consumed return URL cleanup",
+    "applicationRoutingDefectEstablished": false,
+    "manualObservationClarification": "The apparent lost click occurred while the Change adopted receipt was open. After Back to production, the first Schedule click worked.",
+    "automatedPath": "Return from alternatives, adopt, close receipt, reopen and cancel change entry, then click Schedule once without reloading.",
+    "verifiedViewports": ["1440x900", "1366x768"],
+    "relatedEvidence": "navigation-followup.json"
+  }
+}

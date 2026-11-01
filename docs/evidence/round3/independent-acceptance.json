@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "scope": "Independent in-app-browser canonical acceptance",
+  "applicationSourceCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e",
+  "canonicalUrl": "https://stagecraft-swart.vercel.app",
+  "freshExamples": 2,
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1366,
+      "height": 768
+    }
+  ],
+  "observed": {
+    "zeroOriginalApprovals": true,
+    "keyboardComparison50To51": true,
+    "manualExactBurgundyApproval": true,
+    "consumedReturnParameters": true,
+    "amberSixOtherLooks": true,
+    "inlineExampleApprovalAutomaticallyReady": true,
+    "adoptedBurgundyRepair": true,
+    "feasibleAllocation": {
+      "assignments": 17,
+      "quoteGbp": 485,
+      "budgetGbp": 500
+    },
+    "namedDirectionAcknowledgementClearsCurrentFlag": true,
+    "acknowledgementRequiresAllocationRecompute": true,
+    "wardrobeCoatUnavailableAndReplacementAssigned": true,
+    "frozenCrewPackOpenItems": 37,
+    "historicalFrozenPackReadable": true
+  },
+  "screenshots": {
+    "before": 34,
+    "after": 40,
+    "pairedWorkflowScreens": 17,
+    "bothContactSheetsVisuallyInspected": true,
+    "nativeViewportClip": "After screenshots use an exact CSS viewport clip; no image resizing or application DOM/style mutation.",
+    "captureArtifactCorrected": "The in-app compositor initially repeated right/bottom tiles in some 1440px exports. All affected root captures were replaced and visually inspected."
+  },
+  "runtimeLogCheck": {
+    "deploymentId": "dpl_9KRFt3HUKmRbavaM1cS4q4ZLCqS6",
+    "level": "error",
+    "window": "1h",
+    "returnedEntries": 0,
+    "limit": 100,
+    "interpretation": "No error-level runtime entries returned by this bounded query; not a guarantee of absence outside its scope."
+  },
+  "newYouCamSubmissions": 0,
+  "newYouCamUnitsSpent": 0,
+  "limits": [
+    "Agent-operated software walkthrough using a fictional production and recorded provider outputs.",
+    "No physical fitting, supplier transaction or human usability finding is inferred."
+  ],
+  "navigationInvestigation": {
+    "initialObservation": "After return from alternative approval and repair adoption without reload, the first sidebar Schedule click remained on the board. A second click succeeded.",
+    "initialApplicationReproductions": 2,
+    "followupObservation": "The same apparent first-click loss occurred once on 9c52f24. Before-click DOM inspection showed an open Change adopted receipt.",
+    "resolvedCause": "The sidebar-position click dismissed the native modal backdrop; it was not a sidebar navigation.",
+    "correctedSequence": "Back to production closes the receipt, then the first Schedule click navigates successfully.",
+    "verification": {
+      "applicationSourceCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8",
+      "viewport": "1366x768",
+      "openReceiptBeforeDismissal": true,
+      "openDialogsAfterBackToProduction": 0,
+      "firstSidebarClickReachesSchedule": true,
+      "scheduleRscRequests": 1,
+      "consoleErrors": 0
+    },
+    "applicationRoutingDefectEstablished": false,
+    "urlGuard": "Retained as defensive one-shot parameter consumption; it is not claimed to fix the receipt behavior."
+  }
+}

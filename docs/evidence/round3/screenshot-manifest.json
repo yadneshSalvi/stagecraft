@@ -1,0 +1,499 @@
+{
+  "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e",
+  "beforeSourceCommit": "4424b8fb58908c13c88201a5a0b9e5cba682ae18",
+  "beforeApplicationCommit": "8310862fb13be94f3748916963293fa41e45b215",
+  "afterEnvironment": "canonical production",
+  "screenshots": [
+    {
+      "file": "before/allocation-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "2f95465d5467171edee7c13d98abe2198618632368647403fa08bea09d2fd292"
+    },
+    {
+      "file": "before/allocation-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "70d1595b04019ba23882e624d7d83b5dd1e440462ec00ec6b87e80a0d20143d5"
+    },
+    {
+      "file": "before/alternatives-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "975db2ddc20da23b04666a14a116ae5c610087f8acaffbe58576384ae2a59177"
+    },
+    {
+      "file": "before/alternatives-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "ae6d3987a979a6c7157de7376b09d110b9c573691868011334f9ae4ba7a18546"
+    },
+    {
+      "file": "before/approval-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "206de1d3fbcc53979bce1c6c6e9ddfc7b50e2af8ac26ccb3a64cb99238003d66"
+    },
+    {
+      "file": "before/approval-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "4413f6bbb8f2eb3ebb02373e7729973730160575ae6c280f59ca907d5ff7d3a9"
+    },
+    {
+      "file": "before/board-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "97e779cc88a57c2983dbe770afc07a07b65f1094f5957a11e2d231f5d78ee93a"
+    },
+    {
+      "file": "before/board-1440x900.png",
+      "width": 1425,
+      "height": 900,
+      "sha256": "8ac213e2e2c6042b55c0d690ac70c9dc77139dab739d8e407e978a15f4d7fdba"
+    },
+    {
+      "file": "before/change-entry-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "54f0f52688ca0fa93394ba15c9af151f88b9bf00c53c9d8d184e835a3cb4b590"
+    },
+    {
+      "file": "before/change-entry-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "0d024b8ddcd6e0e80c623a5c468c8302fa47bea2c159f18cdec7c197ba9448ae"
+    },
+    {
+      "file": "before/change-impact-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "f8477b26a18ce638e807118d203ff64539193511ed599cd2a95117c4eee4c147"
+    },
+    {
+      "file": "before/change-impact-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "3dcdd88c67785b0107040707bac1740e2b3c7b34578bc033f3f1f2e5c32c798d"
+    },
+    {
+      "file": "before/crew-pack-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "cfdb6372887989dcd17aa778cd3f7ed550e37e6ef94dd5fe2d8ad0a121a3aeea"
+    },
+    {
+      "file": "before/crew-pack-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6bfd46593b4136dbaf18df2b706da7e6b9669d34a35e2f15beae7a8f76decccd"
+    },
+    {
+      "file": "before/evidence-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "c7e27f06093407687430f97c113ad1a8e680cd21da45e7f9370c9e05d13cf194"
+    },
+    {
+      "file": "before/evidence-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "dcda939561cb7b07433862699926a7d4de1b51a265123d8d89b3b9d83611f2d7"
+    },
+    {
+      "file": "before/handoff-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "e5118be95800c94b047d5851f781055345ac67b011f81b12da5f67ab46b37a6d"
+    },
+    {
+      "file": "before/handoff-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6d219f943f762d38e04d28cf23b39074d1ad61a9f8c75e31bd98531a355ac97a"
+    },
+    {
+      "file": "before/landing-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "9c3fbd7cd7939f952d3c3b6b34afb256bb6486ff4b782d6d02a1246fb45d2c0b"
+    },
+    {
+      "file": "before/landing-1440x900.png",
+      "width": 1425,
+      "height": 900,
+      "sha256": "7a001748ec3a7a257a201eda24f85cacdf4a006713f663a480ff8e4b68f8492f"
+    },
+    {
+      "file": "before/looks-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "54a0da466a0712e15c8aff057f9f049d71ce0395636b970cc5b0db09526b7c1f"
+    },
+    {
+      "file": "before/looks-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "9d3bc9febe1b354cb2f88d5f54cdfb252406b62c25741af8819593910db02bbd"
+    },
+    {
+      "file": "before/makeup-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "b81404acf46fcac2e7f7946e43dddc393836e31dc8fb7547b009a224d034cf9e"
+    },
+    {
+      "file": "before/makeup-1440x900.png",
+      "width": 1425,
+      "height": 900,
+      "sha256": "120322ac69ecb69a6263a2a46860dfd272e211809d4d5a3de152028f78f41816"
+    },
+    {
+      "file": "before/necklace-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "94f4413ef73c87179288eb5859687d4c05e66001499955894e3affc66fb8c3a8"
+    },
+    {
+      "file": "before/necklace-1440x900.png",
+      "width": 1425,
+      "height": 900,
+      "sha256": "398854d54b95fe23d4c4922a359c448f4df4bf4c4e1fb9622480ebfe603630ec"
+    },
+    {
+      "file": "before/repair-blocker-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "f8477b26a18ce638e807118d203ff64539193511ed599cd2a95117c4eee4c147"
+    },
+    {
+      "file": "before/repair-blocker-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "381f5e2b32be3f114a3bc20952260207fe423f1376215dffb6df57054e9da5ee"
+    },
+    {
+      "file": "before/schedule-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "a339b48b771db4d14a22773ae8904647634adfc2bd35b9ff95408f54a6ab0eef"
+    },
+    {
+      "file": "before/schedule-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6d46c0e8c709861d674dfbb5dc58d27f8cfa649ee1a425a41c85398d950cc195"
+    },
+    {
+      "file": "before/script-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "8e3de1cf73e3d24a0b74bb312f649a6b5e0e833fd3046b8f3287cce48f19c05b"
+    },
+    {
+      "file": "before/script-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "64d9128dcd920405ac34b6c86a75f3e21b53851f6edda1875ffca4e5d8c64c11"
+    },
+    {
+      "file": "before/wardrobe-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "2005ce74c21587f4940fc477a9753caf05282479fe3fabc9c17637d17f87dff8"
+    },
+    {
+      "file": "before/wardrobe-1440x900.png",
+      "width": 1425,
+      "height": 900,
+      "sha256": "8b9c132a1dc80c9f5d0ec87107f3d265eb8524d672a32a2cafdf4e661261e4d5"
+    },
+    {
+      "file": "after/allocation-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "996bdda1e811d5ecfb1203884af8421737b24666a5aaa47fe77b7e1031b22649",
+      "applicationCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8"
+    },
+    {
+      "file": "after/allocation-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "16c32acb5717474ab19a2f86df6f20f6a58419b11a217c2e900176f3dd011883",
+      "applicationCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8"
+    },
+    {
+      "file": "after/alternatives-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "c3bd33780ebf15823d9e096d74b271923fa7b2b5765cde29502649787f1e4290",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/alternatives-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "0ec784b3f692e91fa77e4fcb0853cc376e917f3a7dd8ced9051f516954e721cb",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/approval-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "6a8610a15fc1aa65382fc98ec7cdd0dc50f14084c8716a0fb60192e9006d879e",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/approval-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "33b97243f9b0ea9cf768ee389583f97fd56f7505f7245be6aff5cc14f913890a",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/board-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "35e39a431be3100e3a93e34d9b1fc0ed730b6f46e9bdcbbc0de3f8442234eb90",
+      "applicationCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8"
+    },
+    {
+      "file": "after/board-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "1cb0ae447ba0d3a502fc0f50f7bbc8ef977f202b85fa86a67eb8ba11fdbbab44",
+      "applicationCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8"
+    },
+    {
+      "file": "after/change-entry-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "ba821787397fc500870171c7517d8bd7a5b816c9883bb77f543e08c1a4e365f8",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/change-entry-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "ba1c799f42225c3ef680c0e9991b850aa598485c01e0fd07e2e3b758d0503f3f",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/change-impact-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "d19256b46d668c4c6bcc6f4cdcec8929672a85155f964bb5994d65294ebac841",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/change-impact-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "cedb9f6dbb261203cd2264d0a88743ad36e510c85366f2a9dda5c3ead0df610a",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/crew-pack-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "92d23f31d306a942ef7379a416062ae33a439c08d71f2eff62712d6ef740de25",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/crew-pack-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "71275823c638019630207f99b5f0ebd457b4d39f87efe9a77ccefb66566c7a7c",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/evidence-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "8f0918599f92ecc0373c4f36572e6941659b410352c432e0ff61e5b834835542",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/evidence-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f99efafdff46faa680f4e0c94eb92c57b641fb911b5573bcf049388b2ccc494d",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/handoff-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "a386793c3cbfc1a72e9e263ad8bba5c8b2831ed74238ae09d773c79efce41a41",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/handoff-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "9e6c8ba0a467ab56cc939185abde0dc54e3a3268b55813918542af3a6f3fb973",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/landing-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "42f50a5f6b36d5224df32cb47db87180ccb656a8fd7c6e95808cc14814f19dd0",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/landing-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "06a1818db27f98a80b19619756cd38da72f1101e81e223998b4c1d623caeb2e2",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/landing-costumed-cast-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "8ab16fda615e46bae21338bfc98f114a28d7664c08da7147e60b49e9a50a1951",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/landing-costumed-cast-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "abfdb075d38ac0f82c62ddc1cd924a9c3668761e92517b4f3f977014b2e87e9d",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/looks-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "5053a29707a3f627c75f778cccff85fd2f167ba9e66205db5e835a88184662a7",
+      "applicationCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8"
+    },
+    {
+      "file": "after/looks-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "990fa0958a71ff40b9574818ff8ab90bf63b4dbf35564b7db7ca686ff75be3aa",
+      "applicationCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8"
+    },
+    {
+      "file": "after/makeup-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "52641f2375803a1a8a4980ff283064ac72e80e182e4263eb153dadb796182cc3",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/makeup-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "280f10ba1d024ba696f3274a7e98db18d52cf15e291349dd245680e34d9c94a6",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/necklace-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "ec10e7d1c627384e53f410503a921cf6b6da99063ac73d822abb4b8b11bdcb0f",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/necklace-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "914f3dc8db803aa0a850fcfbee1266a8024957ab59fcfe9910a1bcc2b4f049f5",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/repair-blocker-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "0f91c478cab39f68a95300a9505f8bf387491fc43ac1b56afb5f178f945a18ff",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/repair-blocker-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6cb0ff935b0d5a916f5b6614f3d167954b987e685ec3e9dbd4003ee267eaa33a",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/repair-decisions-needed-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "b6bf4eb1030f57848dd8edd8bc311f258a12301e270817fcf6373972310d81fb",
+      "applicationCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8"
+    },
+    {
+      "file": "after/repair-decisions-needed-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "19e76b467bf1f4a51b68bf4dcfa2b3b89a0eb2120a968f3a9de009ce420b82c2",
+      "applicationCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8"
+    },
+    {
+      "file": "after/repair-ready-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "6e3240f32219b783ffeaa6c5a53dce1e1831276eeb90a4fc3dca1dfd801486a0",
+      "applicationCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8"
+    },
+    {
+      "file": "after/repair-ready-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "c36fd625c2e195d9283d3be4718e641554092e880f8cbb3ae961ceeb96827372",
+      "applicationCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8"
+    },
+    {
+      "file": "after/schedule-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "171a46f2f500bceb619b7354bf6b806417bc5203d6655a5a9209825f22e3a9f6",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/schedule-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "315e8e8b698f5923c1bfa8ba8f1168cbf41bf2142f95b3a8d316e08166aabbc9",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/script-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "48703567e0d209e93959776c6c82cb5d54acb87b5724ca789fad934ad898482c",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/script-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "8bc8b73341157b0f1c3a88f798d1d0e9480daa7ec7264ce409f11b1425df15bc",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/wardrobe-1366x768.png",
+      "width": 1366,
+      "height": 768,
+      "sha256": "5dd69a6fe9a0c5131fb5abe897b85f0e7c214dc937c665926dca41f5bfcb984e",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    },
+    {
+      "file": "after/wardrobe-1440x900.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e670b7ef698cb2f833d92d5389e5d626ee0aaf713c6a908c5b9f91c912dbf4cd",
+      "applicationCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e"
+    }
+  ],
+  "notes": [
+    "Screenshots show recorded example/sample workflows, not human validation.",
+    "Before and after captures use separate sessions; compare layout and workflow state, not record identity.",
+    "Some STAGECRAFT before captures omit the 15px scrollbar; the original CSS viewport is recorded in before-captures.json.",
+    "The navigation-only follow-up did not change visual components. Ten automated workflow images were recaptured on that release; each after image records its application commit."
+  ],
+  "navigationFollowupCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8"
+}

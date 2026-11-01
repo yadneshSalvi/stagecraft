@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "scope": "STAGECRAFT round three canonical automated acceptance",
+  "applicationSourceCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e",
+  "testSourceCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e",
+  "canonicalUrl": "https://stagecraft-swart.vercel.app",
+  "deploymentId": "dpl_9KRFt3HUKmRbavaM1cS4q4ZLCqS6",
+  "deploymentUrl": "https://stagecraft-epyxqu9ck-yadneshsalvis-projects.vercel.app",
+  "deploymentState": "READY",
+  "verifiedAt": "2026-11-01T11:25:33.336515+00:00",
+  "attempts": [
+    {
+      "number": 1,
+      "kind": "full canonical suite",
+      "startedAt": "2026-11-01T11:14:14.790Z",
+      "completedAt": "2026-11-01T11:21:43.554951+00:00",
+      "durationSeconds": 448.765,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0,
+      "retries": 0,
+      "workers": 1,
+      "exitCode": 0,
+      "repeatedAfterSuccess": false
+    }
+  ],
+  "browser": {
+    "engine": "Chromium",
+    "contexts": "fresh isolated app contexts per case",
+    "copiedApplicationAuthentication": false,
+    "deploymentStorageState": "unset",
+    "roundThreeViewports": [
+      {
+        "width": 1440,
+        "height": 900
+      },
+      {
+        "width": 1366,
+        "height": 768
+      }
+    ],
+    "additionalMobileWidth": 390
+  },
+  "preflight": {
+    "homepageHttpStatus": 200,
+    "configHttpStatus": 200,
+    "normalConfiguration": {
+      "youcam": true,
+      "storage": true,
+      "generationPaused": false,
+      "dailyJobLimit": 8,
+      "ownerDailyJobLimit": 4,
+      "recordedPreviews": 12,
+      "recordedBeautyPreviews": 4,
+      "recordedDetailPreviews": {
+        "hair_color": 2,
+        "necklace": 2
+      },
+      "freshPreviewAvailability": {
+        "available": true,
+        "reason": "ready"
+      }
+    }
+  },
+  "coverage": {
+    "existingCasesPassed": 19,
+    "newRoundThreeCasesPassed": 2,
+    "exactOutputAndIntentRaces": true,
+    "privateBlobUploadOwnerIsolationAndWithdrawal": true,
+    "sameProductionRepairRecastIndependentDetailsAndFrozenPack": true,
+    "bothApprovedRepairChoices": true,
+    "missingDecisionsInlineApprovalAndAutomaticRefresh": true,
+    "consumedReturnUrlAndManualReopen": true,
+    "deliberateDirectionAcknowledgement": true,
+    "keyboardComparisonAndAboveFoldActions": true,
+    "requestRecoveryWithoutAutomaticResubmission": true,
+    "crewPdfAll27ImagesAndFullWarningList": true
+  },
+  "ownScript": {
+    "provider": "Gemini",
+    "model": "gemini-4-argon",
+    "sceneCount": 2,
+    "characterCount": 2,
+    "grounding": {
+      "modelCueCount": 4,
+      "droppedCueCount": 0,
+      "modelSceneCount": 2,
+      "groundedCueCount": 4,
+      "repeatedCueCount": 0,
+      "groundedSceneCount": 2,
+      "normalizedCueCount": 0,
+      "repairedExcerptCount": 0
+    },
+    "recordedRequests": 2,
+    "freshRequests": 0,
+    "adoptedAllocations": 2,
+    "quoteCents": 14500,
+    "performerSpecificBadgesVerified": true,
+    "unsupportedPairSuggestionVerified": true,
+    "physicallyReady": false
+  },
+  "providerSafety": {
+    "freshYouCamSubmissions": 0,
+    "newYouCamUnitsSpent": 0,
+    "recordedUniqueRequestIdentifiers": 12,
+    "mockedLiveClientPosts": 3,
+    "mockedLiveResponseStatuses": [504, 503, 503],
+    "liveClientPostsForwardedToServer": 0,
+    "note": "The three live-mode HTTP requests were fulfilled by browser recovery fixtures. No live request was forwarded to the application."
+  },
+  "cleanup": {
+    "testCreatedProductions": 20,
+    "successfulTestProductionDeletes": 20,
+    "unmatchedDeletes": 0,
+    "leftoverTestProductions": 0,
+    "creationBodiesUnparsed": 0,
+    "deleteFailures": 0,
+    "evidence": "Created identifiers from trace HTTP 201 response bodies reconciled exactly with successful DELETE requests. Identifiers remain private.",
+    "rootOwnedProductionsTouched": false
+  },
+  "evidence": {
+    "fullReportRetainedPrivately": true,
+    "traceArchivesRetainedPrivately": 21,
+    "privateFileMode": "0600",
+    "canonicalScreenshotOutputs": 10,
+    "canonicalLayoutMeasurements": 2,
+    "layoutFiles": ["after/layout-1440x900.json", "after/layout-1366x768.json"],
+    "screenshotFiles": [
+      "after/board-1440x900.png",
+      "after/board-1366x768.png",
+      "after/looks-1440x900.png",
+      "after/looks-1366x768.png",
+      "after/repair-decisions-needed-1440x900.png",
+      "after/repair-decisions-needed-1366x768.png",
+      "after/repair-ready-1440x900.png",
+      "after/repair-ready-1366x768.png",
+      "after/allocation-1440x900.png",
+      "after/allocation-1366x768.png"
+    ],
+    "note": "The public reference set can include later independent canonical recaptures. Original automated states remain in the full private traces. Layout measurements are marked with this canonical deployment."
+  },
+  "relatedLocalVerification": "local-verification.json",
+  "limits": [
+    "Synthetic productions and software checks; no practitioner or physical outcome is inferred.",
+    "Chromium accessibility and layout checks do not certify every device or assistive technology."
+  ]
+}

@@ -62,5 +62,10 @@
       "width": 198,
       "height": 40
     }
-  ]
+  ],
+  "evidenceOrigin": "canonical automated Chromium acceptance",
+  "applicationSourceCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8",
+  "deploymentId": "dpl_AdZFEtAtiaoMogNNBwvATVQ8tYCh",
+  "canonicalUrl": "https://stagecraft-swart.vercel.app",
+  "attempt": 1
 }

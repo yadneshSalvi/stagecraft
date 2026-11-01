@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "applicationSourceCommit": "9c52f24e2d61bc8a1872a95b87f06cd7dc9848a8",
+  "precedingApplicationSourceCommit": "74e244c5f5139249c1ca0174d287f1dae11acb5e",
+  "reason": "Strengthen one-time consumption of change-return query parameters and exercise real sidebar clicks.",
+  "change": "Consume return parameters once; require the current board path and actual intent query keys; preserve unrelated query and hash.",
+  "baseline": {
+    "ordinaryStrengthenedBrowserPath": {
+      "passed": 1,
+      "failed": 0,
+      "durationSeconds": 8.954838
+    },
+    "deterministicFailingBrowserTest": false,
+    "initialManualObservations": 2
+  },
+  "localVerification": {
+    "format": true,
+    "lint": true,
+    "typecheck": true,
+    "unitPostgresql": {
+      "passed": 254,
+      "files": 24,
+      "durationSeconds": 18.93
+    },
+    "optimizedBuild": true,
+    "browser": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0,
+      "retries": 0,
+      "durationSeconds": 16.274451,
+      "viewports": ["1440x900", "1366x768"],
+      "noReloadReturnAndAdoption": true,
+      "singleSidebarScheduleClick": true
+    }
+  },
+  "rootChecks": {
+    "sourceClientScan": {
+      "textFiles": 308,
+      "clientFiles": 35,
+      "configuredValuesChecked": 27,
+      "findings": 0
+    },
+    "dryDeploymentInventory": {
+      "inventoryEntries": 411,
+      "regularFiles": 405,
+      "totalBytes": 49036898,
+      "privateFileFindings": []
+    }
+  },
+  "productionVerification": {
+    "report": "production-navigation-verification.json",
+    "passed": 21,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "retries": 0,
+    "durationSeconds": 439.112867,
+    "testCreatedProductions": 20,
+    "successfulTestDeletes": 20,
+    "leftovers": 0
+  },
+  "newYouCamUnitsSpent": 0,
+  "interpretation": "The ordinary local baseline and explicit receipt-close production path both pass. The guard hardens parameter consumption, with no claim that it fixes the initially misidentified modal interaction.",
+  "manualInvestigationCorrection": "The apparent lost first click dismissed the still-open Change adopted receipt. Explicitly closing it with Back to production makes the first Schedule click work. No routing defect was established.",
+  "deployment": {
+    "id": "dpl_AdZFEtAtiaoMogNNBwvATVQ8tYCh",
+    "url": "https://stagecraft-3evv5aus4-yadneshsalvis-projects.vercel.app",
+    "state": "READY"
+  }
+}
