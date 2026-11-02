@@ -107,3 +107,7 @@ Allocation uses bounded exact TypeScript search. Its production **Constraint che
 - [Asset provenance and licenses](docs/asset-licenses.md)
 
 Private plans, credentials, provider task IDs, private uploads and execution artifacts are excluded from publication and deployment.
+
+## License
+
+Original application source code is licensed under the [MIT License](LICENSE). Third-party dependencies, fonts, models and provider assets retain their own terms and notices; see [asset licenses](docs/asset-licenses.md). This license does not grant rights to provider services, trademarks, private uploads or credentials.
