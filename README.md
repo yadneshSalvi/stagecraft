@@ -1,5 +1,7 @@
 # STAGECRAFT
 
+Watch the [2:42 product demo](https://youtu.be/c7SGXH7d6t4) with English captions.
+
 **A story in every look.** The working book for costume, makeup and the physical details a crew needs.
 
 For community theatre, student and indie film, and costume hire houses keeping creative decisions, scarce garments and crew instructions together.
